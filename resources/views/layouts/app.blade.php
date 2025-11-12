@@ -121,7 +121,7 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
-        <div class="container">
+        <div class="container-fluid px-4">
             <a class="navbar-brand" href="/">
                 <i class="bi bi-mortarboard-fill"></i> SMATCAMPUS
             </a>
