@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bmewburn.vscode-intelephense-client",
+    "ms-python.python",
+    "yzhang.markdown-all-in-one"
+  ]
+}
