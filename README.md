@@ -123,7 +123,8 @@ skolariscloud3/
 │   │   ├── attendanceController.js
 │   │   └── gradeController.js
 │   ├── middleware/      # Custom middleware
-│   │   └── auth.js      # Authentication & authorization
+│   │   ├── auth.js      # Authentication & authorization
+│   │   └── rateLimiter.js # Rate limiting
 │   ├── models/          # Database models
 │   │   ├── User.js
 │   │   ├── School.js
@@ -156,7 +157,11 @@ skolariscloud3/
 - JWT-based authentication
 - Role-based access control (RBAC)
 - Protected API routes
-- Input validation
+- Rate limiting on all API endpoints
+- NoSQL injection prevention with express-mongo-sanitize
+- Security HTTP headers with helmet
+- Input validation and sanitization
+- Secure email validation regex (ReDoS-resistant)
 - Secure password requirements
 
 ## 👥 User Roles
@@ -171,7 +176,7 @@ skolariscloud3/
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT (JSON Web Tokens)
-- **Security**: bcryptjs for password hashing
+- **Security**: bcryptjs, helmet, express-rate-limit, express-mongo-sanitize
 - **API**: RESTful architecture
 - **Frontend**: HTML5, CSS3, JavaScript
 

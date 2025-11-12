@@ -1,7 +1,10 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./src/config/database');
+const { apiLimiter } = require('./src/middleware/rateLimiter');
 
 // Load env vars
 dotenv.config();
@@ -11,12 +14,21 @@ connectDB();
 
 const app = express();
 
+// Set security HTTP headers
+app.use(helmet());
+
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Sanitize data to prevent NoSQL injection
+app.use(mongoSanitize());
+
 // Enable CORS
 app.use(cors());
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
 
 // Serve static files
 app.use(express.static('public'));
