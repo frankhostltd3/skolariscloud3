@@ -1,11 +1,14 @@
 {
-  "recommendations": [
-    "editorconfig.editorconfig",
-    "eamodio.gitlens",
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
-    "bmewburn.vscode-intelephense-client",
-    "ms-python.python",
-    "yzhang.markdown-all-in-one"
-  ]
+    "recommendations": [
+        "editorconfig.editorconfig",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bmewburn.vscode-intelephense-client",
+        "shufo.vscode-blade-formatter",
+        "onecentlin.laravel5-snippets",
+        "amiralizadeh9480.laravel-extra-intellisense",
+        "mikestead.dotenv",
+        "yzhang.markdown-all-in-one"
+    ]
 }
