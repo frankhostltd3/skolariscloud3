@@ -36,10 +36,26 @@ $users = [
         'email_verified_at' => now(),
     ],
     [
+        'name' => 'General Staff Member',
+        'email' => 'staff@frankhost.us',
+        'password' => Hash::make('staff123'),
+        'user_type' => 'general_staff',
+        'school_id' => $school->id,
+        'email_verified_at' => now(),
+    ],
+    [
         'name' => 'Test Student',
         'email' => 'student@frankhost.us',
         'password' => Hash::make('student123'),
         'user_type' => 'student', 
+        'school_id' => $school->id,
+        'email_verified_at' => now(),
+    ],
+    [
+        'name' => 'Test Parent',
+        'email' => 'parent@frankhost.us',
+        'password' => Hash::make('parent123'),
+        'user_type' => 'parent',
         'school_id' => $school->id,
         'email_verified_at' => now(),
     ]
@@ -64,5 +80,7 @@ echo "Login credentials:\n";
 echo "=================\n";
 echo "Admin: admin@frankhost.us / admin123\n";
 echo "Teacher: teacher@frankhost.us / teacher123\n"; 
+echo "Staff: staff@frankhost.us / staff123\n";
 echo "Student: student@frankhost.us / student123\n";
+echo "Parent: parent@frankhost.us / parent123\n";
 echo "\nLogin at: https://frankhost.us/login\n";
