@@ -29,7 +29,7 @@ jobs:
             --exclude='.env' --exclude='.env.*' --exclude='storage/*.key'
             --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
 
-      - name: Run remote deploy commands (composer, artisan, symlink public_html)
+      - name: Run remote deploy commands (composer, artisan, wire public_html)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -39,6 +39,7 @@ jobs:
             set -e
             APP_PATH="${{ secrets.VPS_APP_PATH }}"
             WEBROOT_PATH="${{ secrets.VPS_WEBROOT_PATH }}"  # e.g., /home/USER/public_html
+            WEBSITE_USER="${{ secrets.VPS_WEBSITE_USER }}"  # optional: chown runtime dirs to this user
 
             mkdir -p "$APP_PATH"
             cd "$APP_PATH"
@@ -46,6 +47,9 @@ jobs:
             # Ensure proper permissions for storage and bootstrap/cache
             mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
             chmod -R ug+rw storage bootstrap/cache || true
+            if [ -n "$WEBSITE_USER" ]; then
+              chown -R "$WEBSITE_USER":"$WEBSITE_USER" storage bootstrap/cache || true
+            fi
 
             # Install/update dependencies
             if command -v composer >/dev/null 2>&1; then
@@ -64,13 +68,33 @@ jobs:
               echo "PHP CLI not found on server. Skipping artisan commands."
             fi
 
-            # Point webroot (public_html) to Laravel public directory
+            # Wire webroot (public_html) to Laravel public directory
             if [ -n "$WEBROOT_PATH" ]; then
               # Create parent directory if missing
               mkdir -p "$(dirname "$WEBROOT_PATH")"
-              # Atomically update symlink to APP_PATH/public
-              ln -sfn "$APP_PATH/public" "$WEBROOT_PATH"
-              echo "Symlinked webroot: $WEBROOT_PATH -> $APP_PATH/public"
+
+              TARGET="$APP_PATH/public"
+              # If webroot is a symlink, update it atomically
+              if [ -L "$WEBROOT_PATH" ]; then
+                ln -sfn "$TARGET" "$WEBROOT_PATH"
+                echo "Updated webroot symlink: $WEBROOT_PATH -> $TARGET"
+              # If webroot is an existing directory
+              elif [ -d "$WEBROOT_PATH" ]; then
+                # If directory is empty, replace with symlink
+                if [ -z "$(ls -A "$WEBROOT_PATH")" ]; then
+                  rm -rf "$WEBROOT_PATH"
+                  ln -s "$TARGET" "$WEBROOT_PATH"
+                  echo "Replaced empty webroot dir with symlink: $WEBROOT_PATH -> $TARGET"
+                else
+                  # Fallback: sync public/ contents into webroot directory
+                  rsync -av --delete "$TARGET/" "$WEBROOT_PATH/"
+                  echo "Synced public contents into existing webroot directory: $WEBROOT_PATH"
+                fi
+              else
+                # Path does not exist; create a symlink
+                ln -s "$TARGET" "$WEBROOT_PATH"
+                echo "Created webroot symlink: $WEBROOT_PATH -> $TARGET"
+              fi
             fi
 
             echo "Deployed at $(date)"
