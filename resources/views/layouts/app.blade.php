@@ -38,6 +38,9 @@
         .hero-section {
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
         }
 
         .hero-section .badge {
@@ -66,6 +69,59 @@
 
         .hero-visual .info-chip small {
             font-size: 0.8rem;
+        }
+        
+        .dashboard-mockup {
+            max-width: 500px;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dashboard-mockup .card {
+            transition: transform 0.2s ease;
+        }
+        
+        .dashboard-mockup .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Global Card Styles */
+        .card {
+            border-radius: 6px !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        /* Global Border Radius */
+        .rounded, .rounded-1, .rounded-2, .rounded-3 {
+            border-radius: 6px !important;
+        }
+        
+        .badge {
+            border-radius: 6px !important;
+        }
+        
+        .btn {
+            border-radius: 6px !important;
+        }
+        
+        .stats-card {
+            background: white;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
         }
         
         .navbar {
@@ -196,7 +252,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" href="{{ route('home') }}">
                 <i class="bi bi-mortarboard-fill"></i> SMATCAMPUS
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
