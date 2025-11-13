@@ -1,0 +1,58 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Upload and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy files via rsync over SSH
+        uses: easingthemes/ssh-deploy@v5.0.3
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.VPS_HOST }}
+          REMOTE_USER: ${{ secrets.VPS_USER }}
+          TARGET: ${{ secrets.VPS_PATH }}
+          # Rsync args: archive, verbose, compress, recursive; delete removed files on server
+          # Exclude environment and heavy/runtime folders that should live only on server
+          ARGS: >-
+            -avzr --delete
+            --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='vendor'
+            --exclude='.env' --exclude='.env.*' --exclude='storage/*.key'
+            --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
+
+      - name: Run remote deploy commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.VPS_PATH }}"
+            # Ensure proper permissions for storage and bootstrap/cache
+            mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
+            chmod -R ug+rw storage bootstrap/cache || true
+
+            # Install/update dependencies
+            if command -v composer >/dev/null 2>&1; then
+              composer install --no-dev --prefer-dist --optimize-autoloader
+            else
+              echo "Composer not found on server. Skipping composer install."
+            fi
+
+            # Laravel optimizations and migrations
+            php artisan migrate --force || true
+            php artisan config:cache || true
+            php artisan route:cache || true
+            php artisan view:cache || true
+
+            echo "Deployed at $(date)"
