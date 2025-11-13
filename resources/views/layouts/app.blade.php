@@ -32,6 +32,40 @@
         
         body {
             overflow-x: hidden;
+            background-color: var(--light-color);
+        }
+
+        .hero-section {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section .badge {
+            letter-spacing: 0.04em;
+            border-radius: 999px;
+            padding: 0.5rem 1.25rem;
+        }
+
+        .hero-section .display-4 {
+            line-height: 1.15;
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-visual .info-chip {
+            border-radius: 0.85rem;
+            box-shadow: 0 10px 30px rgba(17, 24, 39, 0.15);
+            min-width: 180px;
+        }
+
+        .hero-visual .info-chip strong {
+            font-size: 0.95rem;
+        }
+
+        .hero-visual .info-chip small {
+            font-size: 0.8rem;
         }
         
         .navbar {
@@ -82,6 +116,32 @@
             color: white;
             transform: translateY(-2px);
         }
+
+        .card {
+            border-radius: 1.25rem;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+        }
+
+        .icon-circle,
+        .avatar-circle {
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+        }
+
+        .icon-circle i {
+            font-size: 1.5rem;
+        }
+
+        .stats-block h2 {
+            letter-spacing: -0.5px;
+        }
         
         footer {
             background-color: var(--dark-color);
@@ -104,6 +164,12 @@
             margin-bottom: 1.5rem;
         }
         
+        @media (max-width: 992px) {
+            .hero-section .display-4 {
+                font-size: 2.25rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .navbar-brand {
                 font-size: 1.2rem;
@@ -112,6 +178,14 @@
             .btn-primary, .btn-outline-primary {
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
+            }
+
+            .hero-visual {
+                max-width: 420px;
+            }
+
+            .hero-visual .info-chip {
+                min-width: 150px;
             }
         }
     </style>

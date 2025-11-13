@@ -1,366 +1,730 @@
-@extends('layouts.app')@extends('layouts.app')@extends('layouts.app')
+@extends('layouts.app')@extends('layouts.app')@extends('layouts.app')@extends('layouts.app')
 
 
 
 @section('content')
 
-<section class="hero-section text-white py-5" style="background: linear-gradient(120deg, #4f46e5 0%, #06b6d4 50%, #4f46e5 100%);">
+<section class="hero-section text-white py-5" style="background: linear-gradient(120deg, #4f46e5 0%, #06b6d4 55%, #4f46e5 100%);">
 
-    <div class="container py-5">@section('content')@section('content')
+    <div class="container py-5">@section('content')
 
         <div class="row align-items-center g-5">
 
-            <div class="col-lg-6"><!-- Hero Section --><!-- Hero Section -->
+            <div class="col-lg-6"><section class="hero-section text-white py-5" style="background: linear-gradient(120deg, #4f46e5 0%, #06b6d4 50%, #4f46e5 100%);">
 
                 <span class="badge bg-light text-primary fw-semibold mb-3">Smart School Management SaaS</span>
 
-                <h1 class="display-4 fw-bold mb-4">Run Your Entire Campus From One Powerful Dashboard</h1><section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin: 0; padding-left: 0 !important; padding-right: 0 !important;"><section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: 0; margin-right: 0; width: 100%;">
+                <h1 class="display-4 fw-bold mb-4">Run Your Entire Campus From One Integrated Control Center</h1>    <div class="container py-5">@section('content')@section('content')
 
-                <p class="lead mb-4">SMATCAMPUS helps administrators, teachers, parents, and students stay aligned with automated workflows, real-time analytics, and delightful communication tools.</p>
+                <p class="lead mb-4">SMATCAMPUS orchestrates admissions, academics, fees, and communication in a single, secure platform designed for multi-campus growth.</p>
 
-                <div class="d-flex flex-column flex-sm-row gap-3">    <div class="container-fluid px-4 py-5">    <div class="container-fluid px-4">
+                <div class="d-flex flex-column flex-sm-row gap-3">        <div class="row align-items-center g-5">
 
                     <a href="{{ route('register') }}" class="btn btn-light btn-lg text-primary fw-semibold">Start 14-Day Trial</a>
 
-                    <a href="#features" class="btn btn-outline-light btn-lg fw-semibold">Explore Features</a>        <div class="row align-items-center">        <div class="row align-items-center">
+                    <a href="#features" class="btn btn-outline-light btn-lg fw-semibold">Explore Features</a>            <div class="col-lg-6"><!-- Hero Section --><!-- Hero Section -->
 
                 </div>
 
-                <div class="d-flex flex-wrap gap-4 mt-4 align-items-center">            <div class="col-lg-6 mb-4 mb-lg-0">            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="d-flex flex-wrap gap-4 mt-4 align-items-center">                <span class="badge bg-light text-primary fw-semibold mb-3">Smart School Management SaaS</span>
 
                     <div class="d-flex align-items-center">
 
-                        <i class="bi bi-patch-check-fill me-2 fs-4"></i>                <h1 class="display-4 fw-bold mb-4">Transform Your School Management</h1>                <h1 class="display-4 fw-bold mb-4">Transform Your School Management</h1>
+                        <i class="bi bi-patch-check-fill me-2 fs-4"></i>                <h1 class="display-4 fw-bold mb-4">Run Your Entire Campus From One Powerful Dashboard</h1><section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin: 0; padding-left: 0 !important; padding-right: 0 !important;"><section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: 0; margin-right: 0; width: 100%;">
 
-                        <small>ISO-certified data security</small>
+                        <small>ISO-certified data protection</small>
 
-                    </div>                <p class="lead mb-4">Streamline operations, enhance learning, and empower your institution with our comprehensive school management system.</p>                <p class="lead mb-4">Streamline operations, enhance learning, and empower your institution with our comprehensive school management system.</p>
+                    </div>                <p class="lead mb-4">SMATCAMPUS helps administrators, teachers, parents, and students stay aligned with automated workflows, real-time analytics, and delightful communication tools.</p>
 
                     <div class="d-flex align-items-center">
 
-                        <i class="bi bi-people-fill me-2 fs-4"></i>                <div class="d-flex gap-3">                <div class="d-flex gap-3">
+                        <i class="bi bi-people-fill me-2 fs-4"></i>                <div class="d-flex flex-column flex-sm-row gap-3">    <div class="container-fluid px-4 py-5">    <div class="container-fluid px-4">
 
                         <small>Trusted by 500+ institutions</small>
 
-                    </div>                    <a href="{{ route('register') }}" class="btn btn-primary btn-lg">Start Free Trial</a>                    <a href="{{ route('register') }}" class="btn btn-primary btn-lg">Start Free Trial</a>
+                    </div>                    <a href="{{ route('register') }}" class="btn btn-light btn-lg text-primary fw-semibold">Start 14-Day Trial</a>
 
                 </div>
 
-            </div>                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
+            </div>                    <a href="#features" class="btn btn-outline-light btn-lg fw-semibold">Explore Features</a>        <div class="row align-items-center">        <div class="row align-items-center">
 
             <div class="col-lg-6">
 
-                <div class="hero-visual position-relative mx-auto" style="max-width: 520px;">                </div>                </div>
+                <div class="hero-visual mx-auto" style="max-width: 520px;">                </div>
 
                     <div class="ratio ratio-16x9 shadow-lg rounded-4 overflow-hidden bg-white">
 
-                        <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=1200&q=80" class="w-100 h-100 object-fit-cover" alt="School management dashboard">            </div>            </div>
+                        <img src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80" class="w-100 h-100" alt="School management dashboard">                <div class="d-flex flex-wrap gap-4 mt-4 align-items-center">            <div class="col-lg-6 mb-4 mb-lg-0">            <div class="col-lg-6 mb-4 mb-lg-0">
 
                     </div>
 
-                    <div class="position-absolute top-0 start-0 translate-middle bg-white text-dark shadow rounded-3 px-3 py-2">            <div class="col-lg-6">            <div class="col-lg-6">
+                    <div class="info-chip position-absolute top-0 start-0 translate-middle bg-white text-dark px-3 py-2">                    <div class="d-flex align-items-center">
 
                         <strong class="d-block">Live Attendance</strong>
 
-                        <small class="text-muted">Present: 98% • Alerts: 2</small>                <img src="https://via.placeholder.com/600x400/667eea/ffffff?text=School+Dashboard" alt="Dashboard" class="img-fluid rounded shadow-lg">                <img src="https://via.placeholder.com/600x400/667eea/ffffff?text=School+Dashboard" alt="Dashboard" class="img-fluid rounded shadow-lg">
+                        <small class="text-muted">Present: 98% &bull; Alerts: 2</small>                        <i class="bi bi-patch-check-fill me-2 fs-4"></i>                <h1 class="display-4 fw-bold mb-4">Transform Your School Management</h1>                <h1 class="display-4 fw-bold mb-4">Transform Your School Management</h1>
 
                     </div>
 
-                    <div class="position-absolute bottom-0 end-0 translate-middle bg-white text-dark shadow rounded-3 px-3 py-2">            </div>            </div>
+                    <div class="info-chip position-absolute bottom-0 end-0 translate-middle bg-white text-dark px-3 py-2">                        <small>ISO-certified data security</small>
 
-                        <strong class="d-block">Fee Collection</strong>
+                        <strong class="d-block">Fees Collected</strong>
 
-                        <small class="text-muted">$32K processed today</small>        </div>        </div>
+                        <small class="text-muted">$32K processed today</small>                    </div>                <p class="lead mb-4">Streamline operations, enhance learning, and empower your institution with our comprehensive school management system.</p>                <p class="lead mb-4">Streamline operations, enhance learning, and empower your institution with our comprehensive school management system.</p>
 
                     </div>
 
-                </div>    </div>    </div>
+                </div>                    <div class="d-flex align-items-center">
 
             </div>
 
-        </div></section></section>
+        </div>                        <i class="bi bi-people-fill me-2 fs-4"></i>                <div class="d-flex gap-3">                <div class="d-flex gap-3">
 
     </div>
 
-</section>
+</section>                        <small>Trusted by 500+ institutions</small>
 
 
 
-<section class="py-5 bg-light"><!-- Stats Section --><!-- Stats Section -->
+<section class="py-5 bg-light">                    </div>                    <a href="{{ route('register') }}" class="btn btn-primary btn-lg">Start Free Trial</a>                    <a href="{{ route('register') }}" class="btn btn-primary btn-lg">Start Free Trial</a>
 
     <div class="container">
 
-        <div class="row g-4 text-center text-lg-start"><section class="py-5 bg-light"><section class="py-5 bg-light">
+        <div class="row g-4 text-center text-lg-start stats-block">                </div>
 
             <div class="col-6 col-lg-3">
 
-                <h2 class="display-5 fw-bold text-primary">500+</h2>    <div class="container">    <div class="container">
+                <h2 class="display-5 fw-bold text-primary">500+</h2>            </div>                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
 
                 <p class="text-muted mb-0">Schools worldwide rely on SMATCAMPUS for daily operations.</p>
 
-            </div>        <div class="row text-center">        <div class="row text-center">
+            </div>            <div class="col-lg-6">
 
             <div class="col-6 col-lg-3">
 
-                <h2 class="display-5 fw-bold text-primary">50K+</h2>            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+                <h2 class="display-5 fw-bold text-primary">50K+</h2>                <div class="hero-visual position-relative mx-auto" style="max-width: 520px;">                </div>                </div>
 
-                <p class="text-muted mb-0">Active students enjoying digital classrooms and seamless learning.</p>
+                <p class="text-muted mb-0">Active students engaged through digital classrooms and parent portals.</p>
 
-            </div>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">500+</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">500+</h2>
+            </div>                    <div class="ratio ratio-16x9 shadow-lg rounded-4 overflow-hidden bg-white">
 
             <div class="col-6 col-lg-3">
 
-                <h2 class="display-5 fw-bold text-primary">99.9%</h2>                <p class="text-muted">Schools Trust Us</p>                <p class="text-muted">Schools Trust Us</p>
+                <h2 class="display-5 fw-bold text-primary">99.9%</h2>                        <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=1200&q=80" class="w-100 h-100 object-fit-cover" alt="School management dashboard">            </div>            </div>
 
                 <p class="text-muted mb-0">Guaranteed uptime backed by enterprise-grade infrastructure.</p>
 
-            </div>            </div>            </div>
+            </div>                    </div>
 
             <div class="col-6 col-lg-3">
 
-                <h2 class="display-5 fw-bold text-primary">4.9/5</h2>            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+                <h2 class="display-5 fw-bold text-primary">4.9/5</h2>                    <div class="position-absolute top-0 start-0 translate-middle bg-white text-dark shadow rounded-3 px-3 py-2">            <div class="col-lg-6">            <div class="col-lg-6">
 
                 <p class="text-muted mb-0">Average rating from administrators and teaching staff.</p>
 
-            </div>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">50K+</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">50K+</h2>
+            </div>                        <strong class="d-block">Live Attendance</strong>
 
         </div>
 
-    </div>                <p class="text-muted">Active Students</p>                <p class="text-muted">Active Students</p>
+    </div>                        <small class="text-muted">Present: 98% • Alerts: 2</small>                <img src="https://via.placeholder.com/600x400/667eea/ffffff?text=School+Dashboard" alt="Dashboard" class="img-fluid rounded shadow-lg">                <img src="https://via.placeholder.com/600x400/667eea/ffffff?text=School+Dashboard" alt="Dashboard" class="img-fluid rounded shadow-lg">
 
 </section>
 
-            </div>            </div>
+                    </div>
 
 <section id="features" class="py-5">
 
-    <div class="container">            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+    <div class="container">                    <div class="position-absolute bottom-0 end-0 translate-middle bg-white text-dark shadow rounded-3 px-3 py-2">            </div>            </div>
 
         <div class="text-center mb-5">
 
-            <h2 class="display-5 fw-bold">Everything You Need to Run a Modern School</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">99.9%</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">99.9%</h2>
+            <h2 class="display-5 fw-bold">Everything You Need to Run a Modern School</h2>                        <strong class="d-block">Fee Collection</strong>
 
-            <p class="lead text-muted">Modular capabilities crafted for administrators, academic staff, and parents.</p>
+            <p class="lead text-muted">Modular capabilities crafted for administrators, academic staff, parents, and learners.</p>
 
-        </div>                <p class="text-muted">Uptime Guaranteed</p>                <p class="text-muted">Uptime Guaranteed</p>
+        </div>                        <small class="text-muted">$32K processed today</small>        </div>        </div>
 
         <div class="row g-4">
 
-            <div class="col-md-6 col-lg-4">            </div>            </div>
+            <div class="col-md-6 col-lg-4">                    </div>
 
                 <div class="card h-100 border-0 shadow-sm">
 
-                    <div class="card-body p-4">            <div class="col-md-3">            <div class="col-md-3">
+                    <div class="card-body p-4">                </div>    </div>    </div>
 
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.1);" ></div>
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.12);">
 
-                        <h3 class="h4 fw-semibold">Unified Student Records</h3>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">4.9/5</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">4.9/5</h2>
-
-                        <p class="text-muted">Centralize student profiles, academic history, disciplinary notes, and guardian communication in one secure location.</p>
-
-                    </div>                <p class="text-muted">Customer Rating</p>                <p class="text-muted">Customer Rating</p>
-
-                </div>
-
-            </div>            </div>            </div>
-
-            <div class="col-md-6 col-lg-4">
-
-                <div class="card h-100 border-0 shadow-sm">        </div>        </div>
-
-                    <div class="card-body p-4">
-
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.1);"></div>    </div>    </div>
-
-                        <h3 class="h4 fw-semibold">Smart Scheduling & Attendance</h3>
-
-                        <p class="text-muted">Generate conflict-free timetables, automate attendance, and trigger alerts to parents in real time.</p></section></section>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-6 col-lg-4"><!-- Features Section --><!-- Features Section -->
-
-                <div class="card h-100 border-0 shadow-sm">
-
-                    <div class="card-body p-4"><section id="features" class="py-5"><section id="features" class="py-5">
-
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15);"></div>
-
-                        <h3 class="h4 fw-semibold">Finance & Fee Automation</h3>    <div class="container">    <div class="container">
-
-                        <p class="text-muted">Create flexible fee structures, send reminders, reconcile payments instantly, and export accounting-ready reports.</p>
-
-                    </div>        <div class="text-center mb-5">        <div class="text-center mb-5">
-
-                </div>
-
-            </div>            <h2 class="display-5 fw-bold mb-3">Everything You Need to Manage Your School</h2>            <h2 class="display-5 fw-bold mb-3">Everything You Need to Manage Your School</h2>
-
-            <div class="col-md-6 col-lg-4">
-
-                <div class="card h-100 border-0 shadow-sm">            <p class="lead text-muted">Powerful features designed for modern educational institutions</p>            <p class="lead text-muted">Powerful features designed for modern educational institutions</p>
-
-                    <div class="card-body p-4">
-
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.1);"></div>        </div>        </div>
-
-                        <h3 class="h4 fw-semibold">Collaboration & Messaging</h3>
-
-                        <p class="text-muted">Announcements, two-way messaging, and parent portals keep everyone aligned and informed.</p>        <div class="row g-4">        <div class="row g-4">
-
-                    </div>
-
-                </div>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
-
-            </div>
-
-            <div class="col-md-6 col-lg-4">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
-
-                <div class="card h-100 border-0 shadow-sm">
-
-                    <div class="card-body p-4">                    <div class="card-body p-4">                    <div class="card-body p-4">
-
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.1);"></div>
-
-                        <h3 class="h4 fw-semibold">Learning Insights</h3>                        <div class="mb-3">                        <div class="mb-3">
-
-                        <p class="text-muted">Monitor grades, identify learning gaps early, and serve data-driven interventions to boost outcomes.</p>
-
-                    </div>                            <i class="bi bi-people-fill fs-1" style="color: var(--primary-color);"></i>                            <i class="bi bi-people-fill fs-1" style="color: var(--primary-color);"></i>
-
-                </div>
-
-            </div>                        </div>                        </div>
-
-            <div class="col-md-6 col-lg-4">
-
-                <div class="card h-100 border-0 shadow-sm">                        <h3 class="h4 fw-bold mb-3">Student Management</h3>                        <h3 class="h4 fw-bold mb-3">Student Management</h3>
-
-                    <div class="card-body p-4">
-
-                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15);"></div>                        <p class="text-muted">Comprehensive student profiles, enrollment tracking, and academic records management.</p>                        <p class="text-muted">Comprehensive student profiles, enrollment tracking, and academic records management.</p>
-
-                        <h3 class="h4 fw-semibold">Compliance & Audits</h3>
-
-                        <p class="text-muted">Maintain accreditation readiness with automated document trails, audit logs, and lightning-fast report exports.</p>                    </div>                    </div>
-
-                    </div>
-
-                </div>                </div>                </div>
-
-            </div>
-
-        </div>            </div>            </div>
-
-    </div>
-
-</section>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
-
-
-
-<section id="pricing" class="py-5 bg-light">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
-
-    <div class="container">
-
-        <div class="text-center mb-5">                    <div class="card-body p-4">                    <div class="card-body p-4">
-
-            <h2 class="display-5 fw-bold">Simple Pricing for Schools of Every Size</h2>
-
-            <p class="lead text-muted">Transparent, predictable billing with annual discounts available.</p>                        <div class="mb-3">                        <div class="mb-3">
-
-        </div>
-
-        <div class="row g-4 align-items-stretch">                            <i class="bi bi-calendar-check fs-1" style="color: var(--secondary-color);"></i>                            <i class="bi bi-calendar-check fs-1" style="color: var(--secondary-color);"></i>
-
-            <div class="col-lg-4">
-
-                <div class="card h-100 border-0 shadow-sm">                        </div>                        </div>
-
-                    <div class="card-body p-4">
-
-                        <h3 class="h4 fw-semibold">Starter</h3>                        <h3 class="h4 fw-bold mb-3">Attendance & Timetable</h3>                        <h3 class="h4 fw-bold mb-3">Attendance & Timetable</h3>
-
-                        <p class="text-muted">Ideal for emerging schools digitizing their first processes.</p>
-
-                        <div class="d-flex align-items-end gap-1 mb-4">                        <p class="text-muted">Digital attendance tracking and smart timetable generation with conflict detection.</p>                        <p class="text-muted">Digital attendance tracking and smart timetable generation with conflict detection.</p>
-
-                            <span class="display-6 fw-bold">$99</span>
-
-                            <span class="text-muted">/month</span>                    </div>                    </div>
+                            <i class="bi bi-person-vcard"></i>            </div>
 
                         </div>
 
-                        <ul class="list-unstyled vstack gap-2 mb-4">                </div>                </div>
+                        <h3 class="h4 fw-semibold">Unified Student Records</h3>        </div></section></section>
 
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 200 students</li>
+                        <p class="text-muted">Centralize profiles, grades, disciplinary history, and guardianship details with fine-grained permissions.</p>
 
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Core academic & finance modules</li>            </div>            </div>
-
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Email support</li>
-
-                        </ul>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
-
-                        <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Start Starter Plan</a>
-
-                    </div>                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
+                    </div>    </div>
 
                 </div>
 
-            </div>                    <div class="card-body p-4">                    <div class="card-body p-4">
+            </div></section>
 
-            <div class="col-lg-4">
+            <div class="col-md-6 col-lg-4">
 
-                <div class="card h-100 border-0 shadow position-relative" style="border-top: 4px solid var(--primary-color);">                        <div class="mb-3">                        <div class="mb-3">
-
-                    <span class="badge bg-primary position-absolute top-0 start-50 translate-middle">Most Popular</span>
-
-                    <div class="card-body p-4">                            <i class="bi bi-journal-text fs-1" style="color: var(--accent-color);"></i>                            <i class="bi bi-journal-text fs-1" style="color: var(--accent-color);"></i>
-
-                        <h3 class="h4 fw-semibold">Professional</h3>
-
-                        <p class="text-muted">Expand with advanced analytics, automations, and integrations.</p>                        </div>                        </div>
-
-                        <div class="d-flex align-items-end gap-1 mb-4">
-
-                            <span class="display-6 fw-bold">$249</span>                        <h3 class="h4 fw-bold mb-3">Academic Management</h3>                        <h3 class="h4 fw-bold mb-3">Academic Management</h3>
-
-                            <span class="text-muted">/month</span>
-
-                        </div>                        <p class="text-muted">Grade books, report cards, and comprehensive academic performance analytics.</p>                        <p class="text-muted">Grade books, report cards, and comprehensive academic performance analytics.</p>
-
-                        <ul class="list-unstyled vstack gap-2 mb-4">
-
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 1,000 students</li>                    </div>                    </div>
-
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced automation workflows</li>
-
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Priority onboarding & support</li>                </div>                </div>
-
-                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Parent mobile app</li>
-
-                        </ul>            </div>            </div>
-
-                        <a href="{{ route('register') }}" class="btn btn-primary w-100">Start Professional Plan</a>
-
-                    </div>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
-
-                </div>
-
-            </div>                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
-
-            <div class="col-lg-4">
-
-                <div class="card h-100 border-0 shadow-sm">                    <div class="card-body p-4">                    <div class="card-body p-4">
+                <div class="card h-100 border-0 shadow-sm">
 
                     <div class="card-body p-4">
 
-                        <h3 class="h4 fw-semibold">Enterprise</h3>                        <div class="mb-3">                        <div class="mb-3">
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.15);"><section class="py-5 bg-light"><!-- Stats Section --><!-- Stats Section -->
 
-                        <p class="text-muted">Tailored for multi-campus groups and large districts.</p>
+                            <i class="bi bi-calendar2-check"></i>
+
+                        </div>    <div class="container">
+
+                        <h3 class="h4 fw-semibold">Smart Scheduling & Attendance</h3>
+
+                        <p class="text-muted">Generate conflict-free timetables, automate attendance, and trigger guardians instantly when thresholds drop.</p>        <div class="row g-4 text-center text-lg-start"><section class="py-5 bg-light"><section class="py-5 bg-light">
+
+                    </div>
+
+                </div>            <div class="col-6 col-lg-3">
+
+            </div>
+
+            <div class="col-md-6 col-lg-4">                <h2 class="display-5 fw-bold text-primary">500+</h2>    <div class="container">    <div class="container">
+
+                <div class="card h-100 border-0 shadow-sm">
+
+                    <div class="card-body p-4">                <p class="text-muted mb-0">Schools worldwide rely on SMATCAMPUS for daily operations.</p>
+
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.18);">
+
+                            <i class="bi bi-cash-coin"></i>            </div>        <div class="row text-center">        <div class="row text-center">
+
+                        </div>
+
+                        <h3 class="h4 fw-semibold">Finance & Fee Automation</h3>            <div class="col-6 col-lg-3">
+
+                        <p class="text-muted">Configure payment plans, reconcile instantly, and export accounting-ready ledgers in a click.</p>
+
+                    </div>                <h2 class="display-5 fw-bold text-primary">50K+</h2>            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+
+                </div>
+
+            </div>                <p class="text-muted mb-0">Active students enjoying digital classrooms and seamless learning.</p>
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm">            </div>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">500+</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">500+</h2>
+
+                    <div class="card-body p-4">
+
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.12);">            <div class="col-6 col-lg-3">
+
+                            <i class="bi bi-chat-dots"></i>
+
+                        </div>                <h2 class="display-5 fw-bold text-primary">99.9%</h2>                <p class="text-muted">Schools Trust Us</p>                <p class="text-muted">Schools Trust Us</p>
+
+                        <h3 class="h4 fw-semibold">Collaboration & Messaging</h3>
+
+                        <p class="text-muted">Announcements, secure chat, and parent portals keep every stakeholder aligned in real time.</p>                <p class="text-muted mb-0">Guaranteed uptime backed by enterprise-grade infrastructure.</p>
+
+                    </div>
+
+                </div>            </div>            </div>            </div>
+
+            </div>
+
+            <div class="col-md-6 col-lg-4">            <div class="col-6 col-lg-3">
+
+                <div class="card h-100 border-0 shadow-sm">
+
+                    <div class="card-body p-4">                <h2 class="display-5 fw-bold text-primary">4.9/5</h2>            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.15);">
+
+                            <i class="bi bi-bar-chart-line"></i>                <p class="text-muted mb-0">Average rating from administrators and teaching staff.</p>
+
+                        </div>
+
+                        <h3 class="h4 fw-semibold">Learning Insights</h3>            </div>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">50K+</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">50K+</h2>
+
+                        <p class="text-muted">Monitor grades, identify learning gaps early, and serve data-driven interventions to boost outcomes.</p>
+
+                    </div>        </div>
+
+                </div>
+
+            </div>    </div>                <p class="text-muted">Active Students</p>                <p class="text-muted">Active Students</p>
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm"></section>
+
+                    <div class="card-body p-4">
+
+                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.18);">            </div>            </div>
+
+                            <i class="bi bi-shield-lock"></i>
+
+                        </div><section id="features" class="py-5">
+
+                        <h3 class="h4 fw-semibold">Compliance & Audits</h3>
+
+                        <p class="text-muted">Maintain accreditation readiness with audit logs, digital signatures, and instant documentation exports.</p>    <div class="container">            <div class="col-md-3 mb-4 mb-md-0">            <div class="col-md-3 mb-4 mb-md-0">
+
+                    </div>
+
+                </div>        <div class="text-center mb-5">
+
+            </div>
+
+        </div>            <h2 class="display-5 fw-bold">Everything You Need to Run a Modern School</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">99.9%</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">99.9%</h2>
+
+    </div>
+
+</section>            <p class="lead text-muted">Modular capabilities crafted for administrators, academic staff, and parents.</p>
+
+
+
+<section id="pricing" class="py-5 bg-light">        </div>                <p class="text-muted">Uptime Guaranteed</p>                <p class="text-muted">Uptime Guaranteed</p>
+
+    <div class="container">
+
+        <div class="text-center mb-5">        <div class="row g-4">
+
+            <h2 class="display-5 fw-bold">Straightforward Pricing for Schools of Every Size</h2>
+
+            <p class="lead text-muted">Transparent, predictable billing with annual discounts and regional pricing support.</p>            <div class="col-md-6 col-lg-4">            </div>            </div>
+
+        </div>
+
+        <div class="row g-4 align-items-stretch">                <div class="card h-100 border-0 shadow-sm">
+
+            <div class="col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm">                    <div class="card-body p-4">            <div class="col-md-3">            <div class="col-md-3">
+
+                    <div class="card-body p-4">
+
+                        <h3 class="h4 fw-semibold">Starter</h3>                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.1);" ></div>
+
+                        <p class="text-muted">Perfect for single-campus schools beginning their digital transformation.</p>
+
+                        <div class="d-flex align-items-end gap-1 mb-4">                        <h3 class="h4 fw-semibold">Unified Student Records</h3>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">4.9/5</h2>                <h2 class="display-4 fw-bold" style="color: var(--primary-color);">4.9/5</h2>
+
+                            <span class="display-6 fw-bold">$99</span>
+
+                            <span class="text-muted">/month</span>                        <p class="text-muted">Centralize student profiles, academic history, disciplinary notes, and guardian communication in one secure location.</p>
+
+                        </div>
+
+                        <ul class="list-unstyled vstack gap-2 mb-4">                    </div>                <p class="text-muted">Customer Rating</p>                <p class="text-muted">Customer Rating</p>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 200 students</li>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Core academic & finance modules</li>                </div>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Email support</li>
+
+                        </ul>            </div>            </div>            </div>
+
+                        <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Get Started</a>
+
+                    </div>            <div class="col-md-6 col-lg-4">
+
+                </div>
+
+            </div>                <div class="card h-100 border-0 shadow-sm">        </div>        </div>
+
+            <div class="col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm position-relative" style="border-top: 4px solid var(--primary-color);">                    <div class="card-body p-4">
+
+                    <span class="badge bg-primary position-absolute top-0 start-50 translate-middle">Most Popular</span>
+
+                    <div class="card-body p-4">                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.1);"></div>    </div>    </div>
+
+                        <h3 class="h4 fw-semibold">Professional</h3>
+
+                        <p class="text-muted">Scale with automation, analytics, and mobile experiences for guardians.</p>                        <h3 class="h4 fw-semibold">Smart Scheduling & Attendance</h3>
+
+                        <div class="d-flex align-items-end gap-1 mb-4">
+
+                            <span class="display-6 fw-bold">$249</span>                        <p class="text-muted">Generate conflict-free timetables, automate attendance, and trigger alerts to parents in real time.</p></section></section>
+
+                            <span class="text-muted">/month</span>
+
+                        </div>                    </div>
+
+                        <ul class="list-unstyled vstack gap-2 mb-4">
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 1,000 students</li>                </div>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Workflow automations & alerts</li>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Priority onboarding & support</li>            </div>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Parent mobile app access</li>
+
+                        </ul>            <div class="col-md-6 col-lg-4"><!-- Features Section --><!-- Features Section -->
+
+                        <a href="{{ route('register') }}" class="btn btn-primary w-100">Start Professional</a>
+
+                    </div>                <div class="card h-100 border-0 shadow-sm">
+
+                </div>
+
+            </div>                    <div class="card-body p-4"><section id="features" class="py-5"><section id="features" class="py-5">
+
+            <div class="col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm">                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15);"></div>
+
+                    <div class="card-body p-4">
+
+                        <h3 class="h4 fw-semibold">Enterprise</h3>                        <h3 class="h4 fw-semibold">Finance & Fee Automation</h3>    <div class="container">    <div class="container">
+
+                        <p class="text-muted">Tailored for groups, districts, and franchises requiring custom SLAs.</p>
+
+                        <div class="d-flex align-items-end gap-1 mb-4">                        <p class="text-muted">Create flexible fee structures, send reminders, reconcile payments instantly, and export accounting-ready reports.</p>
+
+                            <span class="display-6 fw-bold">Custom</span>
+
+                        </div>                    </div>        <div class="text-center mb-5">        <div class="text-center mb-5">
+
+                        <ul class="list-unstyled vstack gap-2 mb-4">
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Unlimited students & campuses</li>                </div>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Dedicated success manager</li>
+
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>API & legacy integrations</li>            </div>            <h2 class="display-5 fw-bold mb-3">Everything You Need to Manage Your School</h2>            <h2 class="display-5 fw-bold mb-3">Everything You Need to Manage Your School</h2>
+
+                        </ul>
+
+                        <a href="#contact" class="btn btn-outline-primary w-100">Talk to Sales</a>            <div class="col-md-6 col-lg-4">
+
+                    </div>
+
+                </div>                <div class="card h-100 border-0 shadow-sm">            <p class="lead text-muted">Powerful features designed for modern educational institutions</p>            <p class="lead text-muted">Powerful features designed for modern educational institutions</p>
+
+            </div>
+
+        </div>                    <div class="card-body p-4">
+
+    </div>
+
+</section>                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(79, 70, 229, 0.1);"></div>        </div>        </div>
+
+
+
+<section id="testimonials" class="py-5">                        <h3 class="h4 fw-semibold">Collaboration & Messaging</h3>
+
+    <div class="container">
+
+        <div class="text-center mb-5">                        <p class="text-muted">Announcements, two-way messaging, and parent portals keep everyone aligned and informed.</p>        <div class="row g-4">        <div class="row g-4">
+
+            <h2 class="display-5 fw-bold">Loved by School Leaders Everywhere</h2>
+
+            <p class="lead text-muted">Institutions of every size rely on SMATCAMPUS to modernize their operations.</p>                    </div>
+
+        </div>
+
+        <div class="row g-4">                </div>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
+
+            <div class="col-md-4">
+
+                <div class="card h-100 border-0 shadow-sm">            </div>
+
+                    <div class="card-body p-4">
+
+                        <div class="mb-3 text-warning">            <div class="col-md-6 col-lg-4">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>                <div class="card h-100 border-0 shadow-sm">
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>                    <div class="card-body p-4">                    <div class="card-body p-4">                    <div class="card-body p-4">
+
+                            <i class="bi bi-star-fill"></i>
+
+                        </div>                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(6, 182, 212, 0.1);"></div>
+
+                        <p class="mb-4">“Administrative workload has dropped by almost 60%. Parents love the portal, and teachers finally focus on instruction.”</p>
+
+                        <div class="d-flex align-items-center">                        <h3 class="h4 fw-semibold">Learning Insights</h3>                        <div class="mb-3">                        <div class="mb-3">
+
+                            <div class="avatar-circle me-3" style="width: 48px; height: 48px; background: #4f46e5;">
+
+                                <i class="bi bi-person-fill text-white"></i>                        <p class="text-muted">Monitor grades, identify learning gaps early, and serve data-driven interventions to boost outcomes.</p>
+
+                            </div>
+
+                            <div>                    </div>                            <i class="bi bi-people-fill fs-1" style="color: var(--primary-color);"></i>                            <i class="bi bi-people-fill fs-1" style="color: var(--primary-color);"></i>
+
+                                <strong>Jane Doe</strong>
+
+                                <p class="text-muted mb-0">Principal, Greenwood High</p>                </div>
+
+                            </div>
+
+                        </div>            </div>                        </div>                        </div>
+
+                    </div>
+
+                </div>            <div class="col-md-6 col-lg-4">
+
+            </div>
+
+            <div class="col-md-4">                <div class="card h-100 border-0 shadow-sm">                        <h3 class="h4 fw-bold mb-3">Student Management</h3>                        <h3 class="h4 fw-bold mb-3">Student Management</h3>
+
+                <div class="card h-100 border-0 shadow-sm">
+
+                    <div class="card-body p-4">                    <div class="card-body p-4">
+
+                        <div class="mb-3 text-warning">
+
+                            <i class="bi bi-star-fill"></i>                        <div class="icon-circle mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15);"></div>                        <p class="text-muted">Comprehensive student profiles, enrollment tracking, and academic records management.</p>                        <p class="text-muted">Comprehensive student profiles, enrollment tracking, and academic records management.</p>
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>                        <h3 class="h4 fw-semibold">Compliance & Audits</h3>
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>                        <p class="text-muted">Maintain accreditation readiness with automated document trails, audit logs, and lightning-fast report exports.</p>                    </div>                    </div>
+
+                        </div>
+
+                        <p class="mb-4">“Dashboards surface attendance, dues, and results in real time. Decision-making has never been faster for our board.”</p>                    </div>
+
+                        <div class="d-flex align-items-center">
+
+                            <div class="avatar-circle me-3" style="width: 48px; height: 48px; background: #06b6d4;">                </div>                </div>                </div>
+
+                                <i class="bi bi-person-fill text-white"></i>
+
+                            </div>            </div>
+
+                            <div>
+
+                                <strong>Michael Smith</strong>        </div>            </div>            </div>
+
+                                <p class="text-muted mb-0">Administrator, Valley School</p>
+
+                            </div>    </div>
+
+                        </div>
+
+                    </div></section>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card h-100 border-0 shadow-sm"><section id="pricing" class="py-5 bg-light">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
+
+                    <div class="card-body p-4">
+
+                        <div class="mb-3 text-warning">    <div class="container">
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>        <div class="text-center mb-5">                    <div class="card-body p-4">                    <div class="card-body p-4">
+
+                            <i class="bi bi-star-fill"></i>
+
+                            <i class="bi bi-star-fill"></i>            <h2 class="display-5 fw-bold">Simple Pricing for Schools of Every Size</h2>
+
+                            <i class="bi bi-star-fill"></i>
+
+                        </div>            <p class="lead text-muted">Transparent, predictable billing with annual discounts available.</p>                        <div class="mb-3">                        <div class="mb-3">
+
+                        <p class="mb-4">“Onboarding was seamless and the support team guided every configuration. Our network is now standardized globally.”</p>
+
+                        <div class="d-flex align-items-center">        </div>
+
+                            <div class="avatar-circle me-3" style="width: 48px; height: 48px; background: #f59e0b;">
+
+                                <i class="bi bi-person-fill text-white"></i>        <div class="row g-4 align-items-stretch">                            <i class="bi bi-calendar-check fs-1" style="color: var(--secondary-color);"></i>                            <i class="bi bi-calendar-check fs-1" style="color: var(--secondary-color);"></i>
+
+                            </div>
+
+                            <div>            <div class="col-lg-4">
+
+                                <strong>Sarah Johnson</strong>
+
+                                <p class="text-muted mb-0">Director, Riverside Academy</p>                <div class="card h-100 border-0 shadow-sm">                        </div>                        </div>
+
+                            </div>
+
+                        </div>                    <div class="card-body p-4">
+
+                    </div>
+
+                </div>                        <h3 class="h4 fw-semibold">Starter</h3>                        <h3 class="h4 fw-bold mb-3">Attendance & Timetable</h3>                        <h3 class="h4 fw-bold mb-3">Attendance & Timetable</h3>
+
+            </div>
+
+        </div>                        <p class="text-muted">Ideal for emerging schools digitizing their first processes.</p>
+
+    </div>
+
+</section>                        <div class="d-flex align-items-end gap-1 mb-4">                        <p class="text-muted">Digital attendance tracking and smart timetable generation with conflict detection.</p>                        <p class="text-muted">Digital attendance tracking and smart timetable generation with conflict detection.</p>
+
+
+
+<section id="faq" class="py-5 bg-light">                            <span class="display-6 fw-bold">$99</span>
+
+    <div class="container">
+
+        <div class="text-center mb-5">                            <span class="text-muted">/month</span>                    </div>                    </div>
+
+            <h2 class="display-5 fw-bold">Frequently Asked Questions</h2>
+
+            <p class="lead text-muted">Discover how SMATCAMPUS powers your entire ecosystem.</p>                        </div>
+
+        </div>
+
+        <div class="row justify-content-center">                        <ul class="list-unstyled vstack gap-2 mb-4">                </div>                </div>
+
+            <div class="col-lg-8">
+
+                <div class="accordion" id="faqAccordion">                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 200 students</li>
+
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+
+                        <h3 class="accordion-header" id="faqHeadingOne">                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Core academic & finance modules</li>            </div>            </div>
+
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="true" aria-controls="faqOne">
+
+                                How quickly can we launch SMATCAMPUS?                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Email support</li>
+
+                            </button>
+
+                        </h3>                        </ul>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
+
+                        <div id="faqOne" class="accordion-collapse collapse show" aria-labelledby="faqHeadingOne" data-bs-parent="#faqAccordion">
+
+                            <div class="accordion-body">                        <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Start Starter Plan</a>
+
+                                Most schools go live in under 14 days. Our onboarding team migrates your data, configures modules, and trains staff hands-on.
+
+                            </div>                    </div>                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
+
+                        </div>
+
+                    </div>                </div>
+
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+
+                        <h3 class="accordion-header" id="faqHeadingTwo">            </div>                    <div class="card-body p-4">                    <div class="card-body p-4">
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwo" aria-expanded="false" aria-controls="faqTwo">
+
+                                How secure is the platform?            <div class="col-lg-4">
+
+                            </button>
+
+                        </h3>                <div class="card h-100 border-0 shadow position-relative" style="border-top: 4px solid var(--primary-color);">                        <div class="mb-3">                        <div class="mb-3">
+
+                        <div id="faqTwo" class="accordion-collapse collapse" aria-labelledby="faqHeadingTwo" data-bs-parent="#faqAccordion">
+
+                            <div class="accordion-body">                    <span class="badge bg-primary position-absolute top-0 start-50 translate-middle">Most Popular</span>
+
+                                We leverage bank-grade encryption, regional data residency, daily backups, and SSO support. SMATCAMPUS is GDPR and FERPA aware.
+
+                            </div>                    <div class="card-body p-4">                            <i class="bi bi-journal-text fs-1" style="color: var(--accent-color);"></i>                            <i class="bi bi-journal-text fs-1" style="color: var(--accent-color);"></i>
+
+                        </div>
+
+                    </div>                        <h3 class="h4 fw-semibold">Professional</h3>
+
+                    <div class="accordion-item border-0 shadow-sm mb-3">
+
+                        <h3 class="accordion-header" id="faqHeadingThree">                        <p class="text-muted">Expand with advanced analytics, automations, and integrations.</p>                        </div>                        </div>
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree" aria-expanded="false" aria-controls="faqThree">
+
+                                Can we integrate with existing systems?                        <div class="d-flex align-items-end gap-1 mb-4">
+
+                            </button>
+
+                        </h3>                            <span class="display-6 fw-bold">$249</span>                        <h3 class="h4 fw-bold mb-3">Academic Management</h3>                        <h3 class="h4 fw-bold mb-3">Academic Management</h3>
+
+                        <div id="faqThree" class="accordion-collapse collapse" aria-labelledby="faqHeadingThree" data-bs-parent="#faqAccordion">
+
+                            <div class="accordion-body">                            <span class="text-muted">/month</span>
+
+                                Absolutely. SMATCAMPUS ships with an API gateway and connectors for finance, HR, LMS, and identity providers.
+
+                            </div>                        </div>                        <p class="text-muted">Grade books, report cards, and comprehensive academic performance analytics.</p>                        <p class="text-muted">Grade books, report cards, and comprehensive academic performance analytics.</p>
+
+                        </div>
+
+                    </div>                        <ul class="list-unstyled vstack gap-2 mb-4">
+
+                    <div class="accordion-item border-0 shadow-sm">
+
+                        <h3 class="accordion-header" id="faqHeadingFour">                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 1,000 students</li>                    </div>                    </div>
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour" aria-expanded="false" aria-controls="faqFour">
+
+                                Do you support multi-campus or franchise models?                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced automation workflows</li>
+
+                            </button>
+
+                        </h3>                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Priority onboarding & support</li>                </div>                </div>
+
+                        <div id="faqFour" class="accordion-collapse collapse" aria-labelledby="faqHeadingFour" data-bs-parent="#faqAccordion">
+
+                            <div class="accordion-body">                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Parent mobile app</li>
+
+                                Yes. Our multi-tenant architecture launches new campuses in minutes with isolated databases per tenant and centralized oversight.
+
+                            </div>                        </ul>            </div>            </div>
+
+                        </div>
+
+                    </div>                        <a href="{{ route('register') }}" class="btn btn-primary w-100">Start Professional Plan</a>
+
+                </div>
+
+            </div>                    </div>            <div class="col-md-6 col-lg-4">            <div class="col-md-6 col-lg-4">
+
+        </div>
+
+    </div>                </div>
+
+</section>
+
+            </div>                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">                <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.3s;">
+
+<section class="py-5 text-white" style="background: linear-gradient(120deg, #4f46e5 0%, #06b6d4 60%, #4f46e5 100%);">
+
+    <div class="container text-center py-5">            <div class="col-lg-4">
+
+        <h2 class="display-5 fw-bold mb-3">Ready to modernize your school management?</h2>
+
+        <p class="lead mb-4">Launch SMATCAMPUS today and unlock a smarter, simpler, and more connected learning experience.</p>                <div class="card h-100 border-0 shadow-sm">                    <div class="card-body p-4">                    <div class="card-body p-4">
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+
+            <a href="{{ route('register') }}" class="btn btn-light btn-lg text-primary fw-semibold">Create Your Account</a>                    <div class="card-body p-4">
+
+            <a href="#contact" class="btn btn-outline-light btn-lg fw-semibold">Book a Guided Demo</a>
+
+        </div>                        <h3 class="h4 fw-semibold">Enterprise</h3>                        <div class="mb-3">                        <div class="mb-3">
+
+    </div>
+
+</section>                        <p class="text-muted">Tailored for multi-campus groups and large districts.</p>
+
+@endsection
 
                         <div class="d-flex align-items-end gap-1 mb-4">                            <i class="bi bi-cash-stack fs-1" style="color: var(--primary-color);"></i>                            <i class="bi bi-cash-stack fs-1" style="color: var(--primary-color);"></i>
 
