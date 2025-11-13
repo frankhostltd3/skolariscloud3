@@ -19,6 +19,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rsync sshpass
 
+      - name: Test SSH connectivity (password auth)
+        run: |
+          PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+            ssh -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "echo 'SSH OK on port ' $PORT 'as' $(whoami) && uname -a"
+
+      - name: Ensure remote app path exists
+        run: |
+          PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+            ssh -p "$PORT" -o StrictHostKeyChecking=no \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "mkdir -p '${{ secrets.VPS_APP_PATH }}'"
+
       - name: Deploy app via rsync over SSH (password auth)
         env:
           RSYNC_EXCLUDES: |
@@ -26,10 +42,11 @@ jobs:
             --exclude='.env' --exclude='.env.*' --exclude='storage/*.key' \
             --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
         run: |
+          PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
           sshpass -p "${{ secrets.VPS_PASSWORD }}" \
-          rsync -avzr --delete $RSYNC_EXCLUDES \
-            -e "ssh -o StrictHostKeyChecking=no -l ${{ secrets.VPS_USER }}" \
-            ./ ${{ secrets.VPS_HOST }}:"${{ secrets.VPS_APP_PATH }}"/
+          rsync -avzrv --delete $RSYNC_EXCLUDES \
+            -e "ssh -p $PORT -o StrictHostKeyChecking=no -l ${{ secrets.VPS_USER }}" \
+            ./ "${{ secrets.VPS_HOST }}:${{ secrets.VPS_APP_PATH }}/"
 
       - name: Run remote deploy commands (composer, artisan, wire public_html)
         uses: appleboy/ssh-action@v1.0.0
