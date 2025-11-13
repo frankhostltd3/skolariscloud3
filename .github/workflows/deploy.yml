@@ -19,6 +19,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rsync sshpass
 
+      - name: Validate required inputs
+        run: |
+          missing=()
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing+=(VPS_HOST)
+          [ -z "${{ secrets.VPS_USER }}" ] && missing+=(VPS_USER)
+          [ -z "${{ secrets.VPS_PASSWORD }}" ] && missing+=(VPS_PASSWORD)
+          [ -z "${{ secrets.VPS_APP_PATH }}" ] && missing+=(VPS_APP_PATH)
+          [ -z "${{ secrets.VPS_WEBROOT_PATH }}" ] && missing+=(VPS_WEBROOT_PATH)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required secrets: ${missing[*]}"
+            exit 1
+          fi
+
       - name: Test SSH connectivity (password auth)
         run: |
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
@@ -26,6 +39,14 @@ jobs:
             ssh -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "echo 'SSH OK on port ' $PORT 'as' $(whoami) && uname -a"
+
+      - name: Check remote tools (rsync, tar)
+        run: |
+          PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+            ssh -p "$PORT" -o StrictHostKeyChecking=no \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "command -v rsync >/dev/null 2>&1 && echo 'remote rsync: OK' || echo 'remote rsync: MISSING'; command -v tar >/dev/null 2>&1 && echo 'remote tar: OK' || echo 'remote tar: MISSING'"
 
       - name: Ensure remote app path exists
         run: |
@@ -42,11 +63,28 @@ jobs:
             --exclude='.env' --exclude='.env.*' --exclude='storage/*.key' \
             --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
         run: |
+          set -o pipefail
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
-          rsync -avzrv --delete $RSYNC_EXCLUDES \
-            -e "ssh -p $PORT -o StrictHostKeyChecking=no -l ${{ secrets.VPS_USER }}" \
-            ./ "${{ secrets.VPS_HOST }}:${{ secrets.VPS_APP_PATH }}/"
+          DEST_USER_HOST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          DEST_PATH="${{ secrets.VPS_APP_PATH }}/"
+
+          echo "Local rsync version: $(rsync --version | head -n1)" || true
+
+          echo "Starting rsync upload to $DEST_USER_HOST:$DEST_PATH on port $PORT"
+          if ! sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+            rsync -avzrv -vv --delete $RSYNC_EXCLUDES \
+              -e "ssh -p $PORT -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+              ./ "$DEST_USER_HOST:$DEST_PATH"; then
+            echo "Rsync failed. Attempting tar-over-SSH fallback..."
+            EXCLUDES=(
+              "--exclude=.git" "--exclude=.github" "--exclude=node_modules" "--exclude=vendor" \
+              "--exclude=.env" "--exclude=.env.*" "--exclude=storage/*.key" \
+              "--exclude=storage/logs" "--exclude=storage/framework/*" "--exclude=storage/app/private"
+            )
+            tar czf - "${EXCLUDES[@]}" . | \
+              sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -p "$PORT" -o StrictHostKeyChecking=no "$DEST_USER_HOST" \
+                "mkdir -p '$DEST_PATH' && tar xzf - -C '$DEST_PATH'"
+          fi
 
       - name: Run remote deploy commands (composer, artisan, wire public_html)
         uses: appleboy/ssh-action@v1.0.0
@@ -54,6 +92,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
             APP_PATH="${{ secrets.VPS_APP_PATH }}"
