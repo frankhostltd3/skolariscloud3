@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\UserType;
+use App\Models\School;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +24,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'user_type',
+        'school_id',
     ];
 
     /**
@@ -43,6 +48,27 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'user_type' => UserType::class,
         ];
+    }
+
+    public function hasUserType(UserType|string $type): bool
+    {
+        $userType = $this->user_type instanceof UserType
+            ? $this->user_type
+            : UserType::tryFrom($this->user_type);
+
+        $expected = $type instanceof UserType ? $type : UserType::tryFrom($type);
+
+        if (! $userType || ! $expected) {
+            return false;
+        }
+
+        return $userType === $expected;
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
     }
 }

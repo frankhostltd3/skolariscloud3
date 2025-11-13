@@ -34,7 +34,7 @@ cp .env.example .env
 # You'll need to edit this manually with your database credentials
 echo "📝 Please edit .env file with your database credentials:"
 echo "DB_DATABASE=fran_ugketravel36"
-echo "DB_USERNAME=fran_larvcorex7" 
+echo "DB_USERNAME=fran_larvcorex7"
 echo "DB_PASSWORD=g7TkP9zvL2@xQ1"
 
 # Generate key and setup

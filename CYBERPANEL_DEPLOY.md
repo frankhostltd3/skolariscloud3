@@ -38,11 +38,19 @@ mv * /home/frankhost.us/backups/$(date +%Y%m%d_%H%M%S)/ 2>/dev/null || true
 
 ### 4. Clone Your Repository
 ```bash
-# Clone the repository
-git clone https://github.com/frankhostltd3/skolariscloud3.git .
+# Check if directory is empty
+ls -la
 
-# Or if you want to replace everything:
+# If directory is NOT empty, clear it first:
+# Option A: Remove everything (careful - this deletes all existing content!)
 rm -rf * .*
+
+# Option B: Backup existing content first (safer)
+mkdir -p /home/frankhost.us/backup_$(date +%Y%m%d_%H%M%S)
+mv * /home/frankhost.us/backup_$(date +%Y%m%d_%H%M%S)/ 2>/dev/null || true
+mv .* /home/frankhost.us/backup_$(date +%Y%m%d_%H%M%S)/ 2>/dev/null || true
+
+# Now clone the repository
 git clone https://github.com/frankhostltd3/skolariscloud3.git .
 ```
 
@@ -97,13 +105,19 @@ php artisan view:cache
 
 ### 8. Set Proper Permissions
 ```bash
-# Set ownership to the domain user
-chown -R frankhost.us:frankhost.us /home/frankhost.us/public_html
+# Check current ownership first
+ls -la /home/frankhost.us/public_html/
+
+# Set ownership to the domain user (frank5934:frank5934)
+chown -R frank5934:frank5934 /home/frankhost.us/public_html
 
 # Set proper permissions
 chmod -R 755 /home/frankhost.us/public_html
 chmod -R 775 /home/frankhost.us/public_html/storage
 chmod -R 775 /home/frankhost.us/public_html/bootstrap/cache
+
+# Verify ownership is correct
+ls -la /home/frankhost.us/public_html/ | head -5
 ```
 
 ### 9. Configure Document Root in CyberPanel
@@ -113,10 +127,16 @@ chmod -R 775 /home/frankhost.us/public_html/bootstrap/cache
 2. Go to **Websites → List Websites**
 3. Find `frankhost.us` and click **Manage**
 4. Go to **Configurations → Rewrite Rules**
-5. Add Laravel rewrite rules:
+5. Add Laravel rewrite rules (combine with any existing HTTPS rules):
 
 ```apache
 RewriteEngine On
+
+# Force HTTPS (if you have this rule, keep it)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]
+
+# Laravel routing (add this for Laravel to work)
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ /public/$1 [L]
@@ -156,7 +176,7 @@ php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-chown -R frankhost.us:frankhost.us /home/frankhost.us/public_html
+chown -R frank5934:frank5934 /home/frankhost.us/public_html
 chmod -R 755 /home/frankhost.us/public_html
 chmod -R 775 /home/frankhost.us/public_html/storage
 chmod -R 775 /home/frankhost.us/public_html/bootstrap/cache

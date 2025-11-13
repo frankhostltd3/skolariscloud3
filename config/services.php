@@ -14,8 +14,20 @@ return [
     |
     */
 
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        'scheme' => env('MAILGUN_SCHEME', 'https'),
+    ],
+
     'postmark' => [
-        'key' => env('POSTMARK_API_KEY'),
+        'key' => env('POSTMARK_TOKEN'),
+        'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
+    ],
+
+    'sendgrid' => [
+        'api_key' => env('SENDGRID_API_KEY'),
     ],
 
     'resend' => [

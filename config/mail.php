@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'mail'),
 
     /*
     |--------------------------------------------------------------------------
@@ -40,6 +40,7 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
+            'encryption' => env('MAIL_ENCRYPTION'),
             'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', '127.0.0.1'),
             'port' => env('MAIL_PORT', 2525),
@@ -53,21 +54,50 @@ return [
             'transport' => 'ses',
         ],
 
+        'ses-v2' => [
+            'transport' => 'ses-v2',
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'credentials' => [
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                'token' => env('AWS_SESSION_TOKEN'),
+            ],
+        ],
+
         'postmark' => [
             'transport' => 'postmark',
-            // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
-            // 'client' => [
-            //     'timeout' => 5,
-            // ],
+            'token' => env('POSTMARK_TOKEN'),
+            'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
+            'client' => [
+                'timeout' => env('POSTMARK_TIMEOUT', 5),
+            ],
         ],
 
         'resend' => [
             'transport' => 'resend',
+            'api_key' => env('RESEND_API_KEY'),
+        ],
+
+        'sendgrid' => [
+            'transport' => 'sendgrid',
+            'api_key' => env('SENDGRID_API_KEY'),
         ],
 
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
+        ],
+
+        'mail' => [
+            'transport' => 'mail',
+        ],
+
+        'mailgun' => [
+            'transport' => 'mailgun',
+            'domain' => env('MAILGUN_DOMAIN'),
+            'secret' => env('MAILGUN_SECRET'),
+            'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+            'scheme' => env('MAILGUN_SCHEME', 'https'),
         ],
 
         'log' => [
@@ -83,6 +113,7 @@ return [
             'transport' => 'failover',
             'mailers' => [
                 'smtp',
+                'mail',
                 'log',
             ],
             'retry_after' => 60,

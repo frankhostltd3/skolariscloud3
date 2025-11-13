@@ -7,6 +7,25 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## SMATCAMPUS Tenant Onboarding
+
+- Set `CENTRAL_DOMAIN` in your `.env` (e.g. `CENTRAL_DOMAIN=skolariscloud.com`) so the app can derive marketing and tenant URLs.
+- Run database migrations (`php artisan migrate`) to add the `subdomain` column to `schools`.
+- Create new schools from the central landing page (`/register`). Each school receives a unique subdomain and an administrator account.
+- Staff, parents, and students should visit their school subdomain to register via invitation and to sign in.
+
+## Email Delivery
+
+- **PHP mail (default)** – Set `MAIL_MAILER=mail` in your `.env` and ensure the host's `mail()` function is enabled. Update `MAIL_FROM_ADDRESS` to a verified domain (e.g. `no-reply@your-domain.com`). Use this for quick smoke tests; production deployments should switch to an authenticated provider for better deliverability.
+- **SMTP** – Switch to `MAIL_MAILER=smtp` and supply `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_ENCRYPTION` (usually `tls`). Keep `MAIL_MAILER=failover` if you want Laravel to try SMTP first and fall back to PHP mail or logging gracefully.
+- **Mailgun** – Set `MAIL_MAILER=mailgun` with `MAILGUN_DOMAIN`, `MAILGUN_SECRET`, `MAILGUN_ENDPOINT`, and `MAILGUN_SCHEME`. Verify your sending domain (SPF/DKIM) inside Mailgun so tenant notifications land in inboxes reliably.
+- **Amazon SES** – Use `MAIL_MAILER=ses` (or `ses-v2`) along with your `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION`. Verify domains/identities inside SES for production sends.
+- **Postmark** – Configure `MAIL_MAILER=postmark`, set `POSTMARK_TOKEN`, and optionally `POSTMARK_MESSAGE_STREAM_ID` for transactional vs broadcast streams.
+- **SendGrid** – Set `MAIL_MAILER=sendgrid` and provide `SENDGRID_API_KEY`. Templates, categories, and webhooks are available through SendGrid’s dashboard.
+- **Resend** – Use `MAIL_MAILER=resend` with `RESEND_API_KEY` for a lightweight transactional provider that includes event webhooks and domain management.
+
+> Tip: Admins can update per-school mail credentials through the in-app Mail Settings page (`/settings/mail`), which stores encrypted provider keys without touching your `.env` file.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
