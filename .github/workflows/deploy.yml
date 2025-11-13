@@ -14,27 +14,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy app via rsync over SSH
-        uses: easingthemes/ssh-deploy@v5.0.3
+      - name: Install rsync and sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync sshpass
+
+      - name: Deploy app via rsync over SSH (password auth)
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.VPS_HOST }}
-          REMOTE_USER: ${{ secrets.VPS_USER }}
-          TARGET: ${{ secrets.VPS_APP_PATH }}
-          # Rsync args: archive, verbose, compress, recursive; delete removed files on server
-          # Exclude environment and heavy/runtime folders that should live only on server
-          ARGS: >-
-            -avzr --delete
-            --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='vendor'
-            --exclude='.env' --exclude='.env.*' --exclude='storage/*.key'
+          RSYNC_EXCLUDES: |
+            --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='vendor' \
+            --exclude='.env' --exclude='.env.*' --exclude='storage/*.key' \
             --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
+        run: |
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+          rsync -avzr --delete $RSYNC_EXCLUDES \
+            -e "ssh -o StrictHostKeyChecking=no -l ${{ secrets.VPS_USER }}" \
+            ./ ${{ secrets.VPS_HOST }}:"${{ secrets.VPS_APP_PATH }}"/
 
       - name: Run remote deploy commands (composer, artisan, wire public_html)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_PASSWORD }}
           script: |
             set -e
             APP_PATH="${{ secrets.VPS_APP_PATH }}"
