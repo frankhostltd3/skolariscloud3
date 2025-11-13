@@ -7,7 +7,7 @@ echo "🚀 Starting SMATCAMPUS deployment..."
 
 # Variables
 DOMAIN="frankhost.us"
-PROJECT_DIR="/var/www/html/smatcampus"
+PROJECT_DIR="/home/frankhost.us/public_html"
 REPO_URL="https://github.com/frankhostltd3/skolariscloud3.git"
 
 # Create project directory
@@ -48,7 +48,7 @@ php artisan view:cache
 
 # Set proper permissions
 echo "🔐 Setting file permissions..."
-sudo chown -R www-data:www-data $PROJECT_DIR
+sudo chown -R $DOMAIN:$DOMAIN $PROJECT_DIR
 sudo chmod -R 755 $PROJECT_DIR
 sudo chmod -R 775 $PROJECT_DIR/storage
 sudo chmod -R 775 $PROJECT_DIR/bootstrap/cache
