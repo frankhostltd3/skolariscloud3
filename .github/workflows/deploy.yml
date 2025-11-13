@@ -35,7 +35,9 @@ jobs:
       - name: Test SSH connectivity (password auth)
         run: |
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+          export SSHPASS="${{ secrets.VPS_PASSWORD }}"
+          if [ -z "$SSHPASS" ]; then echo "VPS_PASSWORD is empty; set repo secret VPS_PASSWORD"; exit 1; fi
+          sshpass -e \
             ssh -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "echo 'SSH OK on port ' $PORT 'as' $(whoami) && uname -a"
@@ -43,7 +45,9 @@ jobs:
       - name: Check remote tools (rsync, tar)
         run: |
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+          export SSHPASS="${{ secrets.VPS_PASSWORD }}"
+          if [ -z "$SSHPASS" ]; then echo "VPS_PASSWORD is empty; set repo secret VPS_PASSWORD"; exit 1; fi
+          sshpass -e \
             ssh -p "$PORT" -o StrictHostKeyChecking=no \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "command -v rsync >/dev/null 2>&1 && echo 'remote rsync: OK' || echo 'remote rsync: MISSING'; command -v tar >/dev/null 2>&1 && echo 'remote tar: OK' || echo 'remote tar: MISSING'"
@@ -51,7 +55,9 @@ jobs:
       - name: Ensure remote app path exists
         run: |
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+          export SSHPASS="${{ secrets.VPS_PASSWORD }}"
+          if [ -z "$SSHPASS" ]; then echo "VPS_PASSWORD is empty; set repo secret VPS_PASSWORD"; exit 1; fi
+          sshpass -e \
             ssh -p "$PORT" -o StrictHostKeyChecking=no \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "mkdir -p '${{ secrets.VPS_APP_PATH }}'"
@@ -67,11 +73,13 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"; [ -z "$PORT" ] && PORT=22
           DEST_USER_HOST="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           DEST_PATH="${{ secrets.VPS_APP_PATH }}/"
+          export SSHPASS="${{ secrets.VPS_PASSWORD }}"
+          if [ -z "$SSHPASS" ]; then echo "VPS_PASSWORD is empty; set repo secret VPS_PASSWORD"; exit 1; fi
 
           echo "Local rsync version: $(rsync --version | head -n1)" || true
 
           echo "Starting rsync upload to $DEST_USER_HOST:$DEST_PATH on port $PORT"
-          if ! sshpass -p "${{ secrets.VPS_PASSWORD }}" \
+          if ! sshpass -e \
             rsync -avzrv -vv --delete $RSYNC_EXCLUDES \
               -e "ssh -p $PORT -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
               ./ "$DEST_USER_HOST:$DEST_PATH"; then
@@ -82,7 +90,7 @@ jobs:
               "--exclude=storage/logs" "--exclude=storage/framework/*" "--exclude=storage/app/private"
             )
             tar czf - "${EXCLUDES[@]}" . | \
-              sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -p "$PORT" -o StrictHostKeyChecking=no "$DEST_USER_HOST" \
+              sshpass -e ssh -p "$PORT" -o StrictHostKeyChecking=no "$DEST_USER_HOST" \
                 "mkdir -p '$DEST_PATH' && tar xzf - -C '$DEST_PATH'"
           fi
 
