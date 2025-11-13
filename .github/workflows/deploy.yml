@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy to VPS (CyberPanel)
 
 on:
   push:
@@ -14,13 +14,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy files via rsync over SSH
+      - name: Deploy app via rsync over SSH
         uses: easingthemes/ssh-deploy@v5.0.3
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.VPS_HOST }}
           REMOTE_USER: ${{ secrets.VPS_USER }}
-          TARGET: ${{ secrets.VPS_PATH }}
+          TARGET: ${{ secrets.VPS_APP_PATH }}
           # Rsync args: archive, verbose, compress, recursive; delete removed files on server
           # Exclude environment and heavy/runtime folders that should live only on server
           ARGS: >-
@@ -29,7 +29,7 @@ jobs:
             --exclude='.env' --exclude='.env.*' --exclude='storage/*.key'
             --exclude='storage/logs' --exclude='storage/framework/*' --exclude='storage/app/private'
 
-      - name: Run remote deploy commands
+      - name: Run remote deploy commands (composer, artisan, symlink public_html)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -37,7 +37,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd "${{ secrets.VPS_PATH }}"
+            APP_PATH="${{ secrets.VPS_APP_PATH }}"
+            WEBROOT_PATH="${{ secrets.VPS_WEBROOT_PATH }}"  # e.g., /home/USER/public_html
+
+            mkdir -p "$APP_PATH"
+            cd "$APP_PATH"
+
             # Ensure proper permissions for storage and bootstrap/cache
             mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
             chmod -R ug+rw storage bootstrap/cache || true
@@ -50,9 +55,22 @@ jobs:
             fi
 
             # Laravel optimizations and migrations
-            php artisan migrate --force || true
-            php artisan config:cache || true
-            php artisan route:cache || true
-            php artisan view:cache || true
+            if command -v php >/dev/null 2>&1; then
+              php artisan migrate --force || true
+              php artisan config:cache || true
+              php artisan route:cache || true
+              php artisan view:cache || true
+            else
+              echo "PHP CLI not found on server. Skipping artisan commands."
+            fi
+
+            # Point webroot (public_html) to Laravel public directory
+            if [ -n "$WEBROOT_PATH" ]; then
+              # Create parent directory if missing
+              mkdir -p "$(dirname "$WEBROOT_PATH")"
+              # Atomically update symlink to APP_PATH/public
+              ln -sfn "$APP_PATH/public" "$WEBROOT_PATH"
+              echo "Symlinked webroot: $WEBROOT_PATH -> $APP_PATH/public"
+            fi
 
             echo "Deployed at $(date)"
