@@ -90,6 +90,19 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/settings/currencies/{currency}/toggle-auto-update', [CurrencyController::class, 'toggleAutoUpdate'])->name('settings.currencies.toggle-auto-update');
         Route::post('/settings/currencies/update-rates', [CurrencyController::class, 'updateRates'])->name('settings.currencies.update-rates');
 
+        // Permissions & Access Control Routes
+        Route::prefix('settings/admin')->name('tenant.settings.admin.')->group(function () {
+            Route::get('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'index'])->name('permissions');
+            Route::post('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'update'])->name('permissions.update');
+            Route::post('/roles', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'storeRole'])->name('roles.store');
+            Route::get('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'getRolePermissions'])->name('roles.permissions.get');
+            Route::post('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'updateRolePermissions'])->name('roles.permissions.update');
+            Route::delete('/roles/{role}', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'destroyRole'])->name('roles.destroy');
+            Route::post('/permissions/sync-registry', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'syncRegistry'])->name('permissions.sync-registry');
+            Route::post('/roles/bulk-assign', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'bulkAssignRole'])->name('roles.bulkAssign');
+            Route::post('/permissions/clear-cache', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'clearCache'])->name('permissions.clear-cache');
+        });
+
         // User Approvals Routes
         Route::prefix('admin/user-approvals')->name('admin.user-approvals.')->group(function () {
             Route::get('/', [UserApprovalsController::class, 'index'])->name('index');

@@ -54,6 +54,10 @@
                     href="{{ route('settings.system.edit') }}">
                     <span class="bi bi-server me-2"></span>{{ __('System') }}
                 </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.permissions') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.permissions') }}">
+                    <span class="bi bi-shield-lock me-2"></span>{{ __('Permissions') }}
+                </a>
             </div>
         </div>
 
