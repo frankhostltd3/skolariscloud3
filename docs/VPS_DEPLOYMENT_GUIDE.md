@@ -31,7 +31,76 @@
 
 ---
 
-## 🎯 Quick Start (Recommended Method)
+## ⚠️ IMPORTANT: Is This Your First Deployment?
+
+**Check if Laravel is already installed:**
+```bash
+cd /home/frankhost.us/public_html
+ls -la
+```
+
+- **If you see** `artisan`, `composer.json`, `app/`, etc. → Skip to "Quick Start" below
+- **If the directory is empty** or missing Laravel files → Follow "Initial Setup" first
+
+---
+
+## 🆕 Initial Setup (First Time Deployment Only)
+
+**Only follow this if `public_html` doesn't have Laravel installed yet:**
+
+```bash
+# 1. Navigate to your home directory
+cd /home/frankhost.us
+
+# 2. Backup existing public_html (if any)
+if [ -d "public_html" ]; then
+    mv public_html public_html.backup.$(date +%Y%m%d_%H%M%S)
+fi
+
+# 3. Clone repository as public_html
+git clone https://github.com/frankhostltd3/skolariscloud3.git public_html
+
+# 4. Navigate into application
+cd public_html
+
+# 5. Copy environment file
+cp .env.example .env
+
+# 6. Edit .env with your database credentials
+nano .env
+# Update: DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD, APP_URL, etc.
+
+# 7. Install dependencies
+composer install --no-dev --optimize-autoloader
+
+# 8. Generate application key
+php artisan key:generate
+
+# 9. Run migrations
+php artisan migrate --seed
+
+# 10. Set permissions
+chmod -R 755 storage bootstrap/cache
+chown -R frankhost:frankhost storage bootstrap/cache
+
+# 11. Link storage
+php artisan storage:link
+
+# 12. Cache configuration
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# ✅ Initial setup complete! Your site should now be live.
+```
+
+After initial setup, use the update methods below for future updates.
+
+---
+
+## 🎯 Quick Start (For Updates Only)
+
+**⚠️ Only use this if Laravel is ALREADY installed in public_html**
 
 ### Option 1: Using the Update Script (Easiest)
 
