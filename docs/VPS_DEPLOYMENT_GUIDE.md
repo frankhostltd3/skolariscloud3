@@ -2,7 +2,32 @@
 
 **Date:** November 15, 2025  
 **Purpose:** Update existing VPS installation with latest changes from GitHub  
-**Changes:** Bank Payment Instructions + Currency Bug Fix + All System Settings
+**Changes:** Bank Payment Instructions + Currency Bug Fix + All System Settings  
+**Server:** CyberPanel on AlmaLinux
+
+---
+
+## 📍 CyberPanel Important Notes
+
+**Your Setup:**
+- **Application Directory:** `/home/frankhost.us/public_html`
+- **Repository:** `https://github.com/frankhostltd3/skolariscloud3.git`
+- **Web Server:** LiteSpeed (via CyberPanel)
+- **PHP:** Managed by CyberPanel
+- **Important:** In CyberPanel, `public_html` IS your application root. The Laravel application files go directly in `public_html`, NOT in a subdirectory.
+
+**Directory Structure:**
+```
+/home/frankhost.us/
+└── public_html/           ← Your Laravel app root
+    ├── app/
+    ├── config/
+    ├── public/            ← Laravel public directory
+    │   └── index.php     ← Entry point
+    ├── storage/
+    ├── vendor/
+    └── .env
+```
 
 ---
 
@@ -13,8 +38,8 @@
 **On your VPS (via SSH):**
 
 ```bash
-# 1. Navigate to your application directory
-cd /home/frankhost.us/smatcampus
+# 1. Navigate to your application directory (CyberPanel uses public_html)
+cd /home/frankhost.us/public_html
 
 # 2. Download the update script
 wget https://raw.githubusercontent.com/frankhostltd3/skolariscloud3/main/update_vps.sh
@@ -54,8 +79,8 @@ ssh frankhost.us@frankhost.us
 ### Step 2: Navigate to Application Directory
 
 ```bash
-cd /home/frankhost.us/smatcampus
-# Or wherever your application is installed
+# For CyberPanel, the application is in public_html
+cd /home/frankhost.us/public_html
 ```
 
 ### Step 3: Enable Maintenance Mode
@@ -127,13 +152,13 @@ php artisan view:cache
 ### Step 11: Set Permissions
 
 ```bash
-chmod -R 755 /home/frankhost.us/smatcampus
-chmod -R 775 /home/frankhost.us/smatcampus/storage
-chmod -R 775 /home/frankhost.us/smatcampus/bootstrap/cache
+chmod -R 755 /home/frankhost.us/public_html
+chmod -R 775 /home/frankhost.us/public_html/storage
+chmod -R 775 /home/frankhost.us/public_html/bootstrap/cache
 
-# If you have sudo access
-sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/smatcampus/storage
-sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/smatcampus/bootstrap/cache
+# If you have sudo access (CyberPanel usually handles this)
+sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/public_html/storage
+sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/public_html/bootstrap/cache
 ```
 
 ### Step 12: Disable Maintenance Mode
@@ -156,8 +181,8 @@ If you have GitHub Actions set up with secrets:
 - `VPS_HOST` - Your VPS IP or domain
 - `VPS_USER` - SSH username (e.g., frankhost.us)
 - `VPS_PASSWORD` - SSH password
-- `VPS_APP_PATH` - Application path (e.g., /home/frankhost.us/smatcampus)
-- `VPS_WEBROOT_PATH` - Web root path (e.g., /home/frankhost.us/public_html)
+- `VPS_APP_PATH` - Application path (e.g., /home/frankhost.us/public_html)
+- `VPS_WEBROOT_PATH` - Same as APP_PATH for CyberPanel (e.g., /home/frankhost.us/public_html)
 
 ---
 
@@ -231,9 +256,9 @@ tail -f /home/frankhost.us/smatcampus/storage/logs/laravel.log
 
 **Solution:**
 ```bash
-sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/smatcampus
-sudo chmod -R 775 /home/frankhost.us/smatcampus/storage
-sudo chmod -R 775 /home/frankhost.us/smatcampus/bootstrap/cache
+sudo chown -R frankhost.us:frankhost.us /home/frankhost.us/public_html
+sudo chmod -R 775 /home/frankhost.us/public_html/storage
+sudo chmod -R 775 /home/frankhost.us/public_html/bootstrap/cache
 ```
 
 ### Issue: "Class not found" errors
@@ -263,7 +288,7 @@ php artisan tenants:migrate
 **Solution:**
 ```bash
 # Check logs
-tail -50 /home/frankhost.us/smatcampus/storage/logs/laravel.log
+tail -50 /home/frankhost.us/public_html/storage/logs/laravel.log
 
 # Clear all caches
 php artisan optimize:clear
@@ -325,7 +350,7 @@ If the update causes issues:
 
 ```bash
 # 1. Go to application directory
-cd /home/frankhost.us/smatcampus
+cd /home/frankhost.us/public_html
 
 # 2. Revert to previous commit
 git log --oneline  # Find the previous commit hash

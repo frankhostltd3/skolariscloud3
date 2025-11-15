@@ -18,8 +18,7 @@ echo "================================"
 echo ""
 
 # Variables (adjust these to match your setup)
-APP_DIR="/home/frankhost.us/smatcampus"
-WEBROOT_DIR="/home/frankhost.us/public_html"
+APP_DIR="/home/frankhost.us/public_html"
 REPO_URL="https://github.com/frankhostltd3/skolariscloud3.git"
 BRANCH="main"
 
@@ -46,6 +45,7 @@ print_error() {
 if [ ! -d "$APP_DIR" ]; then
     print_error "Application directory not found: $APP_DIR"
     echo "Please update the APP_DIR variable in this script to match your setup."
+    echo "For CyberPanel, it should be: /home/USERNAME/public_html"
     exit 1
 fi
 
