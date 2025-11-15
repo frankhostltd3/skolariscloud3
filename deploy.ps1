@@ -3,7 +3,7 @@
 
 param(
     [string]$VpsHost = "209.74.83.45",
-    [string]$VpsPort = "22022", 
+    [string]$VpsPort = "22022",
     [string]$VpsUser = "root",
     [string]$VpsPassword = "F!sh9T@ble",
     [string]$ProjectDir = "/home/frankhost.us/public_html"
@@ -32,7 +32,7 @@ function Invoke-SshCommand {
 Write-Host "🔄 Updating repository..." -ForegroundColor Yellow
 Invoke-SshCommand 'cd /home/frankhost.us/public_html && pwd && git status'
 
-# Pull latest changes or clone if needed  
+# Pull latest changes or clone if needed
 Invoke-SshCommand 'cd /home/frankhost.us/public_html && if [ -d .git ]; then echo "Pulling latest changes..."; git pull origin main; else echo "Cloning repository..."; git clone https://github.com/frankhostltd3/skolariscloud3.git .; fi'
 
 # Install PHP dependencies

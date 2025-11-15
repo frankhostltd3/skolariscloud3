@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Services\EnvWriter;
 use App\Services\MailConfigurator;
+use App\Services\MessagingConfigurator;
+use App\Services\PaymentGatewayConfigurator;
+use App\Services\TenantDatabaseManager;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -15,7 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-    $this->app->singleton(\App\Services\MailConfigurator::class);
+        $this->app->singleton(MailConfigurator::class);
+    $this->app->singleton(MessagingConfigurator::class);
+        $this->app->singleton(PaymentGatewayConfigurator::class);
+        $this->app->singleton(TenantDatabaseManager::class);
+        $this->app->singleton(EnvWriter::class);
     }
 
     /**

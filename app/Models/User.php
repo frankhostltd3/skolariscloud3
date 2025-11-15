@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\UserType;
 use App\Models\School;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    protected $connection = 'tenant';
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +29,7 @@ class User extends Authenticatable
         'password',
         'user_type',
         'school_id',
+        'approval_status',
     ];
 
     /**
@@ -49,6 +53,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'user_type' => UserType::class,
+            'approved_at' => 'datetime',
+            'suspended_at' => 'datetime',
+            'expelled_at' => 'datetime',
+            'registration_data' => 'array',
         ];
     }
 
@@ -65,6 +73,17 @@ class User extends Authenticatable
         }
 
         return $userType === $expected;
+    }
+
+    /**
+     * Returns true if the user is a landlord (super-admin, not attached to a school).
+     */
+    public function getIsLandlordAttribute(): bool
+    {
+        return ($this->user_type instanceof UserType
+                ? $this->user_type === UserType::ADMIN
+                : $this->user_type === UserType::ADMIN->value)
+            && empty($this->school_id);
     }
 
     public function school(): BelongsTo

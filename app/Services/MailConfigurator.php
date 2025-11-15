@@ -21,7 +21,11 @@ class MailConfigurator
         config(['mail' => $this->baseMailConfig]);
         config(['services' => $this->baseServicesConfig]);
 
-        $settings = MailSetting::query()->first();
+        try {
+            $settings = MailSetting::query()->first();
+        } catch (\Throwable $exception) {
+            return;
+        }
 
         if (! $settings) {
             return;

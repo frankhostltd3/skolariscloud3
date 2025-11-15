@@ -9,6 +9,8 @@ class MailSetting extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'mailer',
         'from_name',

@@ -67,8 +67,7 @@
                                 </div>
 
                                 <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg"
-                                        @if (!$school) disabled @endif>Sign In</button>
+                                    <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
                                 </div>
                             </form>
 

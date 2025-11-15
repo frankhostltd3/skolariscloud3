@@ -12,6 +12,8 @@ class SchoolUserInvitation extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'school_id',
         'email',

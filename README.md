@@ -27,6 +27,50 @@
 
 > Tip: Admins can update per-school mail credentials through the in-app Mail Settings page (`/settings/mail`), which stores encrypted provider keys without touching your `.env` file.
 
+## Messaging Channels
+
+The platform supports **SMS**, **WhatsApp**, and **Telegram** messaging for school-parent-staff communication. Configure providers via **Settings → Messaging Channels** (`/settings/messaging`).
+
+### SMS Providers
+- **Twilio SMS** – Global reach with reliable delivery
+- **Vonage (Nexmo)** – International SMS gateway
+- **Africa's Talking** – Optimized for African carriers
+- **Custom SMS API** – Bring your own provider
+
+### WhatsApp Providers
+- **Twilio WhatsApp** – Quick setup with templates
+- **Meta Cloud API** – Official WhatsApp Business Platform (free tier available)
+- **Custom WhatsApp Provider** – Alternative aggregators
+
+### Telegram Providers
+- **Telegram Bot API** – Official, free, unlimited messages
+- **Custom Telegram Provider** – Third-party gateways
+
+**Features:**
+- ✅ Multi-provider support per channel
+- ✅ Encrypted credential storage
+- ✅ Environment sync for production (.env)
+- ✅ Per-tenant configuration with central override
+- ✅ Audit logging for security
+
+**Quick Start:** See [`docs/MESSAGING_QUICK_START.md`](docs/MESSAGING_QUICK_START.md)  
+**Full Documentation:** See [`docs/MESSAGING_CHANNELS.md`](docs/MESSAGING_CHANNELS.md)
+
+## Payment Gateways
+
+Configure payment processors for fees, tuition, and other school payments via **Settings → Payment Gateways** (`/settings/payments`).
+
+**Supported Gateways:**
+- Stripe (Credit/Debit cards)
+- PayPal (Global payments)
+- Flutterwave (African markets)
+- Paystack (African markets)
+- MTN Mobile Money (Uganda, Ghana, etc.)
+- Airtel Money (Uganda, Kenya, etc.)
+- Custom Payment Gateway (Your own processor)
+
+All credentials are encrypted and can sync to `.env` for production deployments.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

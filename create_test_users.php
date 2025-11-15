@@ -29,7 +29,7 @@ $users = [
     ],
     [
         'name' => 'Test Teacher',
-        'email' => 'teacher@frankhost.us', 
+        'email' => 'teacher@frankhost.us',
         'password' => Hash::make('teacher123'),
         'user_type' => 'teaching_staff',
         'school_id' => $school->id,
@@ -47,7 +47,7 @@ $users = [
         'name' => 'Test Student',
         'email' => 'student@frankhost.us',
         'password' => Hash::make('student123'),
-        'user_type' => 'student', 
+        'user_type' => 'student',
         'school_id' => $school->id,
         'email_verified_at' => now(),
     ],
@@ -79,7 +79,7 @@ echo "\nTest users created successfully!\n\n";
 echo "Login credentials:\n";
 echo "=================\n";
 echo "Admin: admin@frankhost.us / admin123\n";
-echo "Teacher: teacher@frankhost.us / teacher123\n"; 
+echo "Teacher: teacher@frankhost.us / teacher123\n";
 echo "Staff: staff@frankhost.us / staff123\n";
 echo "Student: student@frankhost.us / student123\n";
 echo "Parent: parent@frankhost.us / parent123\n";

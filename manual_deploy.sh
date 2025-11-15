@@ -37,7 +37,7 @@ fi
 echo "⚙️ Running Laravel setup..."
 php artisan migrate --force || echo "⚠️ Migration failed - check database connection"
 php artisan config:cache || echo "⚠️ Config cache failed"
-php artisan route:cache || echo "⚠️ Route cache failed" 
+php artisan route:cache || echo "⚠️ Route cache failed"
 php artisan view:cache || echo "⚠️ View cache failed"
 
 # Set proper permissions for CyberPanel

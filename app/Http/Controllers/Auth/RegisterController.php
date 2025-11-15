@@ -10,14 +10,20 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\TenantDatabaseManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Support\CentralDomain;
 
 class RegisterController extends Controller
 {
+    public function __construct(private TenantDatabaseManager $tenants)
+    {
+    }
+
     public function create(Request $request): View
     {
         $school = $request->attributes->get('currentSchool');
@@ -29,7 +35,7 @@ class RegisterController extends Controller
         }
 
         return view('auth.register', [
-            'baseDomain' => $this->baseDomain(),
+            'baseDomain' => CentralDomain::base($request),
         ]);
     }
 
@@ -46,10 +52,12 @@ class RegisterController extends Controller
 
     private function registerTenantUser(Request $request, School $school): RedirectResponse
     {
+        $minLength = (int) setting('password_min_length', 8);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:' . $minLength, 'confirmed'],
         ]);
 
         $invitation = SchoolUserInvitation::query()
@@ -97,13 +105,12 @@ class RegisterController extends Controller
 
     private function registerSchool(Request $request): RedirectResponse
     {
-        $baseDomain = $this->baseDomain();
-
+        // For central registration, use default 8 (no tenant context yet)
         $validated = $request->validate([
             'school_name' => ['required', 'string', 'max:255'],
             'subdomain' => ['required', 'string', 'max:50'],
             'admin_name' => ['required', 'string', 'max:255'],
-            'admin_email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'admin_email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'terms' => ['accepted'],
         ], [
@@ -118,51 +125,45 @@ class RegisterController extends Controller
             ]);
         }
 
-        [$school, $user] = DB::transaction(function () use ($validated, $subdomain, $baseDomain) {
-            $domain = $baseDomain ? $subdomain . '.' . $baseDomain : null;
+            $domain = CentralDomain::tenantDomain($subdomain, $request);
 
-            $school = School::create([
+        $school = DB::transaction(function () use ($validated, $subdomain, $domain) {
+            return School::create([
                 'name' => $validated['school_name'],
                 'code' => Str::upper(Str::random(8)),
                 'subdomain' => $subdomain,
                 'domain' => $domain,
             ]);
-
-            $user = User::create([
-                'name' => $validated['admin_name'],
-                'email' => $validated['admin_email'],
-                'password' => Hash::make($validated['password']),
-                'user_type' => UserType::ADMIN,
-                'school_id' => $school->id,
-            ]);
-
-            return [$school, $user];
         });
 
-        Auth::login($user);
-        $request->session()->regenerate();
+        try {
+            $this->tenants->runFor(
+                $school,
+                function () use ($validated, $school) {
+                    User::create([
+                        'name' => $validated['admin_name'],
+                        'email' => $validated['admin_email'],
+                        'password' => Hash::make($validated['password']),
+                        'user_type' => UserType::ADMIN,
+                        'school_id' => $school->id,
+                        'approval_status' => 'approved',
+                    ]);
+                },
+                runMigrations: true
+            );
+        } catch (\Throwable $exception) {
+            $school->delete();
+
+            throw $exception;
+        }
 
         if ($school->url) {
             $request->session()->flash('workspace_url', $school->url);
         }
 
-        return redirect()->route('dashboard')->with('status', 'Welcome aboard! Your workspace is ready.');
-    }
-
-    private function baseDomain(): ?string
-    {
-        $domain = config('tenancy.central_domain');
-
-        if (! $domain) {
-            return null;
-        }
-
-        if (str_contains($domain, '://')) {
-            $parsed = parse_url($domain, PHP_URL_HOST);
-            return $parsed ?: null;
-        }
-
-        return ltrim($domain, '.');
+        return redirect()
+            ->route('home')
+            ->with('status', 'Your workspace is ready. Sign in using your new school address.');
     }
 
     private function normalizeSubdomain(string $value): string

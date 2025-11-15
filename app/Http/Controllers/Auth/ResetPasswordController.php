@@ -37,10 +37,12 @@ class ResetPasswordController extends Controller
             ]);
         }
 
+        $minLength = (int) setting('password_min_length', 8);
+
         $validated = $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:' . $minLength, 'confirmed'],
         ]);
 
         $user = User::query()

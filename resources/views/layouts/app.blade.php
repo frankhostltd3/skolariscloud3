@@ -291,7 +291,10 @@
                         @php($navUser = auth()->user())
                         @if ($navUser && $navUser->hasUserType(\App\Enums\UserType::ADMIN))
                             <li class="nav-item ms-lg-3">
-                                <a class="btn btn-outline-primary" href="{{ route('settings.mail.edit') }}">Mail
+                                <a class="btn btn-outline-primary" href="{{ route('settings.index') }}">Settings</a>
+                            </li>
+                            <li class="nav-item ms-2">
+                                <a class="btn btn-outline-primary" href="{{ route('settings.payments.edit') }}">Payment
                                     Settings</a>
                             </li>
                             <li class="nav-item ms-2">
