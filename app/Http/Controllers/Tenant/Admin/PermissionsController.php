@@ -18,7 +18,7 @@ class PermissionsController extends Controller
     public function index()
     {
         $roles = Role::withCount('users')->with('permissions')->get();
-        
+
         // Group permissions by module
         $allPermissions = Permission::all();
         $permissionGroups = $allPermissions->groupBy(function ($permission) {
@@ -125,7 +125,7 @@ class PermissionsController extends Controller
     public function getRolePermissions($roleId)
     {
         $role = Role::with('permissions')->findOrFail($roleId);
-        
+
         return response()->json([
             'permissions' => $role->permissions->pluck('name')->toArray()
         ]);
@@ -137,7 +137,7 @@ class PermissionsController extends Controller
     public function updateRolePermissions(Request $request, $roleId)
     {
         $role = Role::findOrFail($roleId);
-        
+
         $validated = $request->validate([
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name',
@@ -156,7 +156,7 @@ class PermissionsController extends Controller
     public function destroyRole($roleId)
     {
         $role = Role::findOrFail($roleId);
-        
+
         // Prevent deletion of system roles
         if (in_array($role->name, ['super-admin', 'admin', 'teacher', 'student', 'parent'])) {
             return redirect()->route('tenant.settings.admin.permissions')
@@ -181,10 +181,10 @@ class PermissionsController extends Controller
         ]);
 
         $role = Role::findOrFail($validated['sync_role']);
-        
+
         // This is a placeholder for actual sync logic
         // You would implement your specific registry sync requirements here
-        
+
         return redirect()->route('tenant.settings.admin.permissions')
             ->with('success', "Registry sync initiated for role '{$role->name}'");
     }
@@ -202,7 +202,7 @@ class PermissionsController extends Controller
 
         $role = Role::findOrFail($validated['role_id']);
         $emails = array_filter(array_map('trim', explode("\n", $validated['user_emails'])));
-        
+
         $successCount = 0;
         $failedEmails = [];
 
@@ -243,7 +243,7 @@ class PermissionsController extends Controller
     private function getSettings()
     {
         $settings = DB::table('settings')->pluck('value', 'key')->toArray();
-        
+
         // Set defaults if not in database
         return array_merge([
             'default_student_role' => 'student',

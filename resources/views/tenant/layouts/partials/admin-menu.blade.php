@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        @php($reportsActive = false)
+        @php($reportsActive = request()->routeIs('admin.reports*'))
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $reportsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#reportsMenu" role="button"
             aria-expanded="{{ $reportsActive ? 'true' : 'false' }}" aria-controls="reportsMenu">
@@ -70,26 +70,33 @@
         </a>
         <div class="collapse {{ $reportsActive ? 'show' : '' }}" id="reportsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.index') }}">
                     <span class="bi bi-house-door me-2"></span>{{ __('Overview') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.academic') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.academic') }}">
                     <span class="bi bi-mortarboard me-2"></span>{{ __('Academic') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-people-check me-2"></span>{{ __('Attendance') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.attendance') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.attendance') }}">
+                    <span class="bi bi-calendar-check me-2"></span>{{ __('Attendance') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.financial') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.financial') }}">
                     <span class="bi bi-cash me-2"></span>{{ __('Financial') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.enrollment') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.enrollment') }}">
                     <span class="bi bi-person-plus me-2"></span>{{ __('Enrollment') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.late-submissions*') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.late-submissions') }}">
                     <span class="bi bi-clock-history me-2"></span>{{ __('Late Submissions') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-file-earmark-text me-2"></span>{{ __('Report Cards') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.report-cards*') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.report-cards') }}">
+                    <span class="bi bi-card-text me-2"></span>{{ __('Report Cards') }}
                 </a>
             </div>
         </div>

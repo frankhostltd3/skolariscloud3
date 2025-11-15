@@ -91,4 +91,38 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsTo(School::class);
     }
+
+    /**
+     * Get the user who approved this user's registration.
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the CSS badge class based on approval status.
+     */
+    public function getApprovalBadgeClass(): string
+    {
+        return match($this->approval_status) {
+            'approved' => 'bg-success',
+            'rejected' => 'bg-danger',
+            'pending' => 'bg-warning text-dark',
+            default => 'bg-secondary',
+        };
+    }
+
+    /**
+     * Get the human-readable approval status label.
+     */
+    public function getApprovalLabel(): string
+    {
+        return match($this->approval_status) {
+            'approved' => __('Approved'),
+            'rejected' => __('Rejected'),
+            'pending' => __('Pending Approval'),
+            default => __('Unknown'),
+        };
+    }
 }

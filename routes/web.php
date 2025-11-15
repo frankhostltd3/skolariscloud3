@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UserApprovalsController;
+use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -116,6 +117,61 @@ Route::middleware('auth')->group(function (): void {
             Route::post('/{user}/suspend', [UserApprovalsController::class, 'suspend'])->name('suspend');
             Route::post('/{user}/reinstate', [UserApprovalsController::class, 'reinstate'])->name('reinstate');
             Route::post('/{user}/expel', [UserApprovalsController::class, 'expel'])->name('expel');
+        });
+
+        // Reports Routes
+        Route::prefix('admin/reports')->name('admin.reports.')->group(function () {
+            Route::get('/', [ReportsController::class, 'index'])->name('index');
+            Route::post('/generate', [ReportsController::class, 'generate'])->name('generate');
+            Route::get('/export-pdf', [ReportsController::class, 'exportPdf'])->name('export-pdf');
+            Route::get('/export-excel', [ReportsController::class, 'exportExcel'])->name('export-excel');
+            Route::get('/download/{id}', [ReportsController::class, 'download'])->name('download');
+            Route::get('/academic', [ReportsController::class, 'academic'])->name('academic');
+            Route::get('/attendance', [ReportsController::class, 'attendance'])->name('attendance');
+            Route::get('/financial', [ReportsController::class, 'financial'])->name('financial');
+            Route::get('/enrollment', [ReportsController::class, 'enrollment'])->name('enrollment');
+            Route::get('/late-submissions', [ReportsController::class, 'lateSubmissions'])->name('late-submissions');
+            Route::get('/late-submissions/export', [ReportsController::class, 'lateSubmissionsExport'])->name('late-submissions.export');
+            Route::get('/report-cards', [ReportsController::class, 'reportCards'])->name('report-cards');
+            Route::post('/report-cards/export-student', [ReportsController::class, 'exportStudentReportCard'])->name('report-cards.export-student');
+            Route::post('/report-cards/export-class', [ReportsController::class, 'exportClassReportCards'])->name('report-cards.export-class');
+        });
+
+        // Attendance Management Routes
+        Route::prefix('admin/attendance')->name('admin.attendance.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AttendanceController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AttendanceController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AttendanceController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\AttendanceController::class, 'show'])->name('show');
+            Route::get('/{id}/mark', [\App\Http\Controllers\Admin\AttendanceController::class, 'mark'])->name('mark');
+            Route::post('/{id}/records', [\App\Http\Controllers\Admin\AttendanceController::class, 'saveRecords'])->name('save-records');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\AttendanceController::class, 'destroy'])->name('destroy');
+            Route::get('/kiosk/mode', [\App\Http\Controllers\Admin\AttendanceController::class, 'kiosk'])->name('kiosk');
+            Route::post('/kiosk/check-in', [\App\Http\Controllers\Admin\AttendanceController::class, 'kioskCheckIn'])->name('kiosk.check-in');
+        });
+
+        // Staff Attendance Routes
+        Route::prefix('admin/staff-attendance')->name('admin.staff-attendance.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'update'])->name('update');
+            Route::patch('/{id}/approve', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'approve'])->name('approve');
+            Route::post('/bulk-mark', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'bulkMark'])->name('bulk-mark');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffAttendanceController::class, 'destroy'])->name('destroy');
+        });
+
+        // Exam Attendance Routes
+        Route::prefix('admin/exam-attendance')->name('admin.exam-attendance.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'show'])->name('show');
+            Route::get('/{id}/mark', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'mark'])->name('mark');
+            Route::post('/{id}/records', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'saveRecords'])->name('save-records');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'destroy'])->name('destroy');
         });
 
         // Parent Management Routes (placeholder - TODO: Create ParentController)

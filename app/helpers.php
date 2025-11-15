@@ -171,3 +171,24 @@ if (!function_exists('bankPaymentInstructions')) {
         return $setting->config;
     }
 }
+
+if (!function_exists('curriculum_classes')) {
+    /**
+     * Get all active classes for the current school.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    function curriculum_classes(): \Illuminate\Support\Collection
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school ?? null;
+
+        if (!$school) {
+            return collect([]);
+        }
+
+        return App\Models\Academic\ClassRoom::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name');
+    }
+}

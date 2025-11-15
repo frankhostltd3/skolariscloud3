@@ -164,7 +164,7 @@ class PermissionsSeeder extends Seeder
         }
 
         // Create roles and assign permissions
-        
+
         // Super Admin - All permissions
         $superAdmin = Role::create(['name' => 'super-admin', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo(Permission::all());

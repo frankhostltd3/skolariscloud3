@@ -10,8 +10,8 @@ use App\Models\Student;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\Academic\ClassRoom;
-use App\Models\ClassStream;
-use App\Models\Subject;
+use App\Models\Academic\ClassStream;
+use App\Models\Academic\Subject;
 use App\Enums\UserType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,18 +91,26 @@ class UserApprovalsController extends Controller
     /**
      * Display the specified user registration.
      */
-    public function show(User $user)
+    public function show(Request $request, $id)
     {
-        $user->load(['roles', 'approver']);
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
 
-        return view('admin.user-approvals.show', compact('user'));
+        $user = User::where('school_id', $school->id)
+            ->with(['roles', 'approver'])
+            ->findOrFail($id);
+
+        return view('admin.user-approvals.show', compact('user', 'school'));
     }
 
     /**
      * Approve a user registration.
      */
-    public function approve(Request $request, User $user)
+    public function approve(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $user->update([
             'approval_status' => 'approved',
             'approved_by' => auth()->id(),
@@ -120,8 +128,12 @@ class UserApprovalsController extends Controller
     /**
      * Reject a user registration.
      */
-    public function reject(Request $request, User $user)
+    public function reject(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $request->validate([
             'rejection_reason' => 'required|string|max:1000',
         ]);
@@ -200,8 +212,11 @@ class UserApprovalsController extends Controller
     /**
      * Update employment information for a user.
      */
-    public function updateEmployment(Request $request, User $user)
+    public function updateEmployment(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $request->validate([
             'employment_role' => 'required|string|in:Teacher,Bursar,Nurse,Staff,Other',
             'employee_type' => 'required|string',
@@ -267,8 +282,11 @@ class UserApprovalsController extends Controller
     /**
      * Update student enrollment information.
      */
-    public function updateStudentEnrollment(Request $request, User $user)
+    public function updateStudentEnrollment(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $request->validate([
             'class_id' => 'required|exists:classes,id',
             'class_stream_id' => 'nullable|exists:class_streams,id',
@@ -312,8 +330,11 @@ class UserApprovalsController extends Controller
     /**
      * Suspend an approved user.
      */
-    public function suspend(Request $request, User $user)
+    public function suspend(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $request->validate([
             'reason' => 'nullable|string|max:1000',
         ]);
@@ -333,8 +354,11 @@ class UserApprovalsController extends Controller
     /**
      * Reinstate a suspended user.
      */
-    public function reinstate(User $user)
+    public function reinstate(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $user->update([
             'is_active' => true,
             'suspension_reason' => null,
@@ -350,8 +374,11 @@ class UserApprovalsController extends Controller
     /**
      * Expel or terminate a user.
      */
-    public function expel(Request $request, User $user)
+    public function expel(Request $request, $id)
     {
+        $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
+        $user = User::where('school_id', $school->id)->findOrFail($id);
+
         $request->validate([
             'reason' => 'nullable|string|max:1000',
         ]);
