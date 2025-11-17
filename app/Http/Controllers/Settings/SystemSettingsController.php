@@ -34,6 +34,13 @@ class SystemSettingsController extends Controller
             'auto_backup' => setting('auto_backup', 'disabled'),
             'backup_retention' => setting('backup_retention', '30'),
             'log_level' => setting('log_level', 'error'),
+
+            // User Approval Settings
+            'user_approval_mode' => setting('user_approval_mode', 'manual'),
+            'auto_approve_teachers' => (bool) setting('auto_approve_teachers', false),
+            'auto_approve_students' => (bool) setting('auto_approve_students', false),
+            'auto_approve_parents' => (bool) setting('auto_approve_parents', false),
+            'send_approval_notifications' => (bool) setting('send_approval_notifications', true),
         ];
 
         return view('settings.system', compact('settings'));
@@ -52,6 +59,8 @@ class SystemSettingsController extends Controller
                 return $this->updateSecurity($request);
             case 'maintenance':
                 return $this->updateMaintenance($request);
+            case 'user_approval':
+                return $this->updateUserApproval($request);
             default:
                 return redirect()->back()->with('error', 'Invalid form submission.');
         }
@@ -138,6 +147,33 @@ class SystemSettingsController extends Controller
 
         return redirect()->route('settings.system.edit')
             ->with('status', 'Maintenance settings updated successfully.');
+    }
+
+    private function updateUserApproval(Request $request)
+    {
+        $validated = $request->validate([
+            'user_approval_mode' => 'required|in:manual,email_verification,automatic',
+            'auto_approve_teachers' => 'nullable|boolean',
+            'auto_approve_students' => 'nullable|boolean',
+            'auto_approve_parents' => 'nullable|boolean',
+            'send_approval_notifications' => 'nullable|boolean',
+        ]);
+
+        // Handle approval mode
+        setting(['user_approval_mode' => $validated['user_approval_mode']]);
+
+        // Handle role-specific auto-approval (only applicable in manual mode)
+        setting(['auto_approve_teachers' => $request->has('auto_approve_teachers') && $request->auto_approve_teachers]);
+        setting(['auto_approve_students' => $request->has('auto_approve_students') && $request->auto_approve_students]);
+        setting(['auto_approve_parents' => $request->has('auto_approve_parents') && $request->auto_approve_parents]);
+
+        // Handle notification settings
+        setting(['send_approval_notifications' => $request->has('send_approval_notifications') && $request->send_approval_notifications]);
+
+        Cache::forget('settings');
+
+        return redirect()->route('settings.system.edit')
+            ->with('status', 'User approval settings updated successfully.');
     }
 
     public function clearCache()

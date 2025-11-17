@@ -27,13 +27,14 @@ class ForgotPasswordController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // Send password reset link
-        $status = Password::sendResetLink(
+        // Send password reset link via email using tenant mail configuration
+        $status = Password::broker('users')->sendResetLink(
             $request->only('email')
         );
 
         return $status === Password::RESET_LINK_SENT
-            ? back()->with('success', __($status))
-            : back()->withErrors(['email' => __($status)]);
+            ? back()->with('status', __('We have emailed your password reset link! Please check your inbox.'))
+            : back()->withInput($request->only('email'))
+                    ->withErrors(['email' => __($status)]);
     }
 }

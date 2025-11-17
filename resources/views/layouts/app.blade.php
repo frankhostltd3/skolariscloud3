@@ -282,7 +282,10 @@
                     </li>
                     @guest
                         <li class="nav-item ms-lg-3">
-                            <a class="btn btn-outline-primary" href="{{ route('tenant.login') }}">Login</a>
+                            <a class="btn btn-outline-primary" href="{{ route('register') }}">Register Your School</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="btn btn-outline-primary" href="{{ route('login') }}">Login</a>
                         </li>
                         <li class="nav-item ms-2">
                             <a class="btn btn-primary" href="#contact">Contact Sales</a>

@@ -8,7 +8,7 @@
             <h1 class="h4 fw-semibold mb-1">{{ __('Countries') }}</h1>
             <p class="text-muted mb-0">{{ __('Manage country information and settings.') }}</p>
         </div>
-        <a class="btn btn-primary" href="{{ route('tenant.academics.countries.create') }}"><i
+        <a class="btn btn-primary" href="{{ url('/tenant/academics/countries/create') }}"><i
                 class="bi bi-plus-circle me-1"></i>{{ __('Add Country') }}</a>
     </div>
     @includeWhen(session('success'), 'partials.toast')
@@ -21,7 +21,7 @@
                     <h3 class="mt-3">{{ __('No Countries Yet') }}</h3>
                     <p class="text-muted mb-4">{{ __('Add countries to associate with examination bodies and schools.') }}
                     </p>
-                    <a href="{{ route('tenant.academics.countries.create') }}" class="btn btn-primary"><i
+                    <a href="{{ url('/tenant/academics/countries/create') }}" class="btn btn-primary"><i
                             class="bi bi-plus-circle me-1"></i>{{ __('Create First Country') }}</a>
                 </div>
             @else
@@ -90,3 +90,4 @@
         }
     </script>
 @endpush
+

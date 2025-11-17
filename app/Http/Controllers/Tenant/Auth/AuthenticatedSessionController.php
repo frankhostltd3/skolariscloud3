@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
-use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -96,17 +95,8 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $locale = LaravelLocalization::getCurrentLocale() ?? app()->getLocale() ?? config('app.locale', 'en');
-        $locale = trim((string) $locale) !== '' ? $locale : 'en';
-
-        if (Route::has('landing')) {
-            return redirect()->route('landing', ['locale' => $locale])
-                ->with('success', 'You have been logged out successfully.');
-        }
-
-        $guestHomeUrl = LaravelLocalization::localizeURL('/', $locale);
-
-        return redirect()->to($guestHomeUrl)
+        // Redirect to login page with success message
+        return redirect('/login')
             ->with('success', 'You have been logged out successfully.');
     }
 

@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
@@ -39,11 +40,13 @@ class UserRegistrationController extends Controller
             abort(403, 'Registration is currently disabled.');
         }
 
+        $roleOptions = ['Staff', 'Student', 'Parent'];
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:Staff,Student,Parent'],
+            'role' => ['required', Rule::in($roleOptions)],
         ]);
 
         $user = User::create([
@@ -56,7 +59,13 @@ class UserRegistrationController extends Controller
         ]);
         
         // Ensure role exists for this tenant (guards against mis-seeded tenants)
-        $roleName = $request->role; // Staff | Student | Parent
+        $roleMap = [
+            'Staff' => 'staff',
+            'Student' => 'student',
+            'Parent' => 'parent',
+        ];
+        $requestedRole = $request->role;
+        $roleName = $roleMap[$requestedRole] ?? strtolower($requestedRole);
         
         // In a tenancy context, we may be using team_id scoping; replicate seeding logic
         $teamKey = config('permission.column_names.team_foreign_key', 'team_id');
@@ -91,7 +100,7 @@ class UserRegistrationController extends Controller
             // Clean up created user if role assignment fails
             $user->delete();
             return back()->withInput()->withErrors([
-                'role' => __('Unable to assign role (:role). Please contact support or try again later.', ['role' => $roleName]),
+                'role' => __('Unable to assign role (:role). Please contact support or try again later.', ['role' => $requestedRole]),
             ]);
         }
 
@@ -117,17 +126,17 @@ class UserRegistrationController extends Controller
      */
     protected function redirectBasedOnRole(User $user): RedirectResponse
     {
-        if ($user->hasRole('Staff')) {
+        if ($user->hasRole(['Staff', 'staff'])) {
             return redirect()->route('tenant.teacher.dashboard')
                 ->with('success', 'Welcome! Your account has been created.');
         }
 
-        if ($user->hasRole('Student')) {
+        if ($user->hasRole(['Student', 'student'])) {
             return redirect()->route('tenant.student')
                 ->with('success', 'Welcome! Your account has been created.');
         }
 
-        if ($user->hasRole('Parent')) {
+        if ($user->hasRole(['Parent', 'parent'])) {
             return redirect()->route('tenant.parent')
                 ->with('success', 'Welcome! Your account has been created.');
         }

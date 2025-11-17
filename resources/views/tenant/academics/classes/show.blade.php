@@ -24,7 +24,7 @@
             <a class="btn btn-primary" href="{{ route('tenant.academics.classes.edit', $class) }}">
                 <i class="bi bi-pencil me-1"></i>{{ __('Edit Class') }}
             </a>
-            <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
+            <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
                 <i class="bi bi-arrow-left me-1"></i>{{ __('Back to Classes') }}
             </a>
         </div>
@@ -310,3 +310,4 @@
         </div>
     </div>
 @endsection
+

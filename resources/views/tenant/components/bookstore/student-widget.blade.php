@@ -1,13 +1,21 @@
 {{-- Student Bookstore Widget --}}
 @php
     use App\Models\LibraryBook;
+    use Illuminate\Support\Facades\Schema;
     
-    // Get featured books for students
-    $featuredBooks = LibraryBook::forSale()
-        ->featured()
-        ->inStock()
-        ->take(6)
-        ->get();
+    // Get featured books for students (only if bookstore tables exist)
+    $featuredBooks = collect();
+    if (Schema::hasTable('library_books')) {
+        try {
+            $featuredBooks = LibraryBook::forSale()
+                ->featured()
+                ->inStock()
+                ->take(6)
+                ->get();
+        } catch (\Throwable $e) {
+            $featuredBooks = collect();
+        }
+    }
     
     // Get cart item count from session
     $cartItems = session('cart', []);

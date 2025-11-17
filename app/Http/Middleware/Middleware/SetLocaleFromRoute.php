@@ -6,7 +6,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
+use Illuminate\Support\Facades\App;
 
 class SetLocaleFromRoute
 {
@@ -14,10 +14,11 @@ class SetLocaleFromRoute
     {
         $locale = (string) $request->route('locale', '');
 
-        $supportedLocales = array_keys(config('laravellocalization.supportedLocales', []));
+        // Get supported locales from app config
+        $supportedLocales = config('app.available_locales', ['en']);
 
         if ($locale !== '' && \in_array($locale, $supportedLocales, true)) {
-            LaravelLocalization::setLocale($locale);
+            App::setLocale($locale);
             session(['locale' => $locale]);
         }
 

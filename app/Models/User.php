@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\UserType;
 use App\Models\School;
+use App\Notifications\TenantResetPasswordNotification;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -148,5 +149,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'pending' => __('Pending Approval'),
             default => __('Unknown'),
         };
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new TenantResetPasswordNotification($token));
     }
 }

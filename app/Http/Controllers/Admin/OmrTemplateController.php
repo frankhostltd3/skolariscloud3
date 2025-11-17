@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
-use App\Models\Student;
+use App\Models\Academic\ClassRoom;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -18,7 +17,7 @@ class OmrTemplateController extends Controller
         $schoolId = auth()->user()->school_id;
 
         // Get available classes
-        $classes = \App\Models\CurriculumClass::where('school_id', $schoolId)
+        $classes = ClassRoom::forSchool($schoolId)
             ->orderBy('name')
             ->get();
 
@@ -31,7 +30,7 @@ class OmrTemplateController extends Controller
     public function generate(Request $request)
     {
         $validated = $request->validate([
-            'class_id' => 'required|integer|exists:curriculum_classes,id',
+            'class_id' => 'required|integer|exists:classes,id',
             'date' => 'required|date',
             'title' => 'nullable|string|max:200',
             'include_photos' => 'nullable|boolean',
@@ -40,8 +39,8 @@ class OmrTemplateController extends Controller
         $schoolId = auth()->user()->school_id;
 
         // Get class with students
-        $class = \App\Models\CurriculumClass::with('students')
-            ->where('school_id', $schoolId)
+        $class = ClassRoom::with('students')
+            ->forSchool($schoolId)
             ->findOrFail($validated['class_id']);
 
         $students = $class->students()->orderBy('name')->get();

@@ -11,7 +11,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a
-                            href="{{ route('tenant.academics.classes.index') }}">{{ __('Classes') }}</a></li>
+                            href="{{ url('/tenant/academics/classes') }}">{{ __('Classes') }}</a></li>
                     <li class="breadcrumb-item"><a
                             href="{{ route('tenant.academics.classes.show', $class) }}">{{ $class->name }}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ __('Streams') }}</li>
@@ -251,3 +251,4 @@
         }
     </script>
 @endpush
+

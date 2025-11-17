@@ -10,7 +10,7 @@
             <h1 class="h4 fw-semibold mb-1">{{ __('Classes') }}</h1>
             <p class="text-muted mb-0">{{ __('Manage your school classes and their details') }}</p>
         </div>
-        <a class="btn btn-primary" href="{{ route('tenant.academics.classes.create') }}">
+        <a class="btn btn-primary" href="{{ url('/tenant/academics/classes/create') }}">
             <i class="bi bi-plus-circle me-1"></i>{{ __('Create Class') }}
         </a>
     </div>
@@ -119,7 +119,7 @@
                             <i class="bi bi-search me-1"></i>{{ __('Filter') }}
                         </button>
                         @if (request()->hasAny(['q', 'education_level_id', 'is_active']))
-                            <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
+                            <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
                                 <i class="bi bi-x-circle me-1"></i>{{ __('Clear') }}
                             </a>
                         @endif
@@ -219,7 +219,7 @@
                                 <td colspan="8" class="text-center py-5">
                                     <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
                                     <p class="text-muted mb-2">{{ __('No classes found.') }}</p>
-                                    <a href="{{ route('tenant.academics.classes.create') }}" class="btn btn-primary">
+                                    <a href="{{ url('/tenant/academics/classes/create') }}" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-1"></i>{{ __('Create Your First Class') }}
                                     </a>
                                 </td>
@@ -254,3 +254,4 @@
         });
     </script>
 @endsection
+

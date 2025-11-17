@@ -29,7 +29,33 @@ class DashboardController extends Controller
     public function index()
     {
         $student = Auth::user();
-        $currentAcademicYear = AcademicYear::where('is_current', true)->first();
+        $currentAcademicYear = null;
+
+        if (Schema::hasTable('academic_years')) {
+            try {
+                $currentAcademicYearQuery = AcademicYear::query();
+
+                if (Schema::hasColumn('academic_years', 'is_current')) {
+                    $currentAcademicYearQuery->where('is_current', true);
+                } elseif (Schema::hasColumn('academic_years', 'status')) {
+                    $currentAcademicYearQuery->where('status', 'current');
+                }
+
+                if (Schema::hasColumn('academic_years', 'start_date')) {
+                    $currentAcademicYearQuery->orderByDesc('start_date');
+                } elseif (Schema::hasColumn('academic_years', 'starts_at')) {
+                    $currentAcademicYearQuery->orderByDesc('starts_at');
+                }
+
+                $currentAcademicYear = $currentAcademicYearQuery->first();
+
+                if (! $currentAcademicYear) {
+                    $currentAcademicYear = AcademicYear::orderByDesc('id')->first();
+                }
+            } catch (\Throwable $e) {
+                $currentAcademicYear = null;
+            }
+        }
         $studentProfile = null;
 
         if (Schema::hasTable('students')) {
@@ -41,10 +67,21 @@ class DashboardController extends Controller
         }
 
         // Get student's current enrollment
-        $enrollment = Enrollment::where('student_id', $student->id)
-            ->where('academic_year_id', $currentAcademicYear->id ?? 1)
-            ->with(['classroom', 'classroom.subjects', 'classroom.teacher'])
-            ->first();
+        $enrollment = null;
+        $currentAcademicYearId = $currentAcademicYear?->id;
+
+        if (Schema::hasTable('enrollments')) {
+            try {
+                $enrollment = Enrollment::where('student_id', $student->id)
+                    ->when($currentAcademicYearId, function ($query) use ($currentAcademicYearId) {
+                        $query->where('academic_year_id', $currentAcademicYearId);
+                    })
+                    ->with(['classroom', 'classroom.subjects', 'classroom.teacher'])
+                    ->first();
+            } catch (\Throwable $e) {
+                $enrollment = null;
+            }
+        }
 
         // Calculate statistics
         $stats = [
@@ -57,7 +94,14 @@ class DashboardController extends Controller
         $mySubjects = collect();
         $recentGrades = collect();
 
-        $classIds = $student->activeEnrollments()->pluck('class_id')->filter()->unique()->values();
+        $classIds = collect();
+        if (Schema::hasTable('enrollments') && method_exists($student, 'activeEnrollments')) {
+            try {
+                $classIds = $student->activeEnrollments()->pluck('class_id')->filter()->unique()->values();
+            } catch (\Throwable $e) {
+                $classIds = collect();
+            }
+        }
 
         if ($studentProfile && Schema::hasTable('student_subject')) {
             try {
@@ -293,7 +337,15 @@ class DashboardController extends Controller
             "student_{$student->id}_unread_counts",
             60,
             function () use ($student) {
-                $unreadMessages = MessageRecipient::forRecipient($student->id)->unread()->count();
+                $unreadMessages = 0;
+                if (Schema::hasTable('message_recipients')) {
+                    try {
+                        $unreadMessages = MessageRecipient::forRecipient($student->id)->unread()->count();
+                    } catch (\Throwable $e) {
+                        $unreadMessages = 0;
+                    }
+                }
+                
                 $unreadNotifications = 0;
                 try {
                     $unreadNotifications = $student->unreadNotifications()->count();

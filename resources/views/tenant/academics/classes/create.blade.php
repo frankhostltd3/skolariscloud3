@@ -7,7 +7,7 @@
 @section('content')
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 fw-semibold mb-0">{{ __('Create Class') }}</h1>
-        <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
+        <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
             <i class="bi bi-arrow-left me-1"></i>{{ __('Back to Classes') }}
         </a>
     </div>
@@ -33,7 +33,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('tenant.academics.classes.store') }}" method="POST">
+            <form action="{{ url('/tenant/academics/classes') }}" method="POST">
                 @csrf
                 @include('tenant.academics.classes._form')
 
@@ -41,7 +41,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle me-1"></i>{{ __('Create Class') }}
                     </button>
-                    <a href="{{ route('tenant.academics.classes.index') }}" class="btn btn-secondary">
+                    <a href="{{ url('/tenant/academics/classes') }}" class="btn btn-secondary">
                         {{ __('Cancel') }}
                     </a>
                 </div>
@@ -49,3 +49,4 @@
         </div>
     </div>
 @endsection
+

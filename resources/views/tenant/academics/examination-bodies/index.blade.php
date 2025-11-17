@@ -10,7 +10,7 @@
             <h1 class="h4 fw-semibold mb-1">{{ __('Examination Bodies') }}</h1>
             <p class="text-muted mb-0">{{ __('Manage examination boards like UNEB, Cambridge, KNEC, etc.') }}</p>
         </div>
-        <a class="btn btn-primary" href="{{ route('tenant.academics.examination-bodies.create') }}">
+        <a class="btn btn-primary" href="{{ url('/tenant/academics/examination-bodies/create') }}">
             <i class="bi bi-plus-circle me-1"></i>{{ __('Add Examination Body') }}
         </a>
     </div>
@@ -25,7 +25,7 @@
                     <i class="bi bi-file-earmark-check text-muted" style="font-size: 4rem;"></i>
                     <h3 class="mt-3">{{ __('No Examination Bodies Yet') }}</h3>
                     <p class="text-muted mb-4">{{ __('Add examination bodies that your school is affiliated with.') }}</p>
-                    <a href="{{ route('tenant.academics.examination-bodies.create') }}" class="btn btn-primary">
+                    <a href="{{ url('/tenant/academics/examination-bodies/create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>{{ __('Create First Examination Body') }}
                     </a>
                 </div>
@@ -125,3 +125,4 @@
         }
     </script>
 @endpush
+

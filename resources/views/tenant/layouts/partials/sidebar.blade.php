@@ -10,7 +10,7 @@
         [
             'label' => 'Dashboard',
             'icon' => 'bi-speedometer2',
-            'url' => route('dashboard'),
+            'url' => url('/dashboard'),
             'active' => ['dashboard'],
         ],
     ];

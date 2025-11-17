@@ -47,7 +47,7 @@ class SettingsController extends Controller
             'time_format' => setting('time_format', 'H:i'),
         ];
 
-        return view('admin.settings.index', compact('settings'));
+        return view('tenant.admin.settings.index', compact('settings'));
     }
 
     /**
@@ -90,7 +90,7 @@ class SettingsController extends Controller
             'website_title' => optional(School::query()->first())->website_title,
         ];
 
-        return view('admin.settings.general', compact('settings'));
+        return view('tenant.admin.settings.general', compact('settings'));
     }
 
     /**
@@ -138,7 +138,7 @@ class SettingsController extends Controller
 
         \Log::info('Loaded academic settings', ['settings' => $settings]);
 
-        return view('admin.settings.academic', compact('settings'));
+        return view('tenant.admin.settings.academic', compact('settings'));
     }
 
     /**
@@ -184,7 +184,7 @@ class SettingsController extends Controller
         $cached = \Illuminate\Support\Facades\Cache::get('system_settings', []);
         $settings = array_merge($defaults, $cached);
 
-        return view('admin.settings.system', compact('currencies', 'enabledCodes', 'defaultCurrency', 'settings'));
+        return view('tenant.admin.settings.system', compact('currencies', 'enabledCodes', 'defaultCurrency', 'settings'));
     }
 
     /**
@@ -207,7 +207,7 @@ class SettingsController extends Controller
         $cached = \Illuminate\Support\Facades\Cache::get('finance_settings', []);
         $settings = array_merge($defaults, $cached);
 
-        return view('admin.settings.finance', compact('settings'));
+        return view('tenant.admin.settings.finance', compact('settings'));
     }
 
     /**
@@ -252,7 +252,7 @@ class SettingsController extends Controller
         $cached = \Illuminate\Support\Facades\Cache::get('permissions_settings', []);
         $settings = array_merge($defaults, $cached);
 
-        return view('admin.settings.permissions', compact('roles', 'permissionGroups', 'settings'));
+        return view('tenant.admin.settings.permissions', compact('roles', 'permissionGroups', 'settings'));
     }
 
     /**
@@ -291,7 +291,7 @@ class SettingsController extends Controller
             'default_whatsapp_results' => setting('default_whatsapp_results', false),
         ];
 
-        return view('admin.settings.notifications', compact('settings'));
+        return view('tenant.admin.settings.notifications', compact('settings'));
     }
 
     /**

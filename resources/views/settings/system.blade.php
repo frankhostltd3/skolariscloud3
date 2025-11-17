@@ -404,6 +404,116 @@
                     </form>
                 </div>
             </div>
+
+            <!-- User Approval Settings -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <span class="bi bi-person-check me-2 text-success"></span>
+                        User Approval Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('settings.system.update') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="form_type" value="user_approval">
+
+                        <!-- Approval Mode -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Approval Mode</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="user_approval_mode"
+                                    id="approval_manual" value="manual"
+                                    {{ ($settings['user_approval_mode'] ?? 'manual') === 'manual' ? 'checked' : '' }}
+                                    onchange="toggleRoleSettings()">
+                                <label class="form-check-label" for="approval_manual">
+                                    <strong>Manual Approval</strong>
+                                    <small class="text-muted d-block">Admin must approve each user registration</small>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="user_approval_mode"
+                                    id="approval_email_verification" value="email_verification"
+                                    {{ ($settings['user_approval_mode'] ?? 'manual') === 'email_verification' ? 'checked' : '' }}
+                                    onchange="toggleRoleSettings()">
+                                <label class="form-check-label" for="approval_email_verification">
+                                    <strong>Email Verification</strong>
+                                    <small class="text-muted d-block">Users are approved after verifying their email
+                                        address</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="user_approval_mode"
+                                    id="approval_automatic" value="automatic"
+                                    {{ ($settings['user_approval_mode'] ?? 'manual') === 'automatic' ? 'checked' : '' }}
+                                    onchange="toggleRoleSettings()">
+                                <label class="form-check-label" for="approval_automatic">
+                                    <strong>Automatic Approval</strong>
+                                    <small class="text-muted d-block">All users are approved immediately upon
+                                        registration</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Role-Specific Auto-Approval (Manual Mode Only) -->
+                        <div id="role_specific_settings"
+                            style="display: {{ ($settings['user_approval_mode'] ?? 'manual') === 'manual' ? 'block' : 'none' }}">
+                            <div class="border-top pt-3 mb-3">
+                                <label class="form-label fw-semibold">Role-Specific Auto-Approval</label>
+                                <small class="text-muted d-block mb-2">Auto-approve specific user roles without manual
+                                    review</small>
+
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="auto_approve_teachers"
+                                        name="auto_approve_teachers" value="1"
+                                        {{ $settings['auto_approve_teachers'] ?? false ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="auto_approve_teachers">
+                                        Auto-approve Teachers
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="auto_approve_students"
+                                        name="auto_approve_students" value="1"
+                                        {{ $settings['auto_approve_students'] ?? false ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="auto_approve_students">
+                                        Auto-approve Students
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="auto_approve_parents"
+                                        name="auto_approve_parents" value="1"
+                                        {{ $settings['auto_approve_parents'] ?? false ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="auto_approve_parents">
+                                        Auto-approve Parents
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="border-top pt-3">
+                            <label class="form-label fw-semibold">Notifications</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="send_approval_notifications"
+                                    name="send_approval_notifications" value="1"
+                                    {{ $settings['send_approval_notifications'] ?? true ? 'checked' : '' }}>
+                                <label class="form-check-label" for="send_approval_notifications">
+                                    Send email notifications when users are approved or rejected
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <span class="bi bi-floppy me-2"></span>{{ __('Save Approval Settings') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <!-- Settings Sidebar -->
@@ -435,6 +545,12 @@
                     <div class="alert alert-danger">
                         <h6>Backup & Maintenance</h6>
                         <p class="mb-0">Set up automatic backups and configure system maintenance options.</p>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <h6>User Approval Settings</h6>
+                        <p class="mb-0">Control how new users are approved: manually by admin, after email verification,
+                            or automatically.</p>
                     </div>
                 </div>
             </div>
@@ -537,6 +653,17 @@
                 badge.textContent = 'Disabled';
             }
         });
+
+        function toggleRoleSettings() {
+            const manualMode = document.getElementById('approval_manual').checked;
+            const roleSettings = document.getElementById('role_specific_settings');
+
+            if (manualMode) {
+                roleSettings.style.display = 'block';
+            } else {
+                roleSettings.style.display = 'none';
+            }
+        }
 
         function clearCache() {
             if (!confirm('Are you sure you want to clear the cache?')) return;

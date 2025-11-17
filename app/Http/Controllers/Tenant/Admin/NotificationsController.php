@@ -7,7 +7,9 @@ use App\Models\Notification;
 use App\Models\NotificationLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class NotificationsController extends Controller
@@ -17,11 +19,44 @@ class NotificationsController extends Controller
      */
     public function index()
     {
+        if (! $this->notificationsTableExists()) {
+            $notifications = new LengthAwarePaginator(
+                [],
+                0,
+                20,
+                null,
+                [
+                    'path' => request()->url(),
+                    'query' => request()->query(),
+                ]
+            );
+
+            $stats = [
+                'total' => 0,
+                'sent' => 0,
+                'scheduled' => 0,
+                'messages' => 0,
+            ];
+
+            return view('tenant.admin.notifications.index', [
+                'notifications' => $notifications,
+                'stats' => $stats,
+                'notificationsDisabled' => true,
+            ]);
+        }
+
         $notifications = Notification::with('creator')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->paginate(20);
 
-        return view('tenant.admin.notifications.index', compact('notifications'));
+        $stats = [
+            'total' => $notifications->total(),
+            'sent' => Notification::whereNotNull('sent_at')->count(),
+            'scheduled' => Notification::whereNull('sent_at')->whereNotNull('scheduled_at')->count(),
+            'messages' => Notification::count(),
+        ];
+
+        return view('tenant.admin.notifications.index', compact('notifications', 'stats'));
     }
 
     /**
@@ -53,6 +88,11 @@ class NotificationsController extends Controller
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
+        }
+
+        if (! $this->notificationsTableExists()) {
+            return redirect()->route('tenant.admin.notifications.index')
+                ->with('error', __('Notifications feature is not available. Please run the notifications migration.'));
         }
 
         $notification = Notification::create([
@@ -182,21 +222,22 @@ class NotificationsController extends Controller
 
         foreach ($notification->channels as $channel) {
             foreach ($recipients as $recipient) {
-                // Log the notification attempt
-                NotificationLog::create([
-                    'channel' => $channel,
-                    'message_type' => 'notification',
-                    'to' => $this->getRecipientContact($recipient, $channel),
-                    'status' => 'sent', // In a real implementation, this would be updated based on delivery status
-                    'created_by' => $notification->created_by,
-                    'target_type' => get_class($recipient),
-                    'target_id' => $recipient->id,
-                    'notification_id' => $notification->id,
-                    'meta' => [
-                        'title' => $notification->title,
-                        'message' => $notification->message,
-                    ],
-                ]);
+                if ($this->notificationLogsTableExists()) {
+                    NotificationLog::create([
+                        'channel' => $channel,
+                        'message_type' => 'notification',
+                        'to' => $this->getRecipientContact($recipient, $channel),
+                        'status' => 'sent',
+                        'created_by' => $notification->created_by,
+                        'target_type' => get_class($recipient),
+                        'target_id' => $recipient->id,
+                        'notification_id' => $notification->id,
+                        'meta' => [
+                            'title' => $notification->title,
+                            'message' => $notification->message,
+                        ],
+                    ]);
+                }
 
                 // Here you would integrate with actual notification services
                 // (Twilio, Africa's Talking, WhatsApp Cloud API, etc.)
@@ -261,5 +302,27 @@ class NotificationsController extends Controller
             default:
                 return $user->email;
         }
+    }
+
+    private function notificationsTableExists(): bool
+    {
+        static $cache;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        return $cache = Schema::hasTable('notifications');
+    }
+
+    private function notificationLogsTableExists(): bool
+    {
+        static $cache;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        return $cache = Schema::hasTable('notification_logs');
     }
 }

@@ -9,11 +9,23 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            \Illuminate\Support\Facades\Route::middleware('web')
-                ->group(base_path('routes/web.php'));
+            // Central domain routes (localhost, 127.0.0.1)
+            $centralDomains = ['localhost', '127.0.0.1', 'localhost:8000', '127.0.0.1:8000'];
+            $currentHost = request()->getHost();
+            $currentHostWithPort = request()->getHttpHost();
 
-            \Illuminate\Support\Facades\Route::middleware('web')
-                ->group(base_path('routes/tenant.php'));
+            $isCentralDomain = in_array($currentHost, $centralDomains) ||
+                               in_array($currentHostWithPort, $centralDomains);
+
+            if ($isCentralDomain) {
+                // Load central routes for school registration
+                \Illuminate\Support\Facades\Route::middleware('web')
+                    ->group(base_path('routes/web.php'));
+            } else {
+                // Load tenant routes for school-specific operations
+                \Illuminate\Support\Facades\Route::middleware('web')
+                    ->group(base_path('routes/tenant.php'));
+            }
         },
     )
     ->withCommands([

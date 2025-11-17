@@ -8,7 +8,9 @@ use App\Models\MessageRecipient;
 use App\Models\MessageThread;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class MessagesController extends Controller
@@ -18,13 +20,25 @@ class MessagesController extends Controller
      */
     public function index()
     {
+        if (! $this->messagesTableExists()) {
+            $threads = new LengthAwarePaginator([], 0, 20, null, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+
+            return view('tenant.admin.messages.index', [
+                'threads' => $threads,
+                'messagesDisabled' => true,
+            ]);
+        }
+
         $threads = MessageThread::with(['creator', 'latestMessage.sender'])
             ->where('is_active', true)
             ->where(function ($query) {
                 $query->where('created_by', Auth::id())
                       ->orWhereJsonContains('participants', Auth::id());
             })
-            ->orderBy('last_message_at', 'desc')
+            ->orderByDesc('last_message_at')
             ->paginate(20);
 
         return view('tenant.admin.messages.index', compact('threads'));
@@ -35,6 +49,11 @@ class MessagesController extends Controller
      */
     public function create()
     {
+        if (! $this->messagesTableExists()) {
+            return redirect()->route('tenant.admin.messages.index')
+                ->with('error', __('Messages feature is not available. Please run the messaging migrations.'));
+        }
+
         $users = User::select('id', 'name', 'email')->where('id', '!=', Auth::id())->get();
         return view('tenant.admin.messages.create', compact('users'));
     }
@@ -44,6 +63,11 @@ class MessagesController extends Controller
      */
     public function store(Request $request)
     {
+        if (! $this->messagesTableExists()) {
+            return redirect()->route('tenant.admin.messages.index')
+                ->with('error', __('Messages feature is not available. Please run the messaging migrations.'));
+        }
+
         $validator = Validator::make($request->all(), [
             'subject' => 'nullable|string|max:255',
             'recipients' => 'required|array|min:1',
@@ -91,6 +115,10 @@ class MessagesController extends Controller
     public function show(MessageThread $thread)
     {
         // Check if user has access to this thread
+        if (! $this->messagesTableExists()) {
+            abort(404);
+        }
+
         if (!$thread->hasParticipant(Auth::id())) {
             abort(403, 'You do not have access to this conversation.');
         }
@@ -114,6 +142,10 @@ class MessagesController extends Controller
     public function reply(Request $request, MessageThread $thread)
     {
         // Check if user has access to this thread
+        if (! $this->messagesTableExists()) {
+            abort(404);
+        }
+
         if (!$thread->hasParticipant(Auth::id())) {
             abort(403, 'You do not have access to this conversation.');
         }
@@ -157,6 +189,10 @@ class MessagesController extends Controller
      */
     public function unreadCount()
     {
+        if (! $this->messagesTableExists()) {
+            return response()->json(['count' => 0]);
+        }
+
         $count = MessageRecipient::where('recipient_id', Auth::id())
             ->where('is_read', false)
             ->count();
@@ -169,6 +205,10 @@ class MessagesController extends Controller
      */
     public function markAsRead(MessageThread $thread)
     {
+        if (! $this->messagesTableExists()) {
+            abort(404);
+        }
+
         if (!$thread->hasParticipant(Auth::id())) {
             abort(403);
         }
@@ -181,4 +221,15 @@ class MessagesController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+        private function messagesTableExists(): bool
+        {
+            static $cache;
+
+            if ($cache !== null) {
+                return $cache;
+            }
+
+            return $cache = Schema::hasTable('message_threads');
+        }
 }

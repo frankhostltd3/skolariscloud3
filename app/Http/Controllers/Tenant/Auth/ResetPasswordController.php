@@ -35,8 +35,8 @@ class ResetPasswordController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // Attempt to reset the user's password
-        $status = Password::reset(
+        // Attempt to reset the user's password using tenant broker
+        $status = Password::broker('users')->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
@@ -50,7 +50,8 @@ class ResetPasswordController extends Controller
         );
 
         return $status === Password::PASSWORD_RESET
-            ? redirect()->route('tenant.login')->with('success', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+            ? redirect()->route('tenant.login')->with('success', __('Your password has been reset successfully! You can now sign in with your new password.'))
+            : back()->withInput($request->only('email'))
+                    ->withErrors(['email' => [__($status)]]);
     }
 }

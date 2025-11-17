@@ -1,5 +1,33 @@
 @extends('tenant.layouts.app')
 
+@php
+	$currentExamBody = null;
+
+	if (\Illuminate\Support\Facades\Schema::hasTable('examination_bodies')) {
+		try {
+			$examBodyQuery = \App\Models\ExaminationBody::query();
+
+			if (\Illuminate\Support\Facades\Schema::hasColumn('examination_bodies', 'is_current')) {
+				$examBodyQuery->where('is_current', true);
+			} elseif (\Illuminate\Support\Facades\Schema::hasColumn('examination_bodies', 'status')) {
+				$examBodyQuery->where('status', 'current');
+			}
+
+			if (\Illuminate\Support\Facades\Schema::hasColumn('examination_bodies', 'updated_at')) {
+				$examBodyQuery->orderByDesc('updated_at');
+			}
+
+			$currentExamBody = $examBodyQuery->first();
+
+			if (! $currentExamBody) {
+				$currentExamBody = \App\Models\ExaminationBody::orderByDesc('id')->first();
+			}
+		} catch (\Throwable $e) {
+			$currentExamBody = null;
+		}
+	}
+@endphp
+
 @section('sidebar')
 <div class="card shadow-sm">
 	<div class="card-header fw-semibold">{{ __('Staff menu') }}</div>
@@ -112,18 +140,6 @@
 				<div class="small text-secondary">{{ __('Classes today') }}</div>
 				<div class="display-6">4</div>
 			</div>
-				<div class="col-12 col-md-4">
-					<div class="card shadow-sm">
-						<div class="card-body">
-							@php($currentBody = \App\Models\ExaminationBody::where('is_current', true)->first())
-							<div class="small text-secondary">{{ __('Exam body') }}</div>
-							<div class="fw-semibold">{{ $currentBody ? ($currentBody->name_translations[app()->getLocale()] ?? $currentBody->name) : __('Not set') }}</div>
-							@hasanyrole('Admin|Staff')
-								<a class="small d-inline-block mt-1" href="{{ route('tenant.academics.examination_bodies.index') }}">{{ $currentBody ? __('Manage') : __('Set now') }}</a>
-							@endhasanyrole
-						</div>
-					</div>
-				</div>
 		</div>
 	</div>
 	<div class="col-12 col-md-4">
@@ -145,11 +161,10 @@
 	<div class="col-12 col-md-4">
 		<div class="card shadow-sm">
 			<div class="card-body">
-				@php($currentBody = \App\Models\ExaminationBody::where('is_current', true)->first())
 				<div class="small text-secondary">{{ __('Exam body') }}</div>
-				<div class="fw-semibold">{{ $currentBody ? ($currentBody->name_translations[app()->getLocale()] ?? $currentBody->name) : __('Not set') }}</div>
+				<div class="fw-semibold">{{ $currentExamBody ? ($currentExamBody->name_translations[app()->getLocale()] ?? $currentExamBody->name) : __('Not set') }}</div>
 				@hasanyrole('Admin|Staff')
-					<a class="small d-inline-block mt-1" href="{{ route('tenant.academics.examination_bodies.index') }}">{{ $currentBody ? __('Manage') : __('Set now') }}</a>
+					<a class="small d-inline-block mt-1" href="{{ route('tenant.academics.examination_bodies.index') }}">{{ $currentExamBody ? __('Manage') : __('Set now') }}</a>
 				@endhasanyrole
 			</div>
 		</div>

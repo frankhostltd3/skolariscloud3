@@ -28,12 +28,31 @@ class EnsureUserApproved
             return $next($request);
         }
 
+        // Get approval mode setting
+        $approvalMode = setting('user_approval_mode', 'manual');
+
         // Allow access for approved users
         if ($user->approval_status === 'approved') {
             return $next($request);
         }
 
-        // Redirect pending users to waiting page
+        // Handle email verification mode
+        if ($approvalMode === 'email_verification' && $user->approval_status === 'pending') {
+            // Check if email is verified
+            if ($user->hasVerifiedEmail()) {
+                // Auto-approve after email verification
+                $user->update(['approval_status' => 'approved']);
+                return $next($request);
+            }
+
+            // Redirect to email verification notice
+            if (!$request->routeIs('verification.notice') && !$request->routeIs('verification.send')) {
+                return redirect()->route('verification.notice');
+            }
+            return $next($request);
+        }
+
+        // Redirect pending users to waiting page (manual mode)
         if ($user->approval_status === 'pending') {
             if (!$request->routeIs('pending-approval')) {
                 return redirect()->route('pending-approval');

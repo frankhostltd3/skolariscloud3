@@ -4,48 +4,48 @@
         <h6 class="text-uppercase text-muted mb-3 small fw-bold">{{ __('Academics') }}</h6>
         <nav class="nav flex-column">
             <a class="nav-link {{ request()->routeIs('tenant.academics.education-levels.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.education-levels.index') }}">
+                href="{{ url('/tenant/academics/education-levels') }}">
                 <i class="bi bi-mortarboard-fill me-2"></i>{{ __('Education Levels') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.examination-bodies.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.examination-bodies.index') }}">
+                href="{{ url('/tenant/academics/examination-bodies') }}">
                 <i class="bi bi-award me-2"></i>{{ __('Examination Bodies') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.countries.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.countries.index') }}">
+                href="{{ url('/tenant/academics/countries') }}">
                 <i class="bi bi-globe me-2"></i>{{ __('Countries') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.grading_schemes.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.grading_schemes.index') }}">
+                href="{{ url('/tenant/academics/grading_schemes') }}">
                 <i class="bi bi-award-fill me-2"></i>{{ __('Grading Systems') }}
             </a>
             <hr class="my-2">
             <a class="nav-link {{ request()->routeIs('tenant.academics.subjects.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.subjects.index') }}">
+                href="{{ url('/tenant/academics/subjects') }}">
                 <i class="bi bi-book me-2"></i>{{ __('Subjects') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.teacher-allocations.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.teacher-allocations.index') }}">
+                href="{{ url('/tenant/academics/teacher-allocations') }}">
                 <i class="bi bi-person-badge me-2"></i>{{ __('Teacher Allocation') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.terms.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.terms.index') }}">
+                href="{{ url('/tenant/academics/terms') }}">
                 <i class="bi bi-calendar-event me-2"></i>{{ __('Terms') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.timetable.index') || request()->routeIs('tenant.academics.timetable.edit') || request()->routeIs('tenant.academics.timetable.create') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.timetable.index') }}">
+                href="{{ url('/tenant/academics/timetable') }}">
                 <i class="bi bi-calendar3 me-2"></i>{{ __('Timetable') }}
             </a>
             <a class="nav-link {{ request()->routeIs('tenant.academics.timetable.generate') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.timetable.generate') }}">
+                href="{{ url('/tenant/academics/timetable/generate') }}">
                 <i class="bi bi-magic me-2"></i>{{ __('Generate Timetable') }}
             </a>
-            <a class="nav-link {{ request()->routeIs('tenant.academics.classes.*') && !request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
-                href="{{ route('tenant.academics.classes.index') }}">
+            <a class="nav-link {{ request()->routeIs('tenant.academics.classes.*') && !request()->is('tenant/academics/classes/*/streams*') ? 'active' : '' }}"
+                href="{{ url('/tenant/academics/classes') }}">
                 <i class="bi bi-building me-2"></i>{{ __('Classes') }}
             </a>
-            <a class="nav-link {{ request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }} {{ request()->route('class') ? '' : 'disabled' }}"
-                href="{{ request()->route('class') ? route('tenant.academics.streams.index', request()->route('class')) : '#' }}">
+            <a class="nav-link {{ request()->is('tenant/academics/classes/*/streams*') ? 'active' : '' }} {{ request()->route('class') ? '' : 'disabled' }}"
+                href="{{ request()->route('class') ? url('/tenant/academics/classes/' . request()->route('class')->id . '/streams') : '#' }}">
                 <i class="bi bi-diagram-3 me-2"></i>{{ __('Class Streams') }}
             </a>
             <a class="nav-link disabled" href="#">
@@ -93,3 +93,4 @@
         cursor: not-allowed;
     }
 </style>
+

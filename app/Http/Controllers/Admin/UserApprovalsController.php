@@ -13,6 +13,8 @@ use App\Models\Academic\ClassRoom;
 use App\Models\Academic\ClassStream;
 use App\Models\Academic\Subject;
 use App\Enums\UserType;
+use App\Notifications\UserApprovedNotification;
+use App\Notifications\UserRejectedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -111,14 +113,17 @@ class UserApprovalsController extends Controller
 
         $user = User::where('school_id', $school->id)->findOrFail($id);
 
-        $user->update([
+                $user->update([
             'approval_status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
             'is_active' => true,
         ]);
 
-        // TODO: Send approval notification email to user
+        // Send approval notification email if enabled
+        if (setting('send_approval_notifications', true)) {
+            $user->notify(new UserApprovedNotification(auth()->user()->name, $school->name));
+        }
 
         return redirect()
             ->route('admin.user-approvals.index', ['status' => 'pending'])
@@ -146,7 +151,10 @@ class UserApprovalsController extends Controller
             'is_active' => false,
         ]);
 
-        // TODO: Send rejection notification email to user
+        // Send rejection notification email if enabled
+        if (setting('send_approval_notifications', true)) {
+            $user->notify(new UserRejectedNotification($request->rejection_reason, $school->name));
+        }
 
         return redirect()
             ->route('admin.user-approvals.index', ['status' => 'pending'])

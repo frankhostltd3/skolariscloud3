@@ -150,7 +150,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('tenant.settings.admin.permissions.update') }}" method="POST">
+                    <form action="{{ url('/settings/admin/permissions') }}" method="POST">
                         @csrf
 
                         <!-- Default Role Settings -->
@@ -662,7 +662,7 @@
     <div class="modal fade" id="createRoleModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ route('tenant.settings.admin.roles.store') }}" method="POST">
+                <form action="{{ url('/settings/admin/roles') }}" method="POST">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -733,7 +733,7 @@
     <div class="modal fade" id="syncRegistryModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ route('tenant.settings.admin.permissions.sync-registry') }}" method="POST">
+                <form action="{{ url('/settings/admin/permissions/sync-registry') }}" method="POST">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -783,7 +783,7 @@
     <div class="modal fade" id="bulkAssignRoleModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ route('tenant.settings.admin.roles.bulkAssign') }}" method="POST">
+                <form action="{{ url('/settings/admin/roles/bulk-assign') }}" method="POST">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -903,3 +903,4 @@
         }, 5000);
     </script>
 @endsection
+

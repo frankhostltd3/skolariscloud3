@@ -38,8 +38,9 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ route('two-factor.show') }}">
-                                <i class="bi bi-shield-lock me-2"></i>Two-Factor Authentication
+                            <a class="dropdown-item" href="{{ url('/security/two-factor') }}">
+                                <i class="bi bi-shield-lock"></i>
+                                Two-Factor Authentication
                                 @if ($user->two_factor_confirmed_at)
                                     <span class="badge bg-success badge-sm ms-1">Enabled</span>
                                 @else
@@ -56,7 +57,7 @@
                             <form method="POST" action="{{ route('tenant.logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item text-danger">
-                                    <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </button>
                             </form>
                         </li>

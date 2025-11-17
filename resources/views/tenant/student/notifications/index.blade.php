@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.student._sidebar')
-@endsection
+﻿@extends('layouts.dashboard-student')
 
 @section('title', 'Notifications')
 
@@ -191,4 +187,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-

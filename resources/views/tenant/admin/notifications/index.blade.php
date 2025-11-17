@@ -10,6 +10,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+            @if(!empty($notificationsDisabled))
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span>{{ __('Notifications database tables are not available yet. Run the tenant notifications migration to enable this module.') }}</span>
+                </div>
+            @endif
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0">{{ __('Notifications') }}</h1>

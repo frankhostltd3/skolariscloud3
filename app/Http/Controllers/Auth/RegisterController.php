@@ -105,12 +105,35 @@ class RegisterController extends Controller
         }
 
         $user = DB::transaction(function () use ($invitation, $validated, $school) {
+            // Determine approval status based on settings
+            $approvalMode = setting('user_approval_mode', 'manual');
+            $approvalStatus = 'pending'; // Default
+
+            // Check if automatic approval is enabled
+            if ($approvalMode === 'automatic') {
+                $approvalStatus = 'approved';
+            }
+            // Check if email verification is required
+            elseif ($approvalMode === 'email_verification') {
+                $approvalStatus = 'pending'; // Will be approved after email verification
+            }
+            // Check role-specific auto-approval in manual mode
+            elseif ($approvalMode === 'manual') {
+                $userType = strtolower($invitation->user_type->value ?? $invitation->user_type);
+                if (($userType === 'teacher' && setting('auto_approve_teachers', false)) ||
+                    ($userType === 'student' && setting('auto_approve_students', false)) ||
+                    ($userType === 'parent' && setting('auto_approve_parents', false))) {
+                    $approvalStatus = 'approved';
+                }
+            }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'user_type' => $invitation->user_type,
                 'school_id' => $school->id,
+                'approval_status' => $approvalStatus,
             ]);
 
             $invitation->markAccepted();
@@ -161,7 +184,7 @@ class RegisterController extends Controller
             $this->tenants->runFor(
                 $school,
                 function () use ($validated, $school) {
-                    User::create([
+                    $user = User::create([
                         'name' => $validated['admin_name'],
                         'email' => $validated['admin_email'],
                         'password' => Hash::make($validated['password']),
@@ -169,6 +192,9 @@ class RegisterController extends Controller
                         'school_id' => $school->id,
                         'approval_status' => 'approved',
                     ]);
+
+                    // Assign admin role to school registrant
+                    $user->assignRole('admin');
                 },
                 runMigrations: true
             );

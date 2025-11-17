@@ -40,6 +40,12 @@
                             <h4 class="mt-2 mb-1">{{ $stats['active_threads'] ?? 0 }}</h4>
                             <p class="text-muted mb-0">{{ __('Active') }}</p>
                         </div>
+                                    @if(!empty($messagesDisabled))
+                                        <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                            <i class="bi bi-chat-square-dots me-2"></i>
+                                            <span>{{ __('Messaging tables are not available yet. Run the tenant messaging migrations to enable this module.') }}</span>
+                                        </div>
+                                    @endif
                     </div>
                 </div>
                 <div class="col-md-3">
