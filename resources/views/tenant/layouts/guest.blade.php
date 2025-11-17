@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,48 +26,59 @@
             justify-content: center;
             font-family: 'Figtree', sans-serif;
         }
+
         .auth-card {
             background: white;
             border-radius: 1rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             max-width: 450px;
             width: 100%;
         }
+
         .auth-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 2rem;
             text-align: center;
         }
+
         .auth-header h1 {
             font-size: 1.75rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
+
         .auth-header p {
             font-size: 0.9rem;
             opacity: 0.9;
             margin: 0;
         }
+
         .auth-body {
             padding: 2rem;
         }
+
         .form-label {
             font-weight: 500;
             color: #374151;
             margin-bottom: 0.5rem;
         }
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             padding: 0.75rem 1rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             transition: all 0.15s ease;
         }
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -75,24 +87,29 @@
             font-weight: 500;
             transition: transform 0.15s ease;
         }
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
+
         .alert {
             border-radius: 0.5rem;
             border: none;
         }
+
         .text-link {
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.15s ease;
         }
+
         .text-link:hover {
             color: #764ba2;
             text-decoration: underline;
         }
+
         .school-logo {
             max-width: 80px;
             margin-bottom: 1rem;
@@ -101,13 +118,14 @@
 
     @stack('styles')
 </head>
+
 <body>
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 <div class="auth-card">
                     <div class="auth-header">
-                        @if(isset($school) && $school->logo_url)
+                        @if (isset($school) && $school->logo_url)
                             <img src="{{ $school->logo_url }}" alt="{{ $school->name }}" class="school-logo">
                         @endif
                         <h1>{{ $school->name ?? config('app.name') }}</h1>
@@ -154,4 +172,5 @@
 
     @stack('scripts')
 </body>
+
 </html>

@@ -306,9 +306,12 @@
                             </li>
                         @endif
                         <li class="nav-item ms-2">
-                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                            <form method="POST" action="{{ route('tenant.logout') }}" class="d-inline">
                                 @csrf
-                                <button type="submit" class="btn btn-primary">Logout</button>
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    {{ __('Logout') }}
+                                </button>
                             </form>
                         </li>
                     @endguest

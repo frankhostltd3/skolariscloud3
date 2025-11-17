@@ -213,7 +213,10 @@ Route::middleware('auth')->group(function (): void {
             Route::post('/report-cards/export-class', [ReportsController::class, 'exportClassReportCards'])->name('report-cards.export-class');
         });
 
-        // Attendance Management Routes
+    }); // End of user.type:admin middleware group
+
+    // Attendance Management Routes (accessible to admin, teaching staff, and general staff)
+    Route::middleware(['auth', 'user.type:admin,teaching_staff,general_staff'])->group(function (): void {
         Route::prefix('admin/attendance')->name('admin.attendance.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AttendanceController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\AttendanceController::class, 'create'])->name('create');
@@ -224,6 +227,61 @@ Route::middleware('auth')->group(function (): void {
             Route::delete('/{id}', [\App\Http\Controllers\Admin\AttendanceController::class, 'destroy'])->name('destroy');
             Route::get('/kiosk/mode', [\App\Http\Controllers\Admin\AttendanceController::class, 'kiosk'])->name('kiosk');
             Route::post('/kiosk/check-in', [\App\Http\Controllers\Admin\AttendanceController::class, 'kioskCheckIn'])->name('kiosk.check-in');
+        });
+
+        // Attendance Settings Routes (admin only)
+        Route::middleware('user.type:admin')->prefix('tenant/attendance/settings')->name('tenant.attendance.settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'index'])->name('index');
+            Route::put('/general', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateGeneral'])->name('update-general');
+            Route::put('/student-methods', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateStudentMethods'])->name('update-student-methods');
+            Route::put('/staff-methods', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateStaffMethods'])->name('update-staff-methods');
+            Route::put('/qr', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateQrSettings'])->name('update-qr');
+            Route::put('/fingerprint', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateFingerprintSettings'])->name('update-fingerprint');
+            Route::post('/fingerprint/test', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'testFingerprintDevice'])->name('test-fingerprint');
+            Route::put('/optical', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'updateOpticalSettings'])->name('update-optical');
+            Route::post('/clear-cache', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'clearCache'])->name('clear-cache');
+        });
+
+        // QR Scanner Routes
+        Route::prefix('admin/qr-scanner')->name('admin.qr-scanner.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\QrScannerController::class, 'index'])->name('index');
+            Route::post('/scan', [\App\Http\Controllers\Admin\QrScannerController::class, 'scan'])->name('scan');
+            Route::post('/get-user', [\App\Http\Controllers\Admin\QrScannerController::class, 'getUserInfo'])->name('get-user');
+        });
+
+        // Manual Attendance Routes
+        Route::prefix('admin/manual-attendance')->name('admin.manual-attendance.')->group(function () {
+            Route::get('/{attendance}/mark', [\App\Http\Controllers\Admin\ManualAttendanceController::class, 'mark'])->name('mark');
+            Route::post('/{attendance}/save', [\App\Http\Controllers\Admin\ManualAttendanceController::class, 'saveManual'])->name('save-manual');
+            Route::post('/{attendance}/bulk', [\App\Http\Controllers\Admin\ManualAttendanceController::class, 'bulkMark'])->name('bulk-mark');
+        });
+
+        // Biometric Enrollment Routes
+        Route::prefix('admin/biometric')->name('admin.biometric.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BiometricEnrollmentController::class, 'index'])->name('index');
+            Route::get('/{userType}/{userId}/enroll', [\App\Http\Controllers\Admin\BiometricEnrollmentController::class, 'enroll'])->name('enroll');
+            Route::post('/capture', [\App\Http\Controllers\Admin\BiometricEnrollmentController::class, 'capture'])->name('capture');
+            Route::delete('/template/{template}', [\App\Http\Controllers\Admin\BiometricEnrollmentController::class, 'delete'])->name('delete');
+            Route::post('/test-device', [\App\Http\Controllers\Admin\BiometricEnrollmentController::class, 'testDevice'])->name('test-device');
+        });
+
+        // OMR Template Generator Routes
+        Route::prefix('admin/omr')->name('admin.omr.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\OmrTemplateController::class, 'index'])->name('index');
+            Route::post('/generate', [\App\Http\Controllers\Admin\OmrTemplateController::class, 'generate'])->name('generate');
+        });
+
+        // Attendance Analytics Routes
+        Route::prefix('admin/attendance-analytics')->name('admin.attendance-analytics.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AttendanceAnalyticsController::class, 'index'])->name('index');
+            Route::get('/export', [\App\Http\Controllers\Admin\AttendanceAnalyticsController::class, 'export'])->name('export');
+        });
+
+        // Device Monitoring Routes
+        Route::prefix('admin/device-monitoring')->name('admin.device-monitoring.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\DeviceMonitoringController::class, 'index'])->name('index');
+            Route::post('/test', [\App\Http\Controllers\Admin\DeviceMonitoringController::class, 'testConnection'])->name('test');
+            Route::get('/stats', [\App\Http\Controllers\Admin\DeviceMonitoringController::class, 'getStats'])->name('stats');
         });
 
         // Staff Attendance Routes
@@ -249,7 +307,9 @@ Route::middleware('auth')->group(function (): void {
             Route::post('/{id}/records', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'saveRecords'])->name('save-records');
             Route::delete('/{id}', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'destroy'])->name('destroy');
         });
+    }); // End of attendance routes middleware group
 
+    Route::middleware('user.type:admin')->group(function (): void {
         // Parent Management Routes (placeholder - TODO: Create ParentController)
         Route::prefix('tenant/users/parents')->name('tenant.users.parents.')->group(function () {
             // Route::get('/{user}/edit', [ParentController::class, 'edit'])->name('edit');
@@ -279,6 +339,31 @@ Route::middleware('auth')->group(function (): void {
         // Human Resource Management Routes
         Route::prefix('tenant/modules/human-resource')->name('tenant.modules.human-resource.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Tenant\Modules\HumanResourceController::class, 'index'])->name('index');
+
+            // Employees
+            Route::resource('employees', \App\Http\Controllers\Tenant\Modules\HumanResource\EmployeesController::class);
+            Route::get('employees/{employee}/id-card', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'show'])->name('employees.id-card');
+
+            // Departments
+            Route::resource('departments', \App\Http\Controllers\Tenant\Modules\HumanResource\DepartmentsController::class);
+
+            // Positions
+            Route::resource('positions', \App\Http\Controllers\Tenant\Modules\HumanResource\PositionsController::class);
+
+            // Salary Scales
+            Route::resource('salary-scales', \App\Http\Controllers\Tenant\Modules\HumanResource\SalaryScalesController::class);
+
+            // Leave Types
+            Route::resource('leave-types', \App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class);
+
+            // Leave Requests
+            Route::resource('leave-requests', \App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class);
+
+            // Payroll Settings
+            Route::resource('payroll-settings', \App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class);
+
+            // Payroll Payslips
+            Route::resource('payroll-payslip', \App\Http\Controllers\Tenant\Modules\HumanResource\PayrollPayslipController::class);
         });
 
         // Library Management Routes

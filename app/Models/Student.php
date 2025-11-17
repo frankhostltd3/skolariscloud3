@@ -112,6 +112,14 @@ class Student extends Model
     }
 
     /**
+     * Get the biometric templates for this student
+     */
+    public function biometricTemplates()
+    {
+        return $this->morphMany(BiometricTemplate::class, 'user');
+    }
+
+    /**
      * Get the subjects assigned to this student
      */
     public function subjects()

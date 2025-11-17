@@ -119,8 +119,7 @@ class ExamAttendanceController extends Controller
                 $q->where('name', 'student');
             })
             ->where('class_id', $attendance->class_id)
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderBy('name')
             ->get();
 
         // Get existing records

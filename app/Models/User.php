@@ -109,6 +109,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the biometric templates for this user.
+     */
+    public function biometricTemplates()
+    {
+        return $this->morphMany(BiometricTemplate::class, 'user');
+    }
+
+    /**
      * Get the user who approved this user's registration.
      */
     public function approver(): BelongsTo

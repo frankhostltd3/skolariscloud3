@@ -44,8 +44,7 @@ class StaffAttendanceController extends Controller
             ->whereHas('roles', function($q) {
                 $q->whereIn('name', ['teacher', 'admin', 'accountant', 'librarian']);
             })
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderBy('name')
             ->get();
 
         return view('admin.staff-attendance.index', compact('attendances', 'staff', 'school'));
@@ -62,8 +61,7 @@ class StaffAttendanceController extends Controller
             ->whereHas('roles', function($q) {
                 $q->whereIn('name', ['teacher', 'admin', 'accountant', 'librarian']);
             })
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderBy('name')
             ->get();
 
         return view('admin.staff-attendance.create', compact('staff', 'school'));
@@ -128,8 +126,7 @@ class StaffAttendanceController extends Controller
             ->whereHas('roles', function($q) {
                 $q->whereIn('name', ['teacher', 'admin', 'accountant', 'librarian']);
             })
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderBy('name')
             ->get();
 
         return view('admin.staff-attendance.edit', compact('attendance', 'staff', 'school'));

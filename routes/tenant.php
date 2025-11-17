@@ -51,14 +51,14 @@ Route::middleware([
         // Browse books
         Route::get('/', [\App\Http\Controllers\Tenant\BookstoreController::class, 'index'])->name('index');
         Route::get('/book/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'show'])->name('show');
-        
+
         // Shopping cart
         Route::get('/cart', [\App\Http\Controllers\Tenant\BookstoreController::class, 'cart'])->name('cart');
         Route::post('/cart/add/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'addToCart'])->name('cart.add');
         Route::post('/cart/update', [\App\Http\Controllers\Tenant\BookstoreController::class, 'updateCart'])->name('cart.update');
         Route::post('/cart/remove', [\App\Http\Controllers\Tenant\BookstoreController::class, 'removeFromCart'])->name('cart.remove');
         Route::post('/cart/clear', [\App\Http\Controllers\Tenant\BookstoreController::class, 'clearCart'])->name('cart.clear');
-        
+
         // Checkout
         Route::get('/checkout', [\App\Http\Controllers\Tenant\BookstoreController::class, 'checkout'])->name('checkout');
         Route::post('/checkout/process', [\App\Http\Controllers\Tenant\BookstoreController::class, 'processCheckout'])->name('checkout.process');
@@ -68,7 +68,7 @@ Route::middleware([
     // ===================================================================
     // AUTHENTICATION ROUTES - New System
     // ===================================================================
-    
+
     // GUEST ROUTES (Not Authenticated)
     Route::middleware('guest')->group(function () {
         // ADMIN REGISTRATION (Secured)
@@ -105,12 +105,12 @@ Route::middleware([
     });
 
     // AUTHENTICATED ROUTES
-    
+
     // 🧪 TEST ROUTE FOR BLADE DIRECTIVES (Development only)
     Route::get('/test-blade-directives', function () {
         return view('tenant.test-blade-directives');
     })->name('tenant.test.blade');
-    
+
     // LOGOUT (Redirects to front page)
     Route::post('/logout', [\App\Http\Controllers\Tenant\Auth\AuthenticatedSessionController::class, 'destroy'])
         ->middleware(['auth', \App\Http\Middleware\PreventBackHistory::class])
@@ -137,15 +137,15 @@ Route::middleware([
         Route::get('/admin', [\App\Http\Controllers\Tenant\Admin\DashboardController::class, '__invoke'])
             ->middleware('role:Admin|admin')
             ->name('tenant.admin');
-            
+
         Route::get('/staff', [\App\Http\Controllers\Tenant\Staff\DashboardController::class, '__invoke'])
             ->middleware('role:Staff|staff|Teacher|teacher|Admin|admin')
             ->name('tenant.staff');
-            
+
         Route::get('/student', [\App\Http\Controllers\Tenant\Student\DashboardController::class, '__invoke'])
             ->middleware('role:Student|student|Admin|admin')
             ->name('tenant.student');
-            
+
         Route::get('/parent', [\App\Http\Controllers\Tenant\Guardian\DashboardController::class, '__invoke'])
             ->middleware('role:Parent|parent')
             ->name('tenant.parent');
@@ -304,7 +304,7 @@ Route::middleware([
         Route::get('/notes', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'index'])->name('notes.index');
         Route::get('/notes/{note}', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'show'])->name('notes.show');
         Route::get('/notes/{note}/download', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'download'])->name('notes.download');
-        
+
         // Notes - Personal Notes CRUD
         Route::get('/notes/personal/create', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'createPersonalNote'])->name('notes.personal.create');
         Route::post('/notes/personal', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'storePersonalNote'])->name('notes.personal.store');
@@ -398,22 +398,22 @@ Route::middleware([
         Route::prefix('attendance')->name('attendance.')->group(function () {
             // Dashboard
             Route::get('/', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'index'])->name('index');
-            
+
             // Take Roll Call
             Route::get('/take', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'takeRollCall'])->name('take');
-            
+
             // Manual Entry
             Route::get('/manual', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'manual'])->name('manual');
             Route::post('/manual', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'store'])->name('store');
-            
+
             // Biometric (Fingerprint & Iris)
             Route::get('/biometric', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'biometric'])->name('biometric');
             Route::post('/biometric/process', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'processBiometric'])->name('biometric.process');
-            
+
             // Barcode/QR Scanning
             Route::get('/barcode', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'barcode'])->name('barcode');
             Route::post('/barcode/process', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'processBarcode'])->name('barcode.process');
-            
+
             // Analysis & Reports
             Route::get('/patterns', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'patterns'])->name('patterns');
             Route::get('/reports', [\App\Http\Controllers\Tenant\Teacher\AttendanceController::class, 'reports'])->name('reports');
@@ -424,7 +424,7 @@ Route::middleware([
         Route::prefix('classroom')->name('classroom.')->group(function () {
             // Dashboard
             Route::get('/', function() { return view('tenant.teacher.classroom.index'); })->name('index');
-            
+
             // Virtual Classes
             Route::prefix('virtual')->name('virtual.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\VirtualClassController::class, 'index'])->name('index');
@@ -448,7 +448,7 @@ Route::middleware([
                 Route::post('/{platform}/test', [App\Http\Controllers\Tenant\Teacher\PlatformIntegrationController::class, 'test'])->name('test');
                 Route::post('/{platform}/disable', [App\Http\Controllers\Tenant\Teacher\PlatformIntegrationController::class, 'disable'])->name('disable');
             });
-            
+
             // Lesson Plans
             Route::prefix('lessons')->name('lessons.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\LessonPlanController::class, 'index'])->name('index');
@@ -459,7 +459,7 @@ Route::middleware([
                 Route::put('/{lesson}', [App\Http\Controllers\Tenant\Teacher\LessonPlanController::class, 'update'])->name('update');
                 Route::delete('/{lesson}', [App\Http\Controllers\Tenant\Teacher\LessonPlanController::class, 'destroy'])->name('destroy');
             });
-            
+
             // Learning Materials
             Route::prefix('materials')->name('materials.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\LearningMaterialController::class, 'index'])->name('index');
@@ -471,7 +471,7 @@ Route::middleware([
                 Route::delete('/{material}', [App\Http\Controllers\Tenant\Teacher\LearningMaterialController::class, 'destroy'])->name('destroy');
                 Route::get('/{material}/download', [App\Http\Controllers\Tenant\Teacher\LearningMaterialController::class, 'download'])->name('download');
             });
-            
+
             // Exercises/Assignments
             Route::prefix('exercises')->name('exercises.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\ExerciseController::class, 'index'])->name('index');
@@ -486,7 +486,7 @@ Route::middleware([
                 Route::post('/{exercise}/bulk-grade', [App\Http\Controllers\Tenant\Teacher\ExerciseController::class, 'bulkGrade'])->name('bulk-grade');
                 Route::get('/submissions/{submission}/download', [App\Http\Controllers\Tenant\Teacher\ExerciseController::class, 'downloadSubmission'])->name('download');
             });
-            
+
             // Quizzes
             Route::prefix('quizzes')->name('quizzes.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\QuizController::class, 'index'])->name('index');
@@ -498,7 +498,7 @@ Route::middleware([
                 Route::delete('/{quiz}', [App\Http\Controllers\Tenant\Teacher\QuizController::class, 'destroy'])->name('destroy');
                 Route::get('/{quiz}/results', [App\Http\Controllers\Tenant\Teacher\QuizController::class, 'results'])->name('results');
             });
-            
+
             // Discussions
             Route::prefix('discussions')->name('discussions.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Tenant\Teacher\DiscussionController::class, 'index'])->name('index');
@@ -509,7 +509,7 @@ Route::middleware([
                 Route::put('/{discussion}', [App\Http\Controllers\Tenant\Teacher\DiscussionController::class, 'update'])->name('update');
                 Route::delete('/{discussion}', [App\Http\Controllers\Tenant\Teacher\DiscussionController::class, 'destroy'])->name('destroy');
             });
-            
+
             // Online Exams
             Route::prefix('exams')->name('exams.')->group(function () {
                 Route::get('/', function() { return view('tenant.teacher.classroom.exams.index'); })->name('index');
@@ -561,7 +561,7 @@ Route::middleware([
             Route::delete('/{fee}', [\App\Http\Controllers\Tenant\Modules\FeesController::class, 'destroy'])
                 ->name('destroy')
                 ->middleware('permission:manage fees');
-            
+
             // Fee Assignments
             Route::get('/{fee}/assign', [\App\Http\Controllers\Tenant\Modules\FeesController::class, 'assign'])
                 ->name('assign')
@@ -572,7 +572,7 @@ Route::middleware([
             Route::delete('/assignments/{assignment}', [\App\Http\Controllers\Tenant\Modules\FeesController::class, 'removeAssignment'])
                 ->name('assignment.remove')
                 ->middleware('permission:manage fees');
-            
+
             // Payment Recording
             Route::get('/{fee}/record-payment', [\App\Http\Controllers\Tenant\Modules\FeesController::class, 'recordPayment'])
                 ->name('record-payment')
@@ -611,7 +611,7 @@ Route::middleware([
         Route::prefix('library')->name('library.')->middleware(['role:Admin|Staff'])->group(function () {
             // Dashboard
             Route::get('/', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'index'])->name('index');
-            
+
             // Books Management
             Route::get('/books', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'books'])->name('books.index');
             Route::get('/books/create', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'createBook'])->name('books.create');
@@ -620,7 +620,7 @@ Route::middleware([
             Route::get('/books/{book}/edit', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'editBook'])->name('books.edit');
             Route::put('/books/{book}', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'updateBook'])->name('books.update');
             Route::delete('/books/{book}', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'destroyBook'])->name('books.destroy');
-            
+
             // Transactions Management
             Route::get('/transactions', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'transactions'])->name('transactions.index');
             Route::get('/transactions/borrow', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'borrowForm'])->name('transactions.borrow');
@@ -809,7 +809,7 @@ Route::middleware([
                     'update' => 'admins.update',
                     'destroy' => 'admins.destroy',
                 ]);
-            
+
             // User Activation/Deactivation
             Route::post('admins/{user}/activate', [\App\Http\Controllers\Tenant\Users\AdminsController::class, 'activate'])
                 ->name('admins.activate');
@@ -833,7 +833,7 @@ Route::middleware([
                 ->name('staff.activate');
             Route::post('staff/{user}/deactivate', [\App\Http\Controllers\Tenant\Users\StaffController::class, 'deactivate'])
                 ->name('staff.deactivate');
-                
+
             Route::resource('students', \App\Http\Controllers\Tenant\Users\StudentsController::class)
                 ->parameters(['students' => 'user'])
                 ->names([
@@ -849,7 +849,7 @@ Route::middleware([
                 ->name('students.activate');
             Route::post('students/{user}/deactivate', [\App\Http\Controllers\Tenant\Users\StudentsController::class, 'deactivate'])
                 ->name('students.deactivate');
-                
+
             Route::resource('parents', \App\Http\Controllers\Tenant\Users\ParentsController::class)
                 ->parameters(['parents' => 'user'])
                 ->names([
@@ -1162,7 +1162,7 @@ Route::middleware([
             ->name('leave_requests.approve');
         Route::post('leave-requests/{leave_request}/reject', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'reject'])
             ->name('leave_requests.reject');
-        
+
         // Leave Financial Reports
         Route::get('leave-requests/reports/financial', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'financialReport'])
             ->name('leave_requests.financial_report');
@@ -1365,7 +1365,7 @@ Route::middleware([
         Route::get('/attendance/student/{student}/history', [\App\Http\Controllers\Admin\AttendanceController::class, 'studentHistory'])->name('attendance.student.history');
         Route::post('/attendance/notify-absent', [\App\Http\Controllers\Admin\AttendanceController::class, 'notifyAbsent'])->name('attendance.notify.absent');
         Route::get('/attendance/comparative-stats', [\App\Http\Controllers\Admin\AttendanceController::class, 'comparativeStats'])->name('attendance.comparative.stats');
-        
+
         // School-wide Attendance Analytics
         Route::get('/attendance/analytics', [\App\Http\Controllers\Admin\AttendanceController::class, 'analytics'])->name('attendance.analytics');
         Route::get('/attendance/trends', [\App\Http\Controllers\Admin\AttendanceController::class, 'trends'])->name('attendance.trends');
@@ -1422,12 +1422,12 @@ Route::middleware([
         Route::prefix('bookstore')->name('bookstore.')->group(function () {
             // Dashboard
             Route::get('/', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'index'])->name('index');
-            
+
             // Inventory Management
             Route::get('/inventory', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'inventory'])->name('inventory');
             Route::post('/books/{book}/stock', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'updateStock'])->name('books.stock');
             Route::post('/books/{book}/featured', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'toggleFeatured'])->name('books.featured');
-            
+
             // Orders Management
             Route::get('/orders', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'orders'])->name('orders');
             Route::get('/orders/{order}', [\App\Http\Controllers\Tenant\Admin\BookstoreManagementController::class, 'orderShow'])->name('orders.show');
@@ -1466,7 +1466,7 @@ Route::middleware([
         Route::get('/change-password', function () {
             $user = auth()->user();
             $roles = $user->getRoleNames();
-            
+
             if ($roles->contains('Admin') || $roles->contains('admin')) {
                 return app(\App\Http\Controllers\Tenant\Admin\ProfileController::class)->changePassword();
             } elseif ($roles->contains('Teacher') || $roles->contains('teacher')) {
@@ -1478,14 +1478,14 @@ Route::middleware([
             } elseif ($roles->contains('Parent') || $roles->contains('parent')) {
                 return app(\App\Http\Controllers\Tenant\Parent\ProfileController::class)->changePassword();
             }
-            
+
             abort(403, 'Unauthorized');
         })->name('password.change');
-        
+
         Route::put('/password', function (\Illuminate\Http\Request $request) {
             $user = auth()->user();
             $roles = $user->getRoleNames();
-            
+
             if ($roles->contains('Admin') || $roles->contains('admin')) {
                 return app(\App\Http\Controllers\Tenant\Admin\ProfileController::class)->updatePassword($request);
             } elseif ($roles->contains('Teacher') || $roles->contains('teacher')) {
@@ -1497,7 +1497,7 @@ Route::middleware([
             } elseif ($roles->contains('Parent') || $roles->contains('parent')) {
                 return app(\App\Http\Controllers\Tenant\Parent\ProfileController::class)->updatePassword($request);
             }
-            
+
             abort(403, 'Unauthorized');
         })->name('password.update');
 

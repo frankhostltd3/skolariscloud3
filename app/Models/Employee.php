@@ -83,6 +83,11 @@ class Employee extends Model
         return $this->belongsTo(\App\Models\Teacher::class, 'teacher_id');
     }
 
+    public function biometricTemplates()
+    {
+        return $this->morphMany(BiometricTemplate::class, 'user');
+    }
+
     public function payrollRecords()
     {
         return $this->hasMany(PayrollRecord::class);

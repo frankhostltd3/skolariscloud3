@@ -189,7 +189,57 @@
             </div>
         </div>
 
-        @php($attendanceActive = request()->routeIs('admin.attendance.*') || request()->routeIs('admin.staff-attendance.*') || request()->routeIs('admin.exam-attendance.*'))
+        @php($hrActive = request()->routeIs('tenant.modules.human-resource.*'))
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#hrMenu" role="button"
+            aria-expanded="{{ $hrActive ? 'true' : 'false' }}" aria-controls="hrMenu">
+            <span><span class="bi bi-person-workspace me-2"></span>{{ __('Human Resources') }}</span>
+            <span class="bi bi-chevron-down small"></span>
+        </a>
+        <div class="collapse {{ $hrActive ? 'show' : '' }}" id="hrMenu">
+            <div class="list-group list-group-flush ms-3">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.index') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.index') }}">
+                    <span class="bi bi-house-door me-2"></span>{{ __('HR Overview') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.employees.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.employees.index') }}">
+                    <span class="bi bi-people me-2"></span>{{ __('Employees') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.departments.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.departments.index') }}">
+                    <span class="bi bi-diagram-3 me-2"></span>{{ __('Departments') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.positions.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.positions.index') }}">
+                    <span class="bi bi-briefcase me-2"></span>{{ __('Positions') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.salary-scales.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.salary-scales.index') }}">
+                    <span class="bi bi-cash-coin me-2"></span>{{ __('Salary Scales') }}
+                </a>
+                <div class="border-top my-2"></div>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave-types.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.leave-types.index') }}">
+                    <span class="bi bi-calendar-x me-2"></span>{{ __('Leave Types') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave-requests.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.leave-requests.index') }}">
+                    <span class="bi bi-calendar-event me-2"></span>{{ __('Leave Requests') }}
+                </a>
+                <div class="border-top my-2"></div>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.payroll-settings.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.payroll-settings.index') }}">
+                    <span class="bi bi-gear me-2"></span>{{ __('Payroll Settings') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.payroll-payslip.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.payroll-payslip.index') }}">
+                    <span class="bi bi-receipt-cutoff me-2"></span>{{ __('Payslips') }}
+                </a>
+            </div>
+        </div>
+
+        @php($attendanceActive = request()->routeIs('admin.attendance.*') || request()->routeIs('admin.staff-attendance.*') || request()->routeIs('admin.exam-attendance.*') || request()->routeIs('admin.qr-scanner.*') || request()->routeIs('admin.biometric.*') || request()->routeIs('admin.omr.*') || request()->routeIs('admin.attendance-analytics.*') || request()->routeIs('admin.device-monitoring.*') || request()->routeIs('tenant.attendance.settings.*'))
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $attendanceActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#attendanceMenu" role="button"
             aria-expanded="{{ $attendanceActive ? 'true' : 'false' }}" aria-controls="attendanceMenu">
@@ -198,7 +248,7 @@
         </a>
         <div class="collapse {{ $attendanceActive ? 'show' : '' }}" id="attendanceMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}"
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.attendance.*') && !request()->routeIs('admin.attendance-analytics.*') ? 'active' : '' }}"
                     href="{{ route('admin.attendance.index') }}">
                     <span class="bi bi-people me-2"></span>{{ __('Student Attendance') }}
                 </a>
@@ -209,6 +259,32 @@
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.exam-attendance.*') ? 'active' : '' }}"
                     href="{{ route('admin.exam-attendance.index') }}">
                     <span class="bi bi-journal-check me-2"></span>{{ __('Exam Attendance') }}
+                </a>
+                <div class="border-top my-2"></div>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.qr-scanner.*') ? 'active' : '' }}"
+                    href="{{ route('admin.qr-scanner.index') }}">
+                    <span class="bi bi-qr-code-scan me-2"></span>{{ __('QR Scanner') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.biometric.*') ? 'active' : '' }}"
+                    href="{{ route('admin.biometric.index') }}">
+                    <span class="bi bi-fingerprint me-2"></span>{{ __('Biometric Enrollment') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.omr.*') ? 'active' : '' }}"
+                    href="{{ route('admin.omr.index') }}">
+                    <span class="bi bi-file-earmark-medical me-2"></span>{{ __('OMR Templates') }}
+                </a>
+                <div class="border-top my-2"></div>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.attendance-analytics.*') ? 'active' : '' }}"
+                    href="{{ route('admin.attendance-analytics.index') }}">
+                    <span class="bi bi-graph-up me-2"></span>{{ __('Analytics Dashboard') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.device-monitoring.*') ? 'active' : '' }}"
+                    href="{{ route('admin.device-monitoring.index') }}">
+                    <span class="bi bi-hdd-network me-2"></span>{{ __('Device Monitoring') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.attendance.settings.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.attendance.settings.index') }}">
+                    <span class="bi bi-gear me-2"></span>{{ __('Attendance Settings') }}
                 </a>
             </div>
         </div>
@@ -297,7 +373,7 @@
 
         {{-- Logout at the bottom --}}
         <div class="border-top mt-2">
-            <form method="POST" action="{{ route('logout') }}" class="m-0">
+            <form method="POST" action="{{ route('tenant.logout') }}" class="m-0">
                 @csrf
                 <button type="submit"
                     class="list-group-item list-group-item-action text-danger border-0 w-100 text-start">
