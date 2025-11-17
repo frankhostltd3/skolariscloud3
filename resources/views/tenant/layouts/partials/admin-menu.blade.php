@@ -103,7 +103,7 @@
 
 
 
-        @php($academicsActive = false)
+        @php($academicsActive = request()->routeIs('tenant.academics.*'))
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $academicsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#academicsMenu" role="button"
             aria-expanded="{{ $academicsActive ? 'true' : 'false' }}" aria-controls="academicsMenu">
@@ -112,54 +112,106 @@
         </a>
         <div class="collapse {{ $academicsActive ? 'show' : '' }}" id="academicsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-house-door me-2"></span>{{ __('Classes') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.education-levels.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.education-levels.index') }}">
+                    <span class="bi bi-mortarboard-fill me-2"></span>{{ __('Education Levels') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-diagram-2 me-2"></span>{{ __('Class streams') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.examination-bodies.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.examination-bodies.index') }}">
+                    <span class="bi bi-award me-2"></span>{{ __('Examination Bodies') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.countries.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.countries.index') }}">
+                    <span class="bi bi-globe me-2"></span>{{ __('Countries') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.grading_schemes.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.grading_schemes.index') }}">
+                    <span class="bi bi-award-fill me-2"></span>{{ __('Grading Systems') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.classes.*') && !request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.classes.index') }}">
+                    <span class="bi bi-building me-2"></span>{{ __('Classes') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.classes.index') }}"
+                    title="{{ __('Select a class to manage its streams') }}">
+                    <span class="bi bi-diagram-3 me-2"></span>{{ __('Class streams') }}
+                    <small class="text-muted ms-1">({{ __('via Classes') }})</small>
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.subjects.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.subjects.index') }}">
                     <span class="bi bi-book me-2"></span>{{ __('Subjects') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.teacher-allocations.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.teacher-allocations.index') }}">
+                    <span class="bi bi-person-badge me-2"></span>{{ __('Teacher Allocation') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.terms.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.terms.index') }}">
                     <span class="bi bi-calendar-event me-2"></span>{{ __('Terms') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-journal-check me-2"></span>{{ __('Grading Systems') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.timetable.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.timetable.index') }}">
+                    <span class="bi bi-calendar3 me-2"></span>{{ __('Timetable') }}
                 </a>
             </div>
         </div>
 
-        @php($modulesActive = false)
-        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $modulesActive ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#modulesMenu" role="button"
-            aria-expanded="{{ $modulesActive ? 'true' : 'false' }}" aria-controls="modulesMenu">
-            <span><span class="bi bi-boxes me-2"></span>{{ __('Modules') }}</span>
+        @php($financeActive = request()->routeIs('tenant.finance.*'))
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $financeActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#financeMenu" role="button"
+            aria-expanded="{{ $financeActive ? 'true' : 'false' }}" aria-controls="financeMenu">
+            <span><span class="bi bi-cash-stack me-2"></span>{{ __('Finance') }}</span>
             <span class="bi bi-chevron-down small"></span>
         </a>
-        <div class="collapse {{ $modulesActive ? 'show' : '' }}" id="modulesMenu">
+        <div class="collapse {{ $financeActive ? 'show' : '' }}" id="financeMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-cash-stack me-2"></span>{{ __('Financials') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expense-categories.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expense-categories.index') }}">
+                    <span class="bi bi-tags me-2"></span>{{ __('Expense Categories') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-briefcase-fill me-2"></span>{{ __('Human Resource') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expenses.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expenses.index') }}">
+                    <span class="bi bi-receipt me-2"></span>{{ __('Expenses') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-journal-bookmark me-2"></span>{{ __('Library') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.fee-structures.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.fee-structures.index') }}">
+                    <span class="bi bi-file-earmark-text me-2"></span>{{ __('Fee Structures') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-shop me-2"></span>{{ __('Bookstore') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.invoices.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.invoices.index') }}">
+                    <span class="bi bi-file-earmark-ruled me-2"></span>{{ __('Invoices') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
-                    <span class="bi bi-calendar-week me-2"></span>{{ __('Timetable') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.payments.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.payments.index') }}">
+                    <span class="bi bi-credit-card me-2"></span>{{ __('Payments') }}
                 </a>
             </div>
         </div>
 
-        <a class="list-group-item list-group-item-action" href="#">
-            <span class="bi bi-calendar-check-fill me-2"></span>{{ __('Attendance') }}
+        @php($attendanceActive = request()->routeIs('admin.attendance.*') || request()->routeIs('admin.staff-attendance.*') || request()->routeIs('admin.exam-attendance.*'))
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $attendanceActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#attendanceMenu" role="button"
+            aria-expanded="{{ $attendanceActive ? 'true' : 'false' }}" aria-controls="attendanceMenu">
+            <span><span class="bi bi-calendar-check-fill me-2"></span>{{ __('Attendance') }}</span>
+            <span class="bi bi-chevron-down small"></span>
         </a>
+        <div class="collapse {{ $attendanceActive ? 'show' : '' }}" id="attendanceMenu">
+            <div class="list-group list-group-flush ms-3">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}"
+                    href="{{ route('admin.attendance.index') }}">
+                    <span class="bi bi-people me-2"></span>{{ __('Student Attendance') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.staff-attendance.*') ? 'active' : '' }}"
+                    href="{{ route('admin.staff-attendance.index') }}">
+                    <span class="bi bi-person-badge me-2"></span>{{ __('Staff Attendance') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.exam-attendance.*') ? 'active' : '' }}"
+                    href="{{ route('admin.exam-attendance.index') }}">
+                    <span class="bi bi-journal-check me-2"></span>{{ __('Exam Attendance') }}
+                </a>
+            </div>
+        </div>
 
         @php($userMgmtActive = false)
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $userMgmtActive ? 'active' : '' }}"

@@ -41,4 +41,57 @@ class ClassStream extends Model
     {
         return $this->class->name . ' ' . $this->name;
     }
+
+    /**
+     * Scope a query to only include active streams.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include inactive streams.
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    /**
+     * Check if the stream has available capacity.
+     */
+    public function hasCapacity(int $requiredSlots = 1): bool
+    {
+        if (!$this->capacity) {
+            return true; // No capacity limit set
+        }
+
+        $available = $this->capacity - ($this->active_students_count ?? 0);
+        return $available >= $requiredSlots;
+    }
+
+    /**
+     * Get the percentage of capacity used.
+     */
+    public function getCapacityPercentageAttribute(): float
+    {
+        if (!$this->capacity || $this->capacity == 0) {
+            return 0;
+        }
+
+        return round((($this->active_students_count ?? 0) / $this->capacity) * 100, 1);
+    }
+
+    /**
+     * Get the available capacity.
+     */
+    public function getAvailableCapacityAttribute(): int
+    {
+        if (!$this->capacity) {
+            return 999; // Return large number if no limit
+        }
+
+        return max(0, $this->capacity - ($this->active_students_count ?? 0));
+    }
 }

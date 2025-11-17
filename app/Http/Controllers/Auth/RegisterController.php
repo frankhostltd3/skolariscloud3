@@ -26,7 +26,22 @@ class RegisterController extends Controller
 
     public function create(Request $request): View
     {
+        // Logout any existing session to clear tenant connection issues
+        if (auth()->check()) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         $school = $request->attributes->get('currentSchool');
+        $host = $request->getHost();
+
+        // Force central registration form for localhost/127.0.0.1
+        if (in_array($host, ['localhost', '127.0.0.1'], true)) {
+            return view('auth.register', [
+                'baseDomain' => CentralDomain::base($request),
+            ]);
+        }
 
         if ($school instanceof School) {
             return view('auth.register-tenant', [
@@ -42,6 +57,12 @@ class RegisterController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $school = $request->attributes->get('currentSchool');
+        $host = $request->getHost();
+
+        // Force school registration for localhost/127.0.0.1
+        if (in_array($host, ['localhost', '127.0.0.1'], true)) {
+            return $this->registerSchool($request);
+        }
 
         if ($school instanceof School) {
             return $this->registerTenantUser($request, $school);

@@ -20,6 +20,22 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $connection = 'tenant';
 
     /**
+     * Get the database connection for the model.
+     * Returns tenant connection if configured, otherwise returns central connection.
+     */
+    public function getConnectionName()
+    {
+        $tenantDb = config('database.connections.tenant.database');
+
+        // If no tenant database is configured, use central connection
+        if (empty($tenantDb)) {
+            return config('database.default', 'mysql');
+        }
+
+        return $this->connection;
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

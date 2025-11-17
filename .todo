@@ -1,0 +1,3 @@
+- [ ] Investigate tenant users table missing
+- [ ] Ensure tenant migrations run and create users
+- [ ] Adjust middleware to avoid failing when tenant users missing

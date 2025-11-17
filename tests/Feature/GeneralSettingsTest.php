@@ -4,20 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\UserType;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class GeneralSettingsTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_admin_can_access_general_settings_page(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => UserType::ADMIN,
-        ]);
-
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($this->admin)
             ->get(route('settings.general.edit'));
 
         $response->assertStatus(200);
@@ -28,11 +21,7 @@ class GeneralSettingsTest extends TestCase
 
     public function test_admin_can_update_school_information(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => UserType::ADMIN,
-        ]);
-
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($this->admin)
             ->put(route('settings.general.update'), [
                 'form_type' => 'school_info',
                 'school_name' => 'Test School',
@@ -56,11 +45,7 @@ class GeneralSettingsTest extends TestCase
 
     public function test_admin_can_update_application_settings(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => UserType::ADMIN,
-        ]);
-
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($this->admin)
             ->put(route('settings.general.update'), [
                 'form_type' => 'application',
                 'app_name' => 'Test App',
@@ -93,11 +78,7 @@ class GeneralSettingsTest extends TestCase
 
     public function test_admin_can_clear_cache(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => UserType::ADMIN,
-        ]);
-
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($this->admin)
             ->post(route('settings.general.clear-cache'), [], [
                 'Accept' => 'application/json',
             ]);

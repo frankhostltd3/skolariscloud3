@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ExpenseCategory extends Model
 {
-    use HasFactory;
-
     protected $connection = 'tenant';
 
     protected $fillable = [
@@ -18,50 +15,55 @@ class ExpenseCategory extends Model
         'name',
         'code',
         'description',
+        'color',
+        'icon',
         'is_active',
+        'budget_limit',
+        'parent_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'budget_limit' => 'decimal:2',
     ];
 
-    /**
-     * Get the school that owns the category.
-     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(ExpenseCategory::class, 'parent_id');
+    }
+
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
     }
 
-    /**
-     * Get the expenses for the category.
-     */
-    public function expenses(): HasMany
+    public function scopeActive($query)
     {
-        return $this->hasMany(Expense::class, 'category_id');
+        return $query->where('is_active', true);
     }
 
-    /**
-     * Get the transactions for the category.
-     */
-    public function transactions(): HasMany
-    {
-        return $this->hasMany(Transaction::class, 'category_id');
-    }
-
-    /**
-     * Scope a query to only include categories for a specific school.
-     */
     public function scopeForSchool($query, $schoolId)
     {
         return $query->where('school_id', $schoolId);
     }
 
-    /**
-     * Scope a query to only include active categories.
-     */
-    public function scopeActive($query)
+    public function getStatusBadgeClassAttribute(): string
     {
-        return $query->where('is_active', true);
+        return $this->is_active ? 'bg-success' : 'bg-secondary';
+    }
+
+    public function getStatusTextAttribute(): string
+    {
+        return $this->is_active ? 'Active' : 'Inactive';
     }
 }

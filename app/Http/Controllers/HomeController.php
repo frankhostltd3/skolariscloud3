@@ -12,19 +12,8 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
-        $school = $request->attributes->get('currentSchool');
-
-        // If visiting a school-specific subdomain and not authenticated, go to login
-        if ($school instanceof School && ! auth()->check()) {
-            return redirect()->route('login');
-        }
-
-        // If visiting a school subdomain and authenticated, go to dashboard
-        if ($school instanceof School && auth()->check()) {
-            return redirect()->route('dashboard');
-        }
-
-        // Otherwise show the marketing landing page
+        // Always show the marketing landing page at root
+        // Users can navigate to login/register from there
         return view('home');
     }
 }

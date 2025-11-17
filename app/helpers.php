@@ -192,3 +192,240 @@ if (!function_exists('curriculum_classes')) {
             ->pluck('name');
     }
 }
+
+if (!function_exists('get_school_classes')) {
+    /**
+     * Get all active classes for the current school with full model data.
+     *
+     * @param  bool  $withRelations  Include relationships (educationLevel, streams)
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function get_school_classes(bool $withRelations = false): \Illuminate\Database\Eloquent\Collection
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school ?? null;
+
+        if (!$school) {
+            return collect([]);
+        }
+
+        $query = App\Models\Academic\ClassRoom::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->orderBy('name');
+
+        if ($withRelations) {
+            $query->with(['educationLevel', 'streams']);
+        }
+
+        return $query->get();
+    }
+}
+
+if (!function_exists('get_class_by_id')) {
+    /**
+     * Get a class by ID for the current school.
+     *
+     * @param  int  $classId
+     * @param  bool  $withRelations
+     * @return \App\Models\Academic\ClassRoom|null
+     */
+    function get_class_by_id(int $classId, bool $withRelations = false): ?\App\Models\Academic\ClassRoom
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school ?? null;
+
+        if (!$school) {
+            return null;
+        }
+
+        $query = App\Models\Academic\ClassRoom::where('school_id', $school->id)
+            ->where('id', $classId);
+
+        if ($withRelations) {
+            $query->with(['educationLevel', 'streams', 'students', 'subjects']);
+        }
+
+        return $query->first();
+    }
+}
+
+if (!function_exists('get_education_levels')) {
+    /**
+     * Get all active education levels for the current school.
+     *
+     * @param  bool  $withClasses  Include related classes
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function get_education_levels(bool $withClasses = false): \Illuminate\Database\Eloquent\Collection
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school ?? null;
+
+        if (!$school) {
+            return collect([]);
+        }
+
+        $query = App\Models\Academic\EducationLevel::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name');
+
+        if ($withClasses) {
+            $query->with('classes');
+        }
+
+        return $query->get();
+    }
+}
+
+if (!function_exists('get_classes_by_education_level')) {
+    /**
+     * Get all active classes for a specific education level.
+     *
+     * @param  int  $educationLevelId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function get_classes_by_education_level(int $educationLevelId): \Illuminate\Database\Eloquent\Collection
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school ?? null;
+
+        if (!$school) {
+            return collect([]);
+        }
+
+        return App\Models\Academic\ClassRoom::where('school_id', $school->id)
+            ->where('education_level_id', $educationLevelId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+}
+
+if (!function_exists('get_class_streams')) {
+    /**
+     * Get all streams for a specific class.
+     *
+     * @param  int  $classId
+     * @param  bool  $activeOnly
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function get_class_streams(int $classId, bool $activeOnly = true): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = App\Models\Academic\ClassStream::where('class_id', $classId);
+
+        if ($activeOnly) {
+            $query->where('is_active', true);
+        }
+
+        return $query->orderBy('name')->get();
+    }
+}
+
+if (!function_exists('get_class_capacity_info')) {
+    /**
+     * Get capacity information for a class.
+     *
+     * @param  int  $classId
+     * @return array  ['capacity', 'enrolled', 'available', 'percentage', 'status']
+     */
+    function get_class_capacity_info(int $classId): array
+    {
+        $class = get_class_by_id($classId);
+
+        if (!$class || !$class->capacity) {
+            return [
+                'capacity' => 0,
+                'enrolled' => 0,
+                'available' => 0,
+                'percentage' => 0,
+                'status' => 'unknown',
+            ];
+        }
+
+        $enrolled = $class->active_students_count ?? 0;
+        $capacity = $class->capacity;
+        $available = max(0, $capacity - $enrolled);
+        $percentage = $capacity > 0 ? ($enrolled / $capacity) * 100 : 0;
+
+        // Determine status
+        $status = 'available';
+        if ($percentage >= 100) {
+            $status = 'full';
+        } elseif ($percentage >= 90) {
+            $status = 'almost_full';
+        } elseif ($percentage >= 70) {
+            $status = 'filling_up';
+        }
+
+        return [
+            'capacity' => $capacity,
+            'enrolled' => $enrolled,
+            'available' => $available,
+            'percentage' => round($percentage, 1),
+            'status' => $status,
+        ];
+    }
+}
+
+if (!function_exists('get_class_subjects')) {
+    /**
+     * Get all subjects assigned to a class.
+     *
+     * @param  int  $classId
+     * @param  bool  $activeOnly
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    function get_class_subjects(int $classId, bool $activeOnly = true): \Illuminate\Database\Eloquent\Collection
+    {
+        $class = get_class_by_id($classId);
+
+        if (!$class) {
+            return collect([]);
+        }
+
+        $query = $class->subjects();
+
+        if ($activeOnly) {
+            $query->where('subjects.is_active', true);
+        }
+
+        return $query->orderBy('subjects.name')->get();
+    }
+}
+
+if (!function_exists('class_has_capacity')) {
+    /**
+     * Check if a class has available capacity for new students.
+     *
+     * @param  int  $classId
+     * @param  int  $requiredSlots
+     * @return bool
+     */
+    function class_has_capacity(int $classId, int $requiredSlots = 1): bool
+    {
+        $info = get_class_capacity_info($classId);
+        return $info['available'] >= $requiredSlots;
+    }
+}
+
+if (!function_exists('format_class_name')) {
+    /**
+     * Format class name with optional education level and stream.
+     *
+     * @param  \App\Models\Academic\ClassRoom  $class
+     * @param  bool  $includeEducationLevel
+     * @param  string|null  $streamName
+     * @return string
+     */
+    function format_class_name(\App\Models\Academic\ClassRoom $class, bool $includeEducationLevel = false, ?string $streamName = null): string
+    {
+        $name = $class->name;
+
+        if ($includeEducationLevel && $class->educationLevel) {
+            $name = $class->educationLevel->name . ' - ' . $name;
+        }
+
+        if ($streamName) {
+            $name .= ' ' . $streamName;
+        }
+
+        return $name;
+    }
+}

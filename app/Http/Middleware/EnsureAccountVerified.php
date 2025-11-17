@@ -15,7 +15,19 @@ class EnsureAccountVerified
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        // If no tenant school, skip all verification logic (central domain)
+        $school = $request->attributes->get('currentSchool') ?? (app()->bound('currentSchool') ? app('currentSchool') : null);
+        if (!$school) {
+            return $next($request);
+        }
+
+        // Try to get user, but skip if tenant DB not available
+        try {
+            $user = $request->user();
+        } catch (\Throwable $e) {
+            // User lookup failed (likely no tenant DB), skip verification
+            return $next($request);
+        }
 
         // Skip if user is not authenticated
         if (!$user) {
@@ -28,7 +40,13 @@ class EnsureAccountVerified
         }
 
         // Check if account verification is required by school settings
-        $accountStatus = setting('account_status', 'unverified');
+        // Safely attempt to read setting; fall back if tenant DB not initialised
+        try {
+            $accountStatus = setting('account_status', 'unverified');
+        } catch (\Throwable $e) {
+            // If we cannot reach settings (tenant DB missing), proceed without blocking
+            $accountStatus = 'unverified';
+        }
 
         // If account verification is required and user is not verified, restrict access
         if ($accountStatus === 'verified' && !$user->email_verified_at) {

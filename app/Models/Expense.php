@@ -2,103 +2,99 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
-    use HasFactory;
+    use SoftDeletes;
 
     protected $connection = 'tenant';
 
     protected $fillable = [
         'school_id',
-        'category_id',
-        'expense_name',
+        'title',
+        'description',
         'amount',
+        'currency_id',
+        'expense_category_id',
         'expense_date',
         'payment_method',
         'reference_number',
-        'vendor',
-        'description',
-        'created_by',
-        'approved_by',
+        'vendor_name',
+        'vendor_contact',
+        'receipt_path',
         'status',
+        'approved_by',
+        'approved_at',
+        'rejected_reason',
+        'notes',
+        'created_by',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'expense_date' => 'date',
+        'approved_at' => 'datetime',
     ];
 
-    /**
-     * Get the school that owns the expense.
-     */
-    public function school(): BelongsTo
-    {
-        return $this->belongsTo(School::class);
-    }
-
-    /**
-     * Get the category that owns the expense.
-     */
     public function category(): BelongsTo
     {
-        return $this->belongsTo(ExpenseCategory::class, 'category_id');
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 
-    /**
-     * Get the user who created the expense.
-     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Get the user who approved the expense.
-     */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /**
-     * Scope a query to only include expenses for a specific school.
-     */
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
     public function scopeForSchool($query, $schoolId)
     {
         return $query->where('school_id', $schoolId);
     }
 
-    /**
-     * Scope a query to filter by date range.
-     */
-    public function scopeDateRange($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('expense_date', [$startDate, $endDate]);
-    }
-
-    /**
-     * Scope a query to only include approved expenses.
-     */
     public function scopeApproved($query)
     {
         return $query->where('status', 'approved');
     }
 
-    /**
-     * Scope a query to only include pending expenses.
-     */
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
-    /**
-     * Get the status badge class.
-     */
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
+    }
+
+    public function scopeThisMonth($query)
+    {
+        return $query->whereMonth('expense_date', now()->month)
+                    ->whereYear('expense_date', now()->year);
+    }
+
+    public function scopeThisYear($query)
+    {
+        return $query->whereYear('expense_date', now()->year);
+    }
+
     public function getStatusBadgeClassAttribute(): string
     {
         return match($this->status) {
@@ -106,6 +102,19 @@ class Expense extends Model
             'pending' => 'bg-warning',
             'rejected' => 'bg-danger',
             default => 'bg-secondary',
+        };
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        return match($this->payment_method) {
+            'cash' => 'Cash',
+            'bank_transfer' => 'Bank Transfer',
+            'credit_card' => 'Credit Card',
+            'debit_card' => 'Debit Card',
+            'check' => 'Check',
+            'online_payment' => 'Online Payment',
+            default => ucfirst($this->payment_method),
         };
     }
 }

@@ -1,0 +1,265 @@
+<?php
+
+namespace App\Http\Controllers\Tenant\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Notification;
+use App\Models\NotificationLog;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+
+class NotificationsController extends Controller
+{
+    /**
+     * Display a listing of notifications.
+     */
+    public function index()
+    {
+        $notifications = Notification::with('creator')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('tenant.admin.notifications.index', compact('notifications'));
+    }
+
+    /**
+     * Show the form for creating a new notification.
+     */
+    public function create()
+    {
+        $users = User::select('id', 'name', 'email')->get();
+        return view('tenant.admin.notifications.create', compact('users'));
+    }
+
+    /**
+     * Store a newly created notification.
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|in:general,announcement,alert,reminder',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'target_audience' => 'nullable|array',
+            'specific_recipients' => 'nullable|array',
+            'channels' => 'required|array|min:1',
+            'scheduled_at' => 'nullable|date|after:now',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $notification = Notification::create([
+            'title' => $request->title,
+            'message' => $request->message,
+            'type' => $request->type,
+            'priority' => $request->priority,
+            'target_audience' => $request->target_audience,
+            'specific_recipients' => $request->specific_recipients,
+            'channels' => $request->channels,
+            'scheduled_at' => $request->scheduled_at,
+            'created_by' => Auth::id(),
+        ]);
+
+        // Send notification immediately if not scheduled
+        if (!$request->scheduled_at) {
+            $this->sendNotification($notification);
+        }
+
+        return redirect()->route('tenant.admin.notifications.index')
+            ->with('success', 'Notification created successfully.');
+    }
+
+    /**
+     * Display the specified notification.
+     */
+    public function show(Notification $notification)
+    {
+        $logs = $notification->logs()->with('creator')->orderBy('created_at', 'desc')->get();
+        return view('tenant.admin.notifications.show', compact('notification', 'logs'));
+    }
+
+    /**
+     * Show the form for editing the specified notification.
+     */
+    public function edit(Notification $notification)
+    {
+        if ($notification->sent_at) {
+            return redirect()->route('tenant.admin.notifications.index')
+                ->with('error', 'Cannot edit a sent notification.');
+        }
+
+        $users = User::select('id', 'name', 'email')->get();
+        return view('tenant.admin.notifications.edit', compact('notification', 'users'));
+    }
+
+    /**
+     * Update the specified notification.
+     */
+    public function update(Request $request, Notification $notification)
+    {
+        if ($notification->sent_at) {
+            return redirect()->route('tenant.admin.notifications.index')
+                ->with('error', 'Cannot edit a sent notification.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|in:general,announcement,alert,reminder',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'target_audience' => 'nullable|array',
+            'specific_recipients' => 'nullable|array',
+            'channels' => 'required|array|min:1',
+            'scheduled_at' => 'nullable|date|after:now',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $notification->update([
+            'title' => $request->title,
+            'message' => $request->message,
+            'type' => $request->type,
+            'priority' => $request->priority,
+            'target_audience' => $request->target_audience,
+            'specific_recipients' => $request->specific_recipients,
+            'channels' => $request->channels,
+            'scheduled_at' => $request->scheduled_at,
+        ]);
+
+        return redirect()->route('tenant.admin.notifications.index')
+            ->with('success', 'Notification updated successfully.');
+    }
+
+    /**
+     * Remove the specified notification.
+     */
+    public function destroy(Notification $notification)
+    {
+        if ($notification->sent_at) {
+            return redirect()->route('tenant.admin.notifications.index')
+                ->with('error', 'Cannot delete a sent notification.');
+        }
+
+        $notification->delete();
+
+        return redirect()->route('tenant.admin.notifications.index')
+            ->with('success', 'Notification deleted successfully.');
+    }
+
+    /**
+     * Send a notification immediately.
+     */
+    public function send(Notification $notification)
+    {
+        if ($notification->sent_at) {
+            return redirect()->back()
+                ->with('error', 'Notification has already been sent.');
+        }
+
+        $this->sendNotification($notification);
+
+        return redirect()->back()
+            ->with('success', 'Notification sent successfully.');
+    }
+
+    /**
+     * Send notification via configured channels.
+     */
+    private function sendNotification(Notification $notification)
+    {
+        $recipients = $this->getRecipients($notification);
+
+        foreach ($notification->channels as $channel) {
+            foreach ($recipients as $recipient) {
+                // Log the notification attempt
+                NotificationLog::create([
+                    'channel' => $channel,
+                    'message_type' => 'notification',
+                    'to' => $this->getRecipientContact($recipient, $channel),
+                    'status' => 'sent', // In a real implementation, this would be updated based on delivery status
+                    'created_by' => $notification->created_by,
+                    'target_type' => get_class($recipient),
+                    'target_id' => $recipient->id,
+                    'notification_id' => $notification->id,
+                    'meta' => [
+                        'title' => $notification->title,
+                        'message' => $notification->message,
+                    ],
+                ]);
+
+                // Here you would integrate with actual notification services
+                // (Twilio, Africa's Talking, WhatsApp Cloud API, etc.)
+            }
+        }
+
+        $notification->update(['sent_at' => now()]);
+    }
+
+    /**
+     * Get recipients for the notification.
+     */
+    private function getRecipients(Notification $notification)
+    {
+        $query = User::query();
+
+        // Filter by target audience
+        if ($notification->target_audience) {
+            $roles = [];
+            if (in_array('admins', $notification->target_audience)) {
+                $roles[] = 'admin';
+            }
+            if (in_array('staff', $notification->target_audience)) {
+                $roles[] = 'staff';
+            }
+            if (in_array('teachers', $notification->target_audience)) {
+                $roles[] = 'teacher';
+            }
+            if (in_array('students', $notification->target_audience)) {
+                $roles[] = 'student';
+            }
+            if (in_array('parents', $notification->target_audience)) {
+                $roles[] = 'parent';
+            }
+
+            if (!empty($roles)) {
+                $query->whereHas('roles', function ($q) use ($roles) {
+                    $q->whereIn('name', $roles);
+                });
+            }
+        }
+
+        // Filter by specific recipients
+        if ($notification->specific_recipients) {
+            $query->orWhereIn('id', $notification->specific_recipients);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Get contact information for recipient based on channel.
+     */
+    private function getRecipientContact(User $user, string $channel)
+    {
+        switch ($channel) {
+            case 'email':
+                return $user->email;
+            case 'sms':
+            case 'whatsapp':
+                return $user->phone;
+            default:
+                return $user->email;
+        }
+    }
+}

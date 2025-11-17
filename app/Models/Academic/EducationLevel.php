@@ -43,4 +43,20 @@ class EducationLevel extends Model
     {
         return $this->hasMany(\App\Models\Academic\Subject::class);
     }
+
+    /**
+     * Scope a query to only include levels for a specific school.
+     */
+    public function scopeForSchool($query, $schoolId)
+    {
+        return $query->where('school_id', $schoolId);
+    }
+
+    /**
+     * Scope a query to only include active education levels.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

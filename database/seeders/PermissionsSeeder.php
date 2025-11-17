@@ -106,6 +106,37 @@ class PermissionsSeeder extends Seeder
             'payments.process' => 'Process payments',
             'payments.refund' => 'Process refunds',
             'invoices.generate' => 'Generate invoices',
+            // Human Resource Management
+            'hr.view' => 'View HR records',
+            'hr.manage' => 'Manage HR records',
+            'employees.view' => 'View employees',
+            'employees.create' => 'Create employees',
+            'employees.edit' => 'Edit employees',
+            'employees.delete' => 'Delete employees',
+            'leave-requests.view' => 'View leave requests',
+            'leave-requests.create' => 'Create leave requests',
+            'leave-requests.approve' => 'Approve leave requests',
+            'leave-requests.reject' => 'Reject leave requests',
+
+            // Pamphlets Management
+            'pamphlets.view' => 'View pamphlets',
+            'pamphlets.create' => 'Create pamphlets',
+            'pamphlets.edit' => 'Edit pamphlets',
+            'pamphlets.delete' => 'Delete pamphlets',
+            'pamphlets.publish' => 'Publish pamphlets',
+
+            // Books Module
+            'books.view' => 'View books catalog',
+            'books.create' => 'Add books to catalog',
+            'books.edit' => 'Edit book details',
+            'books.delete' => 'Delete books from catalog',
+
+            // Bookstore Management
+            'bookstore.view' => 'View bookstore',
+            'bookstore.manage' => 'Manage bookstore products',
+            'bookstore.orders' => 'Manage bookstore orders',
+            'bookstore.purchase' => 'Purchase from bookstore',
+
 
             // Library
             'library.view' => 'View library',
@@ -191,6 +222,7 @@ class PermissionsSeeder extends Seeder
             'reports.view', 'reports.generate',
             'messages.send', 'messages.view',
             'documents.view', 'documents.upload', 'documents.download',
+            'books.view', 'pamphlets.view', 'bookstore.view',
         ]);
 
         // Student - View only permissions
@@ -206,6 +238,7 @@ class PermissionsSeeder extends Seeder
             'messages.view',
             'documents.view', 'documents.download',
             'library.view',
+            'books.view', 'bookstore.view', 'bookstore.purchase',
         ]);
 
         // Parent - View student progress
@@ -233,7 +266,8 @@ class PermissionsSeeder extends Seeder
         // Librarian - Library management
         $librarian = Role::create(['name' => 'librarian', 'guard_name' => 'web']);
         $librarian->givePermissionTo([
-            'library.view', 'library.manage', 'library.issue', 'library.return',
+            'library.view',
+            'books.view', 'bookstore.view', 'bookstore.purchase', 'library.manage', 'library.issue', 'library.return',
             'students.view',
             'teachers.view',
             'reports.view', 'reports.generate',
@@ -258,3 +292,7 @@ class PermissionsSeeder extends Seeder
         $this->command->info('Created ' . Permission::count() . ' permissions');
     }
 }
+
+
+
+

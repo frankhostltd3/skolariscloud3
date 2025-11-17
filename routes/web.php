@@ -104,6 +104,82 @@ Route::middleware('auth')->group(function (): void {
             Route::post('/permissions/clear-cache', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'clearCache'])->name('permissions.clear-cache');
         });
 
+        // Academic Management Routes
+        Route::prefix('tenant/academics')->name('tenant.academics.')->group(function () {
+            // Core Academic Resources
+            Route::resource('education-levels', \App\Http\Controllers\Tenant\Academic\EducationLevelController::class);
+            Route::resource('examination-bodies', \App\Http\Controllers\Tenant\Academic\ExaminationBodyController::class);
+            Route::resource('countries', \App\Http\Controllers\Tenant\Academic\CountryController::class);
+            Route::resource('grading_schemes', \App\Http\Controllers\Tenant\Academic\GradingSchemeController::class);
+            Route::put('grading_schemes/{gradingScheme}/set-current', [\App\Http\Controllers\Tenant\Academic\GradingSchemeController::class, 'setCurrent'])->name('grading_schemes.set_current');
+            Route::get('grading_schemes/export/all', [\App\Http\Controllers\Tenant\Academic\GradingSchemeController::class, 'exportAll'])->name('grading_schemes.export_all');
+
+            // Subjects Management
+            Route::resource('subjects', \App\Http\Controllers\Tenant\Academic\SubjectController::class);
+            Route::get('subjects/{subject}/assign-classes', [\App\Http\Controllers\Tenant\Academic\SubjectController::class, 'assignClasses'])->name('subjects.assign_classes');
+            Route::put('subjects/{subject}/assign-classes', [\App\Http\Controllers\Tenant\Academic\SubjectController::class, 'storeClassAssignments'])->name('subjects.store_class_assignments');
+
+            // Teacher Allocation Management
+            Route::get('teacher-allocations', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'index'])->name('teacher-allocations.index');
+            Route::get('teacher-allocations/create', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'create'])->name('teacher-allocations.create');
+            Route::get('teacher-allocations/workload', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'workload'])->name('teacher-allocations.workload');
+            Route::post('teacher-allocations/bulk-assign', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'bulkAssign'])->name('teacher-allocations.bulk-assign');
+            Route::get('teacher-allocations/class-subjects/{classId}', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'getClassSubjects'])->name('teacher-allocations.class-subjects');
+            Route::post('teacher-allocations', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'store'])->name('teacher-allocations.store');
+            Route::delete('teacher-allocations/{id}', [\App\Http\Controllers\Tenant\Academic\TeacherAllocationController::class, 'destroy'])->name('teacher-allocations.destroy');
+
+            // Terms Management
+            Route::resource('terms', \App\Http\Controllers\Tenant\Academic\TermController::class);
+            Route::put('terms/{term}/set-current', [\App\Http\Controllers\Tenant\Academic\TermController::class, 'setCurrent'])->name('terms.set-current');
+
+            // Timetable Management
+            Route::get('timetable/generate', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'generate'])->name('timetable.generate');
+            Route::post('timetable/generate', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'storeGenerated'])->name('timetable.storeGenerated');
+            Route::resource('timetable', \App\Http\Controllers\Tenant\Academic\TimetableController::class);
+            Route::delete('timetable/bulk-delete', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'bulkDelete'])->name('timetable.bulkDelete');
+            Route::post('timetable/bulk-update', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'bulkUpdate'])->name('timetable.bulkUpdate');
+            Route::get('timetable/class/{class}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showClass'])->name('timetable.class');
+            Route::get('timetable/stream/{stream}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showStream'])->name('timetable.stream');
+            Route::get('timetable/teacher/{teacher}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showTeacher'])->name('timetable.teacher');
+
+            // Timetable Management (old routes - commented out)
+            // Route::delete('timetable/bulk-delete', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'bulkDelete'])->name('timetable.bulkDelete');
+            // Route::post('timetable/bulk-update', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'bulkUpdate'])->name('timetable.bulkUpdate');
+            // Timetable entity views
+            // Route::get('timetable/class/{class}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showClass'])->name('timetable.class');
+            // Route::get('timetable/stream/{stream}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showStream'])->name('timetable.stream');
+            // Route::get('timetable/teacher/{teacher}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showTeacher'])->name('timetable.teacher');
+            // Student timetable currently maps to class timetable (placeholder logic)
+            // Route::get('timetable/student/{class}', [\App\Http\Controllers\Tenant\Academic\TimetableController::class, 'showStudent'])->name('timetable.student');
+            // Route::resource('timetable', \App\Http\Controllers\Tenant\Academic\TimetableController::class);
+
+            // Helper route for class streams (AJAX)
+            // Route::get('class-streams/options', function(\Illuminate\Http\Request $request) {
+            //     $classId = $request->input('class_id');
+            //     if (!$classId) {
+            //         return response()->json(['data' => []]);
+            //     }
+            //     $streams = \App\Models\Academic\ClassStream::where('class_id', $classId)
+            //         ->orderBy('name')
+            //         ->get(['id', 'name']);
+            //     return response()->json(['data' => $streams]);
+            // })->name('class_streams.options');
+
+            Route::resource('classes', \App\Http\Controllers\Tenant\Academic\ClassController::class);
+
+            // Class Streams Routes (nested under classes)
+            Route::prefix('classes/{class}/streams')->name('streams.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'store'])->name('store');
+                Route::post('/bulk-create', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'bulkCreate'])->name('bulk-create');
+                Route::get('/{stream}', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'show'])->name('show');
+                Route::get('/{stream}/edit', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'edit'])->name('edit');
+                Route::put('/{stream}', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'update'])->name('update');
+                Route::delete('/{stream}', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'destroy'])->name('destroy');
+            });
+        });
+
         // User Approvals Routes
         Route::prefix('admin/user-approvals')->name('admin.user-approvals.')->group(function () {
             Route::get('/', [UserApprovalsController::class, 'index'])->name('index');
@@ -178,6 +254,52 @@ Route::middleware('auth')->group(function (): void {
         Route::prefix('tenant/users/parents')->name('tenant.users.parents.')->group(function () {
             // Route::get('/{user}/edit', [ParentController::class, 'edit'])->name('edit');
             // Route::put('/{user}', [ParentController::class, 'update'])->name('update');
+        });
+
+        // Financial Management Routes
+        Route::prefix('tenant/finance')->name('tenant.finance.')->group(function () {
+            // Expense Categories
+            Route::resource('expense-categories', \App\Http\Controllers\Tenant\Finance\ExpenseCategoryController::class);
+
+            // Expenses
+            Route::resource('expenses', \App\Http\Controllers\Tenant\Finance\ExpenseController::class);
+            Route::post('expenses/{expense}/approve', [\App\Http\Controllers\Tenant\Finance\ExpenseController::class, 'approve'])->name('expenses.approve');
+            Route::post('expenses/{expense}/reject', [\App\Http\Controllers\Tenant\Finance\ExpenseController::class, 'reject'])->name('expenses.reject');
+
+            // Fee Structures
+            Route::resource('fee-structures', \App\Http\Controllers\Tenant\Finance\FeeStructureController::class);
+
+            // Invoices
+            Route::resource('invoices', \App\Http\Controllers\Tenant\Finance\InvoiceController::class);
+
+            // Payments
+            Route::resource('payments', \App\Http\Controllers\Tenant\Finance\PaymentController::class)->except(['edit', 'update', 'destroy']);
+            Route::get('payments/{payment}/receipt', [\App\Http\Controllers\Tenant\Finance\PaymentController::class, 'receipt'])->name('payments.receipt');
+
+        // Human Resource Management Routes
+        Route::prefix('tenant/modules/human-resource')->name('tenant.modules.human-resource.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Modules\HumanResourceController::class, 'index'])->name('index');
+        });
+
+        // Library Management Routes
+        Route::prefix('tenant/modules/library')->name('tenant.modules.library.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'index'])->name('index');
+        });
+
+        // Pamphlets Management Routes
+        Route::prefix('tenant/modules/pamphlets')->name('tenant.modules.pamphlets.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Modules\PamphletsController::class, 'index'])->name('index');
+        });
+
+        // Books Module Routes
+        Route::prefix('tenant/modules/books')->name('tenant.modules.books.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Modules\BooksController::class, 'index'])->name('index');
+        });
+
+        // Bookstore Management Routes
+        Route::prefix('tenant/bookstore')->name('tenant.bookstore.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\BookstoreController::class, 'index'])->name('index');
+        });
         });
     });
 });

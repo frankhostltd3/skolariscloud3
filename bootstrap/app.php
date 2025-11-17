@@ -6,9 +6,15 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            \Illuminate\Support\Facades\Route::middleware('web')
+                ->group(base_path('routes/web.php'));
+            
+            \Illuminate\Support\Facades\Route::middleware('web')
+                ->group(base_path('routes/tenant.php'));
+        },
     )
     ->withCommands([
         \App\Console\Commands\MigrateTenants::class,
@@ -28,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->appendToGroup('web', \App\Http\Middleware\ForceHttps::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\IdentifySchoolFromHost::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\SwitchTenantDatabase::class);
+    $middleware->appendToGroup('web', \App\Http\Middleware\PreserveSubdomainContext::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\ApplySchoolMailConfiguration::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\ApplyPaymentGatewayConfiguration::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\ApplyMessagingConfiguration::class);

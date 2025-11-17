@@ -230,29 +230,29 @@ class ReportsController extends Controller
     public function academic(Request $request)
     {
         $school = $request->attributes->get('currentSchool') ?? auth()->user()->school;
-        
+
         // Get filter parameters
         $academicYear = $request->input('academic_year');
         $semester = $request->input('semester');
         $gradeLevel = $request->input('grade_level');
-        
+
         // Get curriculum classes for filter dropdown
         $curriculumClasses = curriculum_classes();
         $classesArray = $curriculumClasses->toArray();
-        
+
         // For demonstration purposes, we'll generate estimated academic data
         // In production, this would query actual grades, assignments, and exam results
-        
+
         // Calculate Overall GPA (estimated between 3.2 - 3.8)
         $baseGpa = 3.5;
         $variance = (rand(-30, 30) / 100); // ±0.30 variance
         $overallGpa = max(0, min(4.0, $baseGpa + $variance));
-        
+
         // Calculate Pass Rate (estimated between 75% - 95%)
         $basePassRate = 85;
         $passRateVariance = rand(-10, 10);
         $passRate = max(0, min(100, $basePassRate + $passRateVariance));
-        
+
         // Count students on Honor Roll (GPA >= 3.5)
         // Estimated as 30% of active students
         $totalStudents = User::where('school_id', $school->id)
@@ -260,26 +260,26 @@ class ReportsController extends Controller
             ->where('is_active', true)
             ->count();
         $honorRollCount = (int) ($totalStudents * 0.30);
-        
+
         // Count at-risk students (GPA < 2.0)
         // Estimated as 15% of active students
         $atRiskCount = (int) ($totalStudents * 0.15);
-        
+
         // Subject labels for charts (common secondary school subjects)
         $subjectLabels = [
-            'Mathematics', 
-            'English', 
-            'Science', 
-            'Social Studies', 
-            'Physics', 
-            'Chemistry', 
-            'Biology', 
+            'Mathematics',
+            'English',
+            'Science',
+            'Social Studies',
+            'Physics',
+            'Chemistry',
+            'Biology',
             'Computer Science'
         ];
-        
+
         // Grade letters for distribution
         $gradeLetters = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'];
-        
+
         // Generate grade distribution data per subject
         // In production, this would query actual grade records
         $subjectDatasets = [];
@@ -305,7 +305,7 @@ class ReportsController extends Controller
                 $subjectDatasets[$letter][] = $weight;
             }
         }
-        
+
         // Top 10 performers (estimated data)
         $topPerformers = [];
         if (!empty($classesArray)) {
@@ -317,7 +317,7 @@ class ReportsController extends Controller
                 ];
             }
         }
-        
+
         // Subject Performance Analysis with trends
         $subjectPerformance = [];
         foreach ($subjectLabels as $subject) {
@@ -329,31 +329,31 @@ class ReportsController extends Controller
                 'trend' => $trends[array_rand($trends)]
             ];
         }
-        
+
         // Class Performance Comparison
         $classLabels = [];
         $classAverages = [];
-        
+
         // Sample 5 random classes from curriculum
         $sampleClasses = array_slice($classesArray, 0, min(5, count($classesArray)));
         foreach ($sampleClasses as $class) {
             $classLabels[] = $class;
             $classAverages[] = rand(70, 90); // Average percentage per class
         }
-        
+
         // Academic Performance Trends (last 12 months)
         $months = [];
         $gpaSeries = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = \Carbon\Carbon::now()->subMonths($i);
             $months[] = $date->format('M Y');
-            
+
             // Generate GPA trend with slight variation
             $baseGpa = 3.4;
             $monthVariance = (rand(-20, 20) / 100);
             $gpaSeries[] = round(max(3.0, min(4.0, $baseGpa + $monthVariance)), 2);
         }
-        
+
         return view('admin.reports.academic', compact(
             'curriculumClasses',
             'overallGpa',
@@ -1336,7 +1336,7 @@ class ReportsController extends Controller
             $mark = rand(45, 98);
             $outOf = 100;
             $grade = $this->getLetterGrade($mark);
-            
+
             $grades[] = [
                 'subject' => $subject,
                 'mark' => $mark,
@@ -1384,9 +1384,9 @@ class ReportsController extends Controller
     {
         // Simple HTML-based PDF generation
         // In production, use a proper PDF library like dompdf or TCPDF
-        
+
         $html = view('admin.reports.pdf.report-card', $data)->render();
-        
+
         // For now, return HTML wrapped as PDF content
         // In production, use: $pdf = \PDF::loadHTML($html)->output();
         return $html;
@@ -1398,7 +1398,7 @@ class ReportsController extends Controller
     private function generateBulkReportCardsPDF($students, $school, $academicYear, $term)
     {
         $allHTML = '';
-        
+
         foreach ($students as $student) {
             $reportData = $this->generateReportCardData($student, $school, $academicYear, $term);
             $allHTML .= view('admin.reports.pdf.report-card', $reportData)->render();

@@ -6,6 +6,7 @@ use App\Models\School;
 use App\Services\TenantDatabaseManager;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
 
 class SwitchTenantDatabase
@@ -30,7 +31,8 @@ class SwitchTenantDatabase
             $sessionSchoolId = $request->session()->get('tenant_school_id');
 
             if ($sessionSchoolId) {
-                $sessionSchool = School::query()->find($sessionSchoolId);
+                // Use central connection to fetch school
+                $sessionSchool = School::on('mysql')->find($sessionSchoolId);
 
                 if ($sessionSchool instanceof School) {
                     $school = $sessionSchool;

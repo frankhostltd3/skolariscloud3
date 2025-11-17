@@ -29,7 +29,7 @@ class SeedQuizData extends Command
 
             // Get or create classes for this school
             $classes = SchoolClass::on('tenant')->where('school_id', $tenant->id)->get();
-            
+
             if ($classes->isEmpty()) {
                 $this->warn("No classes found for {$tenant->name}. Creating sample classes...");
                 $classes = $this->createSampleClasses($tenant);
@@ -56,7 +56,7 @@ class SeedQuizData extends Command
 
             foreach ($classes as $class) {
                 $teacher = $teachers->random();
-                
+
                 // Create 3-5 quizzes per class
                 for ($i = 0; $i < rand(3, 5); $i++) {
                     $quiz = Quiz::on('tenant')->create([
@@ -77,18 +77,18 @@ class SeedQuizData extends Command
 
                     // Create quiz attempts for 60-80% of students
                     $attemptingStudents = $students->random(rand((int)($students->count() * 0.6), (int)($students->count() * 0.8)));
-                    
+
                     foreach ($attemptingStudents as $student) {
                         // 30% chance of late submission
                         $isLate = rand(1, 100) <= 30;
-                        
+
                         $submittedAt = $quiz->end_at->copy()->addMinutes($isLate ? rand(5, 120) : rand(-30, 0));
                         $minutesLate = $isLate ? (int) $quiz->end_at->diffInMinutes($submittedAt) : 0;
-                        
+
                         $scoreAuto = rand(40, 95);
                         $scoreManual = rand(0, 5);
                         $scoreTotal = $scoreAuto + $scoreManual;
-                        
+
                         // Apply late penalty if applicable
                         if ($minutesLate > 0 && $quiz->late_penalty_percent > 0) {
                             $penalty = ($scoreTotal * $quiz->late_penalty_percent) / 100;
@@ -133,7 +133,7 @@ class SeedQuizData extends Command
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            
+
             // Reload as model
             $classModel = SchoolClass::on('tenant')->find($class);
             $classes->push($classModel);

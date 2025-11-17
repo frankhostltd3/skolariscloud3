@@ -11,7 +11,7 @@
                     <p class="lead mb-4">Streamline operations, enhance learning, and empower your institution with our
                         comprehensive school management system.</p>
                     <div class="d-flex gap-3">
-                        <a href="{{ route('register') }}" class="btn btn-primary btn-lg">Register Your School</a>
+                        <a href="#contact" class="btn btn-primary btn-lg">Contact Sales</a>
                         <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
                     </div>
                 </div>
@@ -235,7 +235,7 @@
                                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Mobile app
                                     access</li>
                             </ul>
-                            <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Get Started</a>
+                            <a href="#contact" class="btn btn-outline-primary w-100">Contact Sales</a>
                         </div>
                     </div>
                 </div>
@@ -260,7 +260,7 @@
                                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced
                                     analytics</li>
                             </ul>
-                            <a href="{{ route('register') }}" class="btn btn-primary w-100">Get Started</a>
+                            <a href="#contact" class="btn btn-primary w-100">Contact Sales</a>
                         </div>
                     </div>
                 </div>
@@ -470,8 +470,8 @@
             <h2 class="display-6 fw-medium mb-3">Ready to Transform Your School?</h2>
             <p class="lead mb-4">Join hundreds of schools already using SMATCAMPUS</p>
             <div class="d-flex gap-3 justify-content-center flex-wrap">
-                <a href="{{ route('register') }}" class="btn btn-light btn-lg">Register Your School</a>
-                <a href="#" class="btn btn-outline-light btn-lg">Schedule Demo</a>
+                <a href="#contact" class="btn btn-light btn-lg">Contact Sales</a>
+                <a href="#contact" class="btn btn-outline-light btn-lg">Schedule Demo</a>
             </div>
         </div>
     </section>

@@ -1,0 +1,167 @@
+@extends('tenant.layouts.app')
+
+@section('sidebar')
+  @include('tenant.admin._sidebar')
+@endsection
+
+@section('content')
+<div class="container">
+  <h1 class="h4 mb-4">{{ __('Add Employee') }}</h1>
+  <form method="POST" action="{{ route('tenant.modules.human_resources.employees.store') }}" enctype="multipart/form-data">
+    @csrf
+    @if ($errors->any())
+      <div class="alert alert-danger">
+        <ul class="mb-0 small">
+          @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="first_name" name="first_name" required>
+      </div>
+      <div class="col-md-6">
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="last_name" name="last_name" required>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label for="national_id" class="form-label">National ID</label>
+        <input type="text" class="form-control" id="national_id" name="national_id" value="{{ old('national_id') }}">
+        <div class="form-text">Optional unique government-issued ID.</div>
+      </div>
+      <div class="col-md-4">
+        <label for="gender" class="form-label">Gender</label>
+        <select class="form-select" id="gender" name="gender">
+          <option value="">Select</option>
+          <option value="male" {{ old('gender')==='male' ? 'selected' : '' }}>Male</option>
+          <option value="female" {{ old('gender')==='female' ? 'selected' : '' }}>Female</option>
+          <option value="other" {{ old('gender')==='other' ? 'selected' : '' }}>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="passport_photo" class="form-label">Passport Photo</label>
+        <input type="file" class="form-control" id="passport_photo" name="passport_photo" accept="image/*">
+        <div class="form-text">Max 130MB, up to 256x256px.</div>
+      </div>
+    </div>
+    <!-- Employee number will be auto-generated based on department -->
+    <div class="mb-3">
+      <label class="form-label">Employee Number</label>
+      <input type="text" class="form-control" value="Auto-generated based on department" disabled>
+      <div class="form-text">Employee number will be assigned automatically after saving, based on the selected department.</div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email">
+      </div>
+      <div class="col-md-6">
+        <label for="phone" class="form-label">Phone</label>
+        <input type="text" class="form-control" id="phone" name="phone">
+      </div>
+    </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="employee_type" class="form-label">Employee Type</label>
+          <select class="form-select" id="employee_type" name="employee_type" required>
+            <option value="">Select Type</option>
+            <option value="full_time">Full Time</option>
+            <option value="part_time">Part Time</option>
+            <option value="intern">Intern</option>
+            <option value="contract">Contract</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="salary_scale_id" class="form-label">Salary Scale</label>
+          <select class="form-select" id="salary_scale_id" name="salary_scale_id">
+            <option value="">Select Salary Scale</option>
+            @foreach($salary_scales as $scale)
+              <option value="{{ $scale->id }}">{{ $scale->name }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="department_id" class="form-label">Department</label>
+          <select class="form-select" id="department_id" name="department_id" required>
+            <option value="">Select Department</option>
+            @foreach($departments as $department)
+              <option value="{{ $department->id }}">{{ $department->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="position_id" class="form-label">Position</label>
+          <select class="form-select" id="position_id" name="position_id" required>
+            <option value="">Select Position</option>
+            @foreach($positions as $position)
+              <option value="{{ $position->id }}">{{ $position->title }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="employment_status" class="form-label">Employment Status</label>
+          <select class="form-select" id="employment_status" name="employment_status">
+            <option value="">Select Status</option>
+            <option value="active">Active</option>
+            <option value="probation">Probation</option>
+            <option value="on_leave">On Leave</option>
+            <option value="inactive">Inactive</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="hire_date" class="form-label">Hire Date</label>
+        <input type="date" class="form-control" id="hire_date" name="hire_date">
+      </div>
+      <div class="col-md-6">
+        <label for="birth_date" class="form-label">Birth Date</label>
+        <input type="date" class="form-control" id="birth_date" name="birth_date">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" id="submitBtn">
+        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+        <span id="submitText">Save Employee</span>
+    </button>
+    <a href="{{ route('tenant.modules.human_resources.employees.index') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+
+<script>
+document.getElementById('submitBtn').addEventListener('click', function() {
+    const btn = this;
+    const spinner = btn.querySelector('.spinner-border');
+    const text = btn.querySelector('#submitText');
+
+    // Disable button and show loading
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    text.textContent = 'Saving...';
+
+    // Re-enable after 10 seconds as fallback
+    setTimeout(function() {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        text.textContent = 'Save Employee';
+    }, 10000);
+});
+
+// Also handle form submission
+document.querySelector('form').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    if (!btn.disabled) {
+        btn.disabled = true;
+        btn.querySelector('.spinner-border').classList.remove('d-none');
+        btn.querySelector('#submitText').textContent = 'Saving...';
+    }
+});
+</script>
+@endsection

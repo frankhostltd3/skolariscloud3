@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-    $centralDomain = CentralDomain::base();
+        $centralDomain = CentralDomain::base();
         $manager = app(TenantDatabaseManager::class);
 
         $schools = [
@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-    $frankhostDomain = env('FRANKHOST_DOMAIN', $centralDomain);
+        $frankhostDomain = env('FRANKHOST_DOMAIN', $centralDomain);
 
         if ($frankhostDomain) {
             $schools[] = [
@@ -80,7 +80,7 @@ class DatabaseSeeder extends Seeder
         $invitation = null;
 
         if (! empty($definition['invitation_email'])) {
-            $invitation = SchoolUserInvitation::query()->firstOrCreate(
+            $invitation = SchoolUserInvitation::query()->updateOrCreate(
                 [
                     'school_id' => $school->id,
                     'email' => $definition['invitation_email'],
