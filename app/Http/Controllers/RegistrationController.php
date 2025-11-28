@@ -15,6 +15,10 @@ use Stancl\Tenancy\Database\Models\Domain;
 
 class RegistrationController extends Controller
 {
+    public function __construct(private TenantAccessConfigurator $accessConfigurator)
+    {
+    }
+
     public function create(Request $request): View
     {
         $baseDomain = $this->baseDomain($request);
@@ -72,18 +76,20 @@ class RegistrationController extends Controller
                 throw $domainException;
             }
 
-            $tenant->run(function () use ($validated) {
-                app(TenantAccessConfigurator::class)->seed(includeSampleUsers: false);
+            $tenant->run(function () use ($validated, $tenant) {
+                $this->accessConfigurator->withTeamContext(function () use ($validated) {
+                    $this->accessConfigurator->seed(includeSampleUsers: false);
 
-                $admin = User::create([
-                    'name' => $validated['admin_name'],
-                    'email' => $validated['admin_email'],
-                    'password' => Hash::make($validated['password']),
-                ]);
+                    $admin = User::create([
+                        'name' => $validated['admin_name'],
+                        'email' => $validated['admin_email'],
+                        'password' => Hash::make($validated['password']),
+                    ]);
 
-                if (method_exists($admin, 'assignRole')) {
-                    $admin->assignRole('Admin');
-                }
+                    if (method_exists($admin, 'assignRole')) {
+                        $admin->assignRole('Admin');
+                    }
+                }, $tenant->getTenantKey());
             });
         } catch (\Throwable $e) {
             if ($tenant !== null) {

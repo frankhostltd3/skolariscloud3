@@ -27,7 +27,8 @@ class TestTenantConnection extends Command
         $this->info("Testing connection for subdomain: {$subdomain}");
 
         // Find school
-        $school = School::on('mysql')
+        $centralConnection = config('database.central_connection', config('database.default'));
+        $school = School::on($centralConnection)
             ->where('subdomain', $subdomain)
             ->first();
 

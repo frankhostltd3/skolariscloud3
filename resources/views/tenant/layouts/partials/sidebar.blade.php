@@ -10,27 +10,115 @@
         [
             'label' => 'Dashboard',
             'icon' => 'bi-speedometer2',
-            'url' => url('/dashboard'),
-            'active' => ['dashboard'],
+            'url' => route('tenant.dashboard'),
+            'active' => ['tenant.dashboard', 'tenant.dashboard.alias'],
+        ],
+        [
+            'label' => 'Bookstore',
+            'icon' => 'bi-shop',
+            'url' => \Illuminate\Support\Facades\Route::has('tenant.bookstore.index')
+                ? route('tenant.bookstore.index')
+                : '#',
+            'active' => ['tenant.bookstore.*'],
         ],
     ];
 
     $menus = [
         UserType::TEACHING_STAFF->value => array_merge($baseItems, [
             [
-                'label' => 'My Classes',
-                'icon' => 'bi-easel',
-                'url' => '#',
+                'label' => 'Dashboard',
+                'icon' => 'bi-speedometer2',
+                'url' => route('tenant.teacher.dashboard'),
+                'active' => ['tenant.teacher.dashboard'],
             ],
             [
-                'label' => 'Assignments',
-                'icon' => 'bi-clipboard-check',
-                'url' => '#',
+                'label' => 'My Classes',
+                'icon' => 'bi-easel',
+                'url' => route('tenant.teacher.classes.index'),
+                'active' => ['tenant.teacher.classes.*'],
+            ],
+            [
+                'label' => 'Virtual Classes',
+                'icon' => 'bi-camera-video',
+                'url' => route('tenant.teacher.classroom.virtual.index'),
+                'active' => ['tenant.teacher.classroom.virtual.*'],
+            ],
+            [
+                'label' => 'Lesson Plans',
+                'icon' => 'bi-journal-text',
+                'url' => route('tenant.teacher.classroom.lessons.index'),
+                'active' => ['tenant.teacher.classroom.lessons.*'],
+            ],
+            [
+                'label' => 'Learning Materials',
+                'icon' => 'bi-collection',
+                'url' => route('tenant.teacher.classroom.materials.index'),
+                'active' => ['tenant.teacher.classroom.materials.*'],
+            ],
+            [
+                'type' => 'divider',
+            ],
+            [
+                'type' => 'header',
+                'label' => 'ASSIGNMENT SYSTEM',
+            ],
+            [
+                'label' => 'All Assignments',
+                'icon' => 'bi-list-task',
+                'url' => route('tenant.teacher.classroom.exercises.index'),
+                'active' => [
+                    'tenant.teacher.classroom.exercises.index',
+                    'tenant.teacher.classroom.exercises.edit',
+                    'tenant.teacher.classroom.exercises.show',
+                    'tenant.teacher.classroom.exercises.submissions',
+                ],
+                'badge' => 'NEW',
+                'badge_class' => 'bg-success',
+            ],
+            [
+                'label' => 'Create Assignment',
+                'icon' => 'bi-plus-circle',
+                'url' => route('tenant.teacher.classroom.exercises.create'),
+                'active' => ['tenant.teacher.classroom.exercises.create'],
+            ],
+            [
+                'type' => 'divider',
+            ],
+            [
+                'label' => 'Quizzes',
+                'icon' => 'bi-patch-question',
+                'url' => route('tenant.teacher.classroom.quizzes.index'),
+                'active' => ['tenant.teacher.classroom.quizzes.*'],
+            ],
+            [
+                'label' => 'Online Exams',
+                'icon' => 'bi-laptop',
+                'url' => route('tenant.teacher.classroom.exams.index'),
+                'active' => ['tenant.teacher.classroom.exams.*'],
+            ],
+            [
+                'label' => 'Discussions',
+                'icon' => 'bi-chat-square-text',
+                'url' => route('tenant.teacher.classroom.discussions.index'),
+                'active' => ['tenant.teacher.classroom.discussions.*'],
+            ],
+            [
+                'label' => 'Integrations',
+                'icon' => 'bi-puzzle',
+                'url' => route('tenant.teacher.classroom.integrations.index'),
+                'active' => ['tenant.teacher.classroom.integrations.*'],
             ],
             [
                 'label' => 'Attendance',
                 'icon' => 'bi-people-check',
-                'url' => '#',
+                'url' => route('tenant.teacher.attendance.index'),
+                'active' => ['tenant.teacher.attendance.*'],
+            ],
+            [
+                'label' => 'Reports',
+                'icon' => 'bi-bar-chart',
+                'url' => route('tenant.reports.index'),
+                'active' => ['tenant.reports.*'],
             ],
         ]),
         UserType::GENERAL_STAFF->value => array_merge($baseItems, [
@@ -47,19 +135,63 @@
         ]),
         UserType::STUDENT->value => array_merge($baseItems, [
             [
+                'label' => 'Classroom',
+                'icon' => 'bi-door-open',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.classroom.index')
+                    ? route('tenant.student.classroom.index')
+                    : '#',
+                'active' => ['tenant.student.classroom.index'],
+            ],
+            [
+                'label' => 'Assignments',
+                'icon' => 'bi-pencil-square',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.classroom.exercises.index')
+                    ? route('tenant.student.classroom.exercises.index')
+                    : '#',
+                'active' => ['tenant.student.classroom.exercises.*'],
+            ],
+            [
+                'label' => 'My Grades',
+                'icon' => 'bi-award',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.classroom.exercises.grades')
+                    ? route('tenant.student.classroom.exercises.grades')
+                    : '#',
+                'active' => ['tenant.student.classroom.exercises.grades'],
+            ],
+            [
+                'label' => 'Virtual Classes',
+                'icon' => 'bi-camera-video',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.classroom.virtual.index')
+                    ? route('tenant.student.classroom.virtual.index')
+                    : '#',
+                'active' => ['tenant.student.classroom.virtual.*'],
+            ],
+            [
+                'label' => 'Materials',
+                'icon' => 'bi-folder',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.classroom.materials.index')
+                    ? route('tenant.student.classroom.materials.index')
+                    : '#',
+                'active' => ['tenant.student.classroom.materials.*'],
+            ],
+            [
                 'label' => 'Timetable',
                 'icon' => 'bi-calendar-week',
                 'url' => '#',
             ],
             [
-                'label' => 'Grades',
-                'icon' => 'bi-mortarboard',
-                'url' => '#',
+                'label' => 'Attendance',
+                'icon' => 'bi-calendar-check',
+                'url' => \Illuminate\Support\Facades\Route::has('tenant.student.attendance.index')
+                    ? route('tenant.student.attendance.index')
+                    : '#',
+                'active' => ['tenant.student.attendance.*'],
             ],
             [
-                'label' => 'Assignments',
-                'icon' => 'bi-ui-checks-grid',
-                'url' => '#',
+                'label' => 'Pay Fees',
+                'icon' => 'bi-credit-card',
+                'url' => route('tenant.finance.payments.pay'),
+                'active' => ['tenant.finance.payments.pay'],
             ],
         ]),
         UserType::PARENT->value => array_merge($baseItems, [
@@ -72,6 +204,12 @@
                 'label' => 'Invoices',
                 'icon' => 'bi-receipt',
                 'url' => '#',
+            ],
+            [
+                'label' => 'Pay Fees',
+                'icon' => 'bi-credit-card',
+                'url' => route('tenant.finance.payments.pay'),
+                'active' => ['tenant.finance.payments.pay'],
             ],
             [
                 'label' => 'Messages',
@@ -117,22 +255,39 @@
         <nav class="py-4 flex-grow-1 overflow-auto">
             <ul class="list-unstyled mb-0">
                 @foreach ($menuItems as $item)
-                    @php
-                        $isActive = false;
-                        foreach ((array) ($item['active'] ?? []) as $pattern) {
-                            if (request()->routeIs($pattern)) {
-                                $isActive = true;
-                                break;
+                    @if (isset($item['type']))
+                        @if ($item['type'] === 'divider')
+                            <li class="px-3 my-2">
+                                <hr class="m-0 opacity-25">
+                            </li>
+                        @elseif($item['type'] === 'header')
+                            <li class="px-3 mt-3 mb-2">
+                                <small class="text-muted fw-bold text-uppercase"
+                                    style="font-size: 0.75rem; letter-spacing: 0.5px;">{{ $item['label'] }}</small>
+                            </li>
+                        @endif
+                    @else
+                        @php
+                            $isActive = false;
+                            foreach ((array) ($item['active'] ?? []) as $pattern) {
+                                if (request()->routeIs($pattern)) {
+                                    $isActive = true;
+                                    break;
+                                }
                             }
-                        }
-                    @endphp
-                    <li class="px-3">
-                        <a href="{{ $item['url'] ?? '#' }}"
-                            class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none {{ $isActive ? 'bg-primary text-white' : 'text-body' }}">
-                            <i class="{{ $item['icon'] ?? 'bi-circle' }}"></i>
-                            <span class="fw-medium">{{ $item['label'] }}</span>
-                        </a>
-                    </li>
+                        @endphp
+                        <li class="px-3">
+                            <a href="{{ $item['url'] ?? '#' }}"
+                                class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none position-relative {{ $isActive ? 'bg-primary text-white' : 'text-body' }}">
+                                <i class="{{ $item['icon'] ?? 'bi-circle' }}"></i>
+                                <span class="fw-medium flex-grow-1">{{ $item['label'] }}</span>
+                                @if (isset($item['badge']))
+                                    <span
+                                        class="badge {{ $item['badge_class'] ?? 'bg-primary' }} badge-sm">{{ $item['badge'] }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                 @endforeach
             </ul>
         </nav>

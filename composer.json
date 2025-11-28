@@ -3,7 +3,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -14,7 +17,9 @@
         "pragmarx/google2fa": "^8.0",
         "predis/predis": "^3.2",
         "spatie/laravel-backup": "^9.3",
-        "spatie/laravel-permission": "^6.23"
+        "spatie/laravel-permission": "^6.23",
+        "skolaris/fees-pay": "@dev",
+        "skolaris/academic-reports": "@dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -29,10 +34,13 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Stancl\\Tenancy\\": "app/StandIn/Tenancy/"
         },
         "files": [
-            "app/helpers.php"
+            "app/helpers.php",
+            "app/Helpers/helpers.php",
+            "app/Helpers/settings.php"
         ]
     },
     "autoload-dev": {
@@ -91,5 +99,18 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/skolaris/fees-pay"
+        },
+        {
+            "type": "path",
+            "url": "./packages/skolaris/academic-reports",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
 }

@@ -11,17 +11,50 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->string('phone')->nullable()->after('email');
-            $table->enum('gender', ['male', 'female', 'other'])->nullable()->after('phone');
-            $table->date('date_of_birth')->nullable()->after('gender');
-            $table->text('address')->nullable()->after('date_of_birth');
-            $table->string('qualification')->nullable()->after('address');
-            $table->string('specialization')->nullable()->after('qualification');
-            $table->string('profile_photo')->nullable()->after('specialization');
-            $table->json('notification_preferences')->nullable()->after('profile_photo');
-            $table->string('emergency_contact_name')->nullable()->after('notification_preferences');
-            $table->string('emergency_contact_phone')->nullable()->after('emergency_contact_name');
+            if (! Schema::hasColumn('users', 'phone')) {
+                $table->string('phone')->nullable()->after('email');
+            }
+
+            if (! Schema::hasColumn('users', 'gender')) {
+                $table->enum('gender', ['male', 'female', 'other'])->nullable()->after('phone');
+            }
+
+            if (! Schema::hasColumn('users', 'date_of_birth')) {
+                $table->date('date_of_birth')->nullable()->after('gender');
+            }
+
+            if (! Schema::hasColumn('users', 'address')) {
+                $table->text('address')->nullable()->after('date_of_birth');
+            }
+
+            if (! Schema::hasColumn('users', 'qualification')) {
+                $table->string('qualification')->nullable()->after('address');
+            }
+
+            if (! Schema::hasColumn('users', 'specialization')) {
+                $table->string('specialization')->nullable()->after('qualification');
+            }
+
+            if (! Schema::hasColumn('users', 'profile_photo')) {
+                $table->string('profile_photo')->nullable()->after('specialization');
+            }
+
+            if (! Schema::hasColumn('users', 'notification_preferences')) {
+                $table->json('notification_preferences')->nullable()->after('profile_photo');
+            }
+
+            if (! Schema::hasColumn('users', 'emergency_contact_name')) {
+                $table->string('emergency_contact_name')->nullable()->after('notification_preferences');
+            }
+
+            if (! Schema::hasColumn('users', 'emergency_contact_phone')) {
+                $table->string('emergency_contact_phone')->nullable()->after('emergency_contact_name');
+            }
         });
     }
 
@@ -30,8 +63,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn([
+            $columns = collect([
                 'phone',
                 'gender',
                 'date_of_birth',
@@ -42,7 +79,11 @@ return new class extends Migration
                 'notification_preferences',
                 'emergency_contact_name',
                 'emergency_contact_phone',
-            ]);
+            ])->filter(fn ($column) => Schema::hasColumn('users', $column))->all();
+
+            if (! empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AcademicController extends Controller
 {
@@ -34,7 +35,7 @@ class AcademicController extends Controller
 
         // Get current academic term
         $currentTerm = Term::where('is_active', true)->first();
-        
+
         // Get all terms for this student's enrollment period
         $terms = Term::orderBy('start_date', 'desc')->take(5)->get();
 
@@ -102,7 +103,7 @@ class AcademicController extends Controller
         $statistics = [
             'total_subjects' => $subjectGrades->count(),
             'average_score' => $grades->avg('marks_obtained'),
-            'average_percentage' => $grades->count() > 0 ? 
+            'average_percentage' => $grades->count() > 0 ?
                 ($grades->sum('marks_obtained') / $grades->sum('total_marks')) * 100 : 0,
             'total_assessments' => $grades->count(),
         ];
@@ -146,7 +147,7 @@ class AcademicController extends Controller
 
         // Generate and email report
         // Implementation depends on your mail system
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Report shared successfully to ' . $request->email
@@ -173,7 +174,7 @@ class AcademicController extends Controller
                 'total_subjects' => $termGrades->pluck('subject_id')->unique()->count(),
                 'total_assessments' => $termGrades->count(),
                 'average_score' => $termGrades->avg('marks_obtained'),
-                'average_percentage' => $termGrades->count() > 0 ? 
+                'average_percentage' => $termGrades->count() > 0 ?
                     ($termGrades->sum('marks_obtained') / $termGrades->sum('total_marks')) * 100 : 0,
                 'highest_score' => $termGrades->max('marks_obtained'),
                 'lowest_score' => $termGrades->min('marks_obtained'),
@@ -182,7 +183,7 @@ class AcademicController extends Controller
                 'total_subjects' => $allGrades->pluck('subject_id')->unique()->count(),
                 'total_assessments' => $allGrades->count(),
                 'average_score' => $allGrades->avg('marks_obtained'),
-                'average_percentage' => $allGrades->count() > 0 ? 
+                'average_percentage' => $allGrades->count() > 0 ?
                     ($allGrades->sum('marks_obtained') / $allGrades->sum('total_marks')) * 100 : 0,
             ],
         ];
@@ -190,16 +191,20 @@ class AcademicController extends Controller
 
     private function checkFeePaymentStatus($student)
     {
-        // Get total fees assigned to student
-        $totalFees = DB::table('fee_assignments')
-            ->where('student_id', $student->id)
-            ->where('is_active', true)
-            ->sum('amount');
+        $totalFees = 0;
+        if (Schema::connection('tenant')->hasTable('fee_assignments')) {
+            $totalFees = DB::table('fee_assignments')
+                ->where('student_id', $student->id)
+                ->where('is_active', true)
+                ->sum('amount');
+        }
 
-        // Get total payments made
-        $totalPaid = FeePayment::where('student_id', $student->id)
-            ->where('status', 'completed')
-            ->sum('amount');
+        $totalPaid = 0;
+        if (Schema::connection('tenant')->hasTable('fee_payments')) {
+            $totalPaid = FeePayment::where('student_id', $student->id)
+                ->where('status', 'completed')
+                ->sum('amount');
+        }
 
         // Check if fully paid (with 1 currency unit tolerance)
         return $totalPaid >= ($totalFees - 1);

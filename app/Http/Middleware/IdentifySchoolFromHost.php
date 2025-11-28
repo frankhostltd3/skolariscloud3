@@ -88,6 +88,11 @@ class IdentifySchoolFromHost
             }
         }
 
+        // Local development support: treat *.localhost (and 127.0.0.1) as subdomains
+        if (preg_match('/^(.+)\.(localhost|127\.0\.0\.1)$/i', $host, $matches)) {
+            $query->orWhere('subdomain', $matches[1]);
+        }
+
         $school = $query->first();
 
         // If we found a school by domain or subdomain, return it

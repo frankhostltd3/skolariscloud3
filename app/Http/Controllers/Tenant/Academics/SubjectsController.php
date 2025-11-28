@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Tenant\Academics;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreSubjectRequest;
+use App\Http\Requests\UpdateSubjectRequest;
 use App\Models\Subject;
 use App\Models\EducationLevel;
 use Illuminate\Contracts\View\View;
@@ -13,31 +15,10 @@ class SubjectsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            $this->authorize('viewAny', Subject::class);
-            return $next($request);
-        })->only(['index','create']);
-
-        $this->middleware(function ($request, $next) {
-            $this->authorize('create', Subject::class);
-            return $next($request);
-        })->only(['store']);
-
-        $this->middleware(function ($request, $next) {
-            $subject = $request->route('subject');
-            if ($subject) {
-                $this->authorize('update', $subject);
-            }
-            return $next($request);
-        })->only(['edit','update']);
-
-        $this->middleware(function ($request, $next) {
-            $subject = $request->route('subject');
-            if ($subject) {
-                $this->authorize('delete', $subject);
-            }
-            return $next($request);
-        })->only(['destroy']);
+        $this->middleware('permission:subjects.view')->only(['index','show']);
+        $this->middleware('permission:subjects.create')->only(['create','store']);
+        $this->middleware('permission:subjects.edit')->only(['edit','update']);
+        $this->middleware('permission:subjects.delete')->only(['destroy']);
     }
 
     public function index(Request $request): View
@@ -72,19 +53,13 @@ class SubjectsController extends Controller
 
     public function create(): View
     {
-        $levels = EducationLevel::orderBy('order')->orderBy('name')->pluck('name','id');
-        return view('tenant.academics.subjects.create', compact('levels'));
+        $educationLevels = EducationLevel::orderBy('order')->orderBy('name')->get();
+        return view('tenant.academics.subjects.create', compact('educationLevels'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreSubjectRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'code' => ['required','string','max:50','unique:subjects,code'],
-            'name' => ['required','string','max:255'],
-            'education_level_id' => ['nullable','exists:education_levels,id'],
-        ]);
-
-        Subject::create($validated);
+        Subject::create($request->validated());
 
         return redirect()->route('tenant.academics.subjects.index')->with('success', __('Subject created successfully.'));
     }
@@ -96,18 +71,13 @@ class SubjectsController extends Controller
 
     public function edit(Subject $subject): View
     {
-        $levels = EducationLevel::orderBy('order')->orderBy('name')->pluck('name','id');
-        return view('tenant.academics.subjects.edit', ['item' => $subject, 'levels' => $levels]);
+        $educationLevels = EducationLevel::orderBy('order')->orderBy('name')->get();
+        return view('tenant.academics.subjects.edit', ['item' => $subject, 'educationLevels' => $educationLevels]);
     }
 
-    public function update(Request $request, Subject $subject): RedirectResponse
+    public function update(UpdateSubjectRequest $request, Subject $subject): RedirectResponse
     {
-        $validated = $request->validate([
-            'code' => ['required','string','max:50','unique:subjects,code,'.$subject->id],
-            'name' => ['required','string','max:255'],
-            'education_level_id' => ['nullable','exists:education_levels,id'],
-        ]);
-        $subject->update($validated);
+        $subject->update($request->validated());
         return redirect()->route('tenant.academics.subjects.show', $subject)->with('success', __('Subject updated successfully.'));
     }
 

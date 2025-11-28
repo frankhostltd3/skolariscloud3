@@ -53,12 +53,12 @@ class ExpenseCategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
-            'code' => 'nullable|string|max:191|unique:expense_categories,code,NULL,id,school_id,' . $school->id,
+            'code' => 'nullable|string|max:191|unique:tenant.expense_categories,code,NULL,id,school_id,' . $school->id,
             'description' => 'nullable|string',
             'color' => 'nullable|string|max:7',
             'icon' => 'nullable|string|max:191',
             'budget_limit' => 'nullable|numeric|min:0',
-            'parent_id' => 'nullable|exists:expense_categories,id',
+            'parent_id' => 'nullable|exists:tenant.expense_categories,id',
             'is_active' => 'boolean',
         ]);
 
@@ -104,12 +104,12 @@ class ExpenseCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:191',
-            'code' => 'nullable|string|max:191|unique:expense_categories,code,' . $expenseCategory->id . ',id,school_id,' . $expenseCategory->school_id,
+            'code' => 'nullable|string|max:191|unique:tenant.expense_categories,code,' . $expenseCategory->id . ',id,school_id,' . $expenseCategory->school_id,
             'description' => 'nullable|string',
             'color' => 'nullable|string|max:7',
             'icon' => 'nullable|string|max:191',
             'budget_limit' => 'nullable|numeric|min:0',
-            'parent_id' => 'nullable|exists:expense_categories,id',
+            'parent_id' => 'nullable|exists:tenant.expense_categories,id',
             'is_active' => 'boolean',
         ]);
 

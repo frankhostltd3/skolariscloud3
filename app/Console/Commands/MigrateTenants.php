@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class MigrateTenants extends Command
 {
-    protected $signature = 'tenants:migrate {--fresh : Drop all tables and re-run tenant migrations} {--seed : Seed the tenant database after migrating}';
+    protected $signature = 'tenants:migrate {--fresh : Drop all tables and re-run tenant migrations} {--seed : Seed the tenant database after migrating} {--path= : Run only the specified tenant migration file or directory}';
 
     protected $description = 'Run tenant database migrations for every school tenant.';
 
@@ -21,6 +21,7 @@ class MigrateTenants extends Command
     {
         $fresh = (bool) $this->option('fresh');
         $seed = (bool) $this->option('seed');
+        $path = $this->option('path');
 
         $schools = School::query()->orderBy('id')->get();
 
@@ -41,13 +42,14 @@ class MigrateTenants extends Command
 
         foreach ($schools as $school) {
             try {
-                $this->components->task("Migrating tenant database for {$school->name}", function () use ($school, $fresh, $seed) {
+                $this->components->task("Migrating tenant database for {$school->name}", function () use ($school, $fresh, $seed, $path) {
                     $this->manager->runFor(
                         $school,
                         fn () => null,
                         runMigrations: true,
                         fresh: $fresh,
-                        seed: $seed
+                        seed: $seed,
+                        path: $path
                     );
                 });
 

@@ -36,3 +36,8 @@ Schedule::command('tenants:update-exchange-rates')
     ->daily()
     ->at('06:00')
     ->description('Update exchange rates for currencies with auto-update enabled');
+
+// Keep exams aligned with their activation windows
+Schedule::command('tenants:sync-exams')
+    ->everyFiveMinutes()
+    ->description('Auto-activate and close exams based on their configured schedules');

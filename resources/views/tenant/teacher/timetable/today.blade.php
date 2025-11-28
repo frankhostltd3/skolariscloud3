@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.teacher._sidebar')
-@endsection
+@extends('layouts.dashboard-teacher')
 
 @section('title', "Today's Schedule")
 
@@ -274,4 +270,3 @@ setTimeout(function() {
 }, 300000);
 </script>
 @endpush
-

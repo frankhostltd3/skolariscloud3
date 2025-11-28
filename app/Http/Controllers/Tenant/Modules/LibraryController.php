@@ -19,30 +19,32 @@ class LibraryController extends Controller
      */
     public function index(): View
     {
+        $this->authorize('library.view');
+
         // Statistics
         $totalBooks = LibraryBook::count();
         $availableBooks = LibraryBook::available()->count();
         $borrowedBooks = LibraryTransaction::active()->count();
         $overdueBooks = LibraryTransaction::overdue()->count();
-        
+
         // Recent activities
         $recentBorrows = LibraryTransaction::with(['user', 'book', 'issuedByStaff'])
             ->latest('borrowed_at')
             ->take(10)
             ->get();
-        
+
         // Popular books
         $popularBooks = LibraryBook::withCount('transactions')
             ->orderBy('transactions_count', 'desc')
             ->take(5)
             ->get();
-        
+
         // Category distribution
         $categoryStats = LibraryBook::select('category', DB::raw('count(*) as count'))
             ->groupBy('category')
             ->orderBy('count', 'desc')
             ->get();
-        
+
         // Overdue transactions
         $overdueTransactions = LibraryTransaction::overdue()
             ->with(['user', 'book'])
@@ -67,6 +69,8 @@ class LibraryController extends Controller
      */
     public function books(Request $request): View
     {
+        $this->authorize('books.view');
+
         $query = LibraryBook::query();
 
         // Search
@@ -101,6 +105,7 @@ class LibraryController extends Controller
      */
     public function createBook(): View
     {
+        $this->authorize('books.create');
         return view('tenant.modules.library.books.create');
     }
 
@@ -109,6 +114,8 @@ class LibraryController extends Controller
      */
     public function storeBook(Request $request): RedirectResponse
     {
+        $this->authorize('books.create');
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
@@ -130,17 +137,27 @@ class LibraryController extends Controller
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'is_featured' => 'nullable|boolean',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // Digital Product fields
+            'is_digital' => 'nullable|boolean',
+            'digital_file' => 'nullable|file|mimes:pdf,epub,mobi|max:10240', // 10MB max
         ]);
 
         $validated['available_quantity'] = $validated['quantity'];
         $validated['status'] = 'available';
         $validated['is_for_sale'] = $request->has('is_for_sale');
         $validated['is_featured'] = $request->has('is_featured');
+        $validated['is_digital'] = $request->has('is_digital');
 
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $path = $request->file('cover_image')->store('book-covers', 'public');
             $validated['cover_image_path'] = $path;
+        }
+
+        // Handle digital file upload
+        if ($request->hasFile('digital_file')) {
+            $path = $request->file('digital_file')->store('digital-books', 'private'); // Store securely
+            $validated['digital_file_path'] = $path;
         }
 
         LibraryBook::create($validated);
@@ -154,6 +171,7 @@ class LibraryController extends Controller
      */
     public function editBook(LibraryBook $book): View
     {
+        $this->authorize('books.edit');
         return view('tenant.modules.library.books.edit', compact('book'));
     }
 
@@ -162,6 +180,8 @@ class LibraryController extends Controller
      */
     public function updateBook(Request $request, LibraryBook $book): RedirectResponse
     {
+        $this->authorize('books.edit');
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
@@ -184,10 +204,14 @@ class LibraryController extends Controller
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'is_featured' => 'nullable|boolean',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // Digital Product fields
+            'is_digital' => 'nullable|boolean',
+            'digital_file' => 'nullable|file|mimes:pdf,epub,mobi|max:10240',
         ]);
 
         $validated['is_for_sale'] = $request->has('is_for_sale');
         $validated['is_featured'] = $request->has('is_featured');
+        $validated['is_digital'] = $request->has('is_digital');
 
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
@@ -195,9 +219,20 @@ class LibraryController extends Controller
             if ($book->cover_image_path && \Storage::disk('public')->exists($book->cover_image_path)) {
                 \Storage::disk('public')->delete($book->cover_image_path);
             }
-            
+
             $path = $request->file('cover_image')->store('book-covers', 'public');
             $validated['cover_image_path'] = $path;
+        }
+
+        // Handle digital file upload
+        if ($request->hasFile('digital_file')) {
+            // Delete old file if exists
+            if ($book->digital_file_path && \Storage::disk('private')->exists($book->digital_file_path)) {
+                \Storage::disk('private')->delete($book->digital_file_path);
+            }
+
+            $path = $request->file('digital_file')->store('digital-books', 'private');
+            $validated['digital_file_path'] = $path;
         }
 
         $book->update($validated);
@@ -211,6 +246,8 @@ class LibraryController extends Controller
      */
     public function destroyBook(LibraryBook $book): RedirectResponse
     {
+        $this->authorize('books.delete');
+
         // Check if book has active borrows
         if ($book->activeBorrows()->exists()) {
             return back()->with('error', 'Cannot delete book with active borrows!');
@@ -227,6 +264,8 @@ class LibraryController extends Controller
      */
     public function showBook(LibraryBook $book): View
     {
+        $this->authorize('books.view');
+
         $book->load(['transactions' => function ($query) {
             $query->latest()->take(20);
         }]);
@@ -239,6 +278,8 @@ class LibraryController extends Controller
      */
     public function transactions(Request $request): View
     {
+        $this->authorize('library.view');
+
         $query = LibraryTransaction::with(['user', 'book', 'issuedByStaff']);
 
         // Filter by status
@@ -265,6 +306,8 @@ class LibraryController extends Controller
      */
     public function borrowForm(): View
     {
+        $this->authorize('library.issue');
+
         $availableBooks = LibraryBook::available()->get();
         $users = User::orderBy('name')->get();
 
@@ -276,6 +319,8 @@ class LibraryController extends Controller
      */
     public function borrow(Request $request): RedirectResponse
     {
+        $this->authorize('library.issue');
+
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'library_book_id' => 'required|exists:library_books,id',
@@ -312,6 +357,8 @@ class LibraryController extends Controller
      */
     public function returnBook(Request $request, LibraryTransaction $transaction): RedirectResponse
     {
+        $this->authorize('library.return');
+
         if ($transaction->status !== 'borrowed') {
             return back()->with('error', 'Book is not currently borrowed!');
         }

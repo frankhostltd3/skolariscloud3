@@ -9,13 +9,14 @@
                     <p class="text-muted mb-0">Manage currencies and exchange rates for payment processing.</p>
                 </div>
                 <div class="mt-3 mt-lg-0 d-flex gap-2">
-                    <form method="POST" action="{{ route('settings.currencies.update-rates') }}" class="d-inline">
+                    <form method="POST" action="{{ route('tenant.settings.admin.currencies.update-rates') }}"
+                        class="d-inline">
                         @csrf
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-arrow-repeat me-2"></i>Update Exchange Rates
                         </button>
                     </form>
-                    <a href="{{ route('settings.currencies.create') }}" class="btn btn-primary">
+                    <a href="{{ route('tenant.settings.admin.currencies.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Add Currency
                     </a>
                 </div>
@@ -42,7 +43,7 @@
                             <i class="bi bi-currency-exchange text-muted" style="font-size: 3rem;"></i>
                             <h5 class="mt-3 fw-semibold">No Currencies Found</h5>
                             <p class="text-muted">Add your first currency to get started.</p>
-                            <a href="{{ route('settings.currencies.create') }}" class="btn btn-primary mt-2">
+                            <a href="{{ route('tenant.settings.admin.currencies.create') }}" class="btn btn-primary mt-2">
                                 <i class="bi bi-plus-circle me-2"></i>Add Currency
                             </a>
                         </div>
@@ -80,7 +81,7 @@
                                             </td>
                                             <td>
                                                 <form method="POST"
-                                                    action="{{ route('settings.currencies.toggle-active', $currency) }}"
+                                                    action="{{ route('tenant.settings.admin.currencies.toggle-active', $currency) }}"
                                                     class="d-inline">
                                                     @csrf
                                                     <button type="submit"
@@ -97,7 +98,7 @@
                                             <td>
                                                 @if ($currency->code !== 'USD')
                                                     <form method="POST"
-                                                        action="{{ route('settings.currencies.toggle-auto-update', $currency) }}"
+                                                        action="{{ route('tenant.settings.admin.currencies.toggle-auto-update', $currency) }}"
                                                         class="d-inline">
                                                         @csrf
                                                         <button type="submit"
@@ -126,7 +127,7 @@
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     @if (!$currency->is_default)
                                                         <form method="POST"
-                                                            action="{{ route('settings.currencies.set-default', $currency) }}"
+                                                            action="{{ route('tenant.settings.admin.currencies.set-default', $currency) }}"
                                                             class="d-inline">
                                                             @csrf
                                                             <button type="submit" class="btn btn-outline-primary"
@@ -135,13 +136,13 @@
                                                             </button>
                                                         </form>
                                                     @endif
-                                                    <a href="{{ route('settings.currencies.edit', $currency) }}"
+                                                    <a href="{{ route('tenant.settings.admin.currencies.edit', $currency) }}"
                                                         class="btn btn-outline-secondary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     @if (!$currency->is_default)
                                                         <form method="POST"
-                                                            action="{{ route('settings.currencies.destroy', $currency) }}"
+                                                            action="{{ route('tenant.settings.admin.currencies.destroy', $currency) }}"
                                                             class="d-inline"
                                                             onsubmit="return confirm('Are you sure you want to delete this currency?');">
                                                             @csrf

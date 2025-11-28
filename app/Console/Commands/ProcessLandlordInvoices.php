@@ -49,8 +49,8 @@ class ProcessLandlordInvoices extends Command
             }
 
             $diff = $now->copy()->startOfDay()->diffInDays($dueAt->copy()->startOfDay(), false);
-            $daysUntilDue = $diff;
-            $daysOverdue = $diff < 0 ? abs($diff) : 0;
+            $daysUntilDue = (int) $diff;
+            $daysOverdue = $daysUntilDue < 0 ? abs($daysUntilDue) : 0;
 
             $warningCooldownPassed = $invoice->last_warning_sent_at === null
                 || $invoice->last_warning_sent_at->diffInHours($now) >= 24;

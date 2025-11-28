@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\RegistrationPipelineService;
 
 class DashboardController extends Controller
 {
@@ -49,6 +50,8 @@ class DashboardController extends Controller
 
         $attendanceWindowStart = now()->subDays(30)->startOfDay();
 
+        $registrationOverview = app(RegistrationPipelineService::class)->parentOverview($user);
+
         if ($wards->isEmpty()) {
             $upcomingEvents = $this->loadUpcomingEvents();
             $recentMessages = $this->loadRecentMessages($user->id);
@@ -63,6 +66,7 @@ class DashboardController extends Controller
                 'recentMessages' => $recentMessages,
                 'plans' => $plans,
                 'attendanceWindowLabel' => null,
+                'registrationOverview' => $registrationOverview,
             ]);
         }
 
@@ -201,6 +205,7 @@ class DashboardController extends Controller
             'recentMessages' => $recentMessages,
             'plans' => $plans,
             'attendanceWindowLabel' => $attendanceWindowLabel,
+            'registrationOverview' => $registrationOverview,
         ]);
     }
 

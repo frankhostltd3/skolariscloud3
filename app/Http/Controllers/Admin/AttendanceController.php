@@ -82,7 +82,7 @@ class AttendanceController extends Controller
 
         $attendance = Attendance::create($validated);
 
-        return redirect()->route('admin.attendance.mark', $attendance->id)
+        return redirect()->route('tenant.modules.attendance.mark', $attendance->id)
             ->with('success', 'Attendance session created. Please mark student attendance.');
     }
 
@@ -150,7 +150,7 @@ class AttendanceController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.attendance.index')
+            return redirect()->route('tenant.modules.attendance.index')
                 ->with('success', 'Attendance records saved successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -231,7 +231,7 @@ class AttendanceController extends Controller
         $attendance = Attendance::forSchool($school->id)->findOrFail($id);
         $attendance->delete();
 
-        return redirect()->route('admin.attendance.index')
+        return redirect()->route('tenant.modules.attendance.index')
             ->with('success', 'Attendance session deleted successfully.');
     }
 }

@@ -4,6 +4,10 @@ namespace App\Models\Academic;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Student;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class ClassRoom extends Model
 {
@@ -47,7 +51,29 @@ class ClassRoom extends Model
 
     public function students()
     {
-        return $this->hasMany(\App\Models\Student::class, 'class_id');
+        $connection = $this->getConnectionName() ?? config('database.default');
+
+        if (Schema::connection($connection)->hasTable('enrollments')) {
+            return $this->belongsToMany(\App\Models\User::class, 'enrollments', 'class_id', 'student_id')
+                ->withPivot('status', 'academic_year_id', 'semester_id', 'enrollment_date')
+                ->withTimestamps();
+        }
+
+        if (Schema::connection($connection)->hasTable('students')) {
+            return $this->hasMany(\App\Models\Student::class, 'class_id');
+        }
+
+        return $this->hasMany(\App\Models\User::class, 'id', $this->getKeyName())->whereRaw('1 = 0');
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(\App\Models\Academic\Enrollment::class, 'class_id');
+    }
+
+    public function activeEnrollments()
+    {
+        return $this->hasMany(\App\Models\Academic\Enrollment::class, 'class_id')->where('status', 'active');
     }
 
     public function teachers()
@@ -55,9 +81,29 @@ class ClassRoom extends Model
         return $this->hasMany(\App\Models\Teacher::class, 'class_id');
     }
 
-    public function subjects()
+    public function teacher()
     {
-        return $this->belongsToMany(\App\Models\Academic\Subject::class, 'class_subjects', 'class_id', 'subject_id');
+        // Primary class teacher, if your schema stores their user/teacher ID
+        return $this->belongsTo(\App\Models\Teacher::class, 'class_teacher_id');
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        $connection = $this->getConnectionName() ?? config('database.default');
+        $pivotTable = null;
+
+        foreach (['class_subjects', 'class_subject'] as $candidate) {
+            if (tenant_table_exists($candidate, $connection)) {
+                $pivotTable = $candidate;
+                break;
+            }
+        }
+
+        $pivotTable ??= 'class_subjects';
+
+        return $this->belongsToMany(\App\Models\Academic\Subject::class, $pivotTable, 'class_id', 'subject_id')
+            ->withPivot('teacher_id', 'is_compulsory')
+            ->withTimestamps();
     }
 
     /**
@@ -116,13 +162,26 @@ class ClassRoom extends Model
     /**
      * Get the percentage of capacity used.
      */
+    public function getComputedStudentsCountAttribute(): int
+    {
+        if (array_key_exists('active_enrollments_count', $this->attributes)) {
+            return (int) $this->attributes['active_enrollments_count'];
+        }
+
+        if (!is_null($this->active_students_count)) {
+            return (int) $this->active_students_count;
+        }
+
+        return 0;
+    }
+
     public function getCapacityPercentageAttribute(): float
     {
         if (!$this->capacity || $this->capacity == 0) {
             return 0;
         }
 
-        return round((($this->active_students_count ?? 0) / $this->capacity) * 100, 1);
+        return round(($this->computed_students_count / $this->capacity) * 100, 1);
     }
 
     /**
@@ -134,7 +193,7 @@ class ClassRoom extends Model
             return 999; // Return large number if no limit
         }
 
-        return max(0, $this->capacity - ($this->active_students_count ?? 0));
+        return max(0, $this->capacity - $this->computed_students_count);
     }
 
     /**
@@ -165,5 +224,38 @@ class ClassRoom extends Model
         }
 
         return $this->name;
+    }
+
+    /**
+     * Recalculate and persist the number of active students in this class.
+     */
+    public function updateEnrollmentCount(): void
+    {
+        $connection = $this->getConnectionName() ?? config('database.default');
+
+        // Prefer enrollments table if available; otherwise fall back to students.
+        if (Schema::connection($connection)->hasTable('enrollments')) {
+            $count = Enrollment::on($connection)
+                ->where('class_id', $this->id)
+                ->where('status', 'active')
+                ->count();
+        } elseif (Schema::connection($connection)->hasTable('students')) {
+            $count = Student::on($connection)
+                ->where('class_id', $this->id)
+                ->count();
+        } else {
+            $count = 0;
+        }
+
+        $this->forceFill(['active_students_count' => $count])->save();
+    }
+
+    /**
+     * Get the academic year for the class.
+     * Since classes are perennial, this returns the current active academic year.
+     */
+    public function getAcademicYearAttribute()
+    {
+        return \App\Models\Academic\AcademicYear::where('is_current', true)->first();
     }
 }

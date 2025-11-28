@@ -10,12 +10,16 @@ class OnlineExamQuestion extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
-        'online_exam_section_id',
+        'section_id',
+        'online_exam_id',
         'type',
-        'question_text',
+        'question',
         'options',
         'correct_answer',
+        'explanation',
         'marks',
         'order',
         'attachments',
@@ -34,7 +38,7 @@ class OnlineExamQuestion extends Model
      */
     public function section()
     {
-        return $this->belongsTo(OnlineExamSection::class, 'online_exam_section_id');
+        return $this->belongsTo(OnlineExamSection::class, 'section_id');
     }
 
     public function answers()

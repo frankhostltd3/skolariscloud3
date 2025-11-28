@@ -42,7 +42,7 @@
                     {{ __('System Information') }}
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.system.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.system.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="system_info">
@@ -96,7 +96,7 @@
                     {{ __('System Performance') }}
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.system.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.system.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="performance">
@@ -204,7 +204,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.system.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.system.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="security">
@@ -308,7 +308,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.system.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.system.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="maintenance">
@@ -414,7 +414,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.system.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.system.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="user_approval">
@@ -441,6 +441,17 @@
                                     <strong>Email Verification</strong>
                                     <small class="text-muted d-block">Users are approved after verifying their email
                                         address</small>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="user_approval_mode"
+                                    id="approval_otp" value="otp_approval"
+                                    {{ ($settings['user_approval_mode'] ?? 'manual') === 'otp_approval' ? 'checked' : '' }}
+                                    onchange="toggleRoleSettings()">
+                                <label class="form-check-label" for="approval_otp">
+                                    <strong>OTP Approval</strong>
+                                    <small class="text-muted d-block">Users must verify a One-Time Password sent to their
+                                        email/phone</small>
                                 </label>
                             </div>
                             <div class="form-check">
@@ -607,16 +618,16 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('settings.general.edit') }}" class="btn btn-outline-primary">
+                        <a href="{{ route('tenant.settings.admin.general') }}" class="btn btn-outline-primary">
                             <span class="bi bi-gear me-2"></span>{{ __('General Settings') }}
                         </a>
-                        <a href="{{ route('settings.academic.edit') }}" class="btn btn-outline-success">
+                        <a href="{{ route('tenant.settings.admin.academic') }}" class="btn btn-outline-success">
                             <span class="bi bi-mortarboard me-2"></span>{{ __('Academic Settings') }}
                         </a>
-                        <a href="{{ route('settings.mail.edit') }}" class="btn btn-outline-info">
+                        <a href="{{ route('tenant.settings.admin.mail') }}" class="btn btn-outline-info">
                             <span class="bi bi-envelope me-2"></span>{{ __('Mail Settings') }}
                         </a>
-                        <a href="{{ route('settings.messaging.edit') }}" class="btn btn-outline-warning">
+                        <a href="{{ route('tenant.settings.admin.messaging') }}" class="btn btn-outline-warning">
                             <span class="bi bi-chat-dots me-2"></span>{{ __('Messaging') }}
                         </a>
                     </div>
@@ -676,7 +687,7 @@
             button.innerHTML = '<span class="bi bi-arrow-repeat spinning me-2"></span>Clearing...';
 
             // Make AJAX request
-            fetch('{{ route('settings.system.clear-cache') }}', {
+            fetch('{{ route('tenant.settings.admin.system.clear-cache') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

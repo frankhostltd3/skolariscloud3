@@ -80,8 +80,8 @@ class InvoiceController extends Controller
         $school = $request->attributes->get('currentSchool');
 
         $validated = $request->validate([
-            'student_id' => 'required|exists:users,id',
-            'fee_structure_id' => 'required|exists:fee_structures,id',
+            'student_id' => 'required|exists:tenant.users,id',
+            'fee_structure_id' => 'required|exists:tenant.fee_structures,id',
             'total_amount' => 'required|numeric|min:0',
             'issue_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:issue_date',
@@ -143,8 +143,8 @@ class InvoiceController extends Controller
         }
 
         $validated = $request->validate([
-            'student_id' => 'required|exists:users,id',
-            'fee_structure_id' => 'required|exists:fee_structures,id',
+            'student_id' => 'required|exists:tenant.users,id',
+            'fee_structure_id' => 'required|exists:tenant.fee_structures,id',
             'total_amount' => 'required|numeric|min:' . $invoice->paid_amount,
             'issue_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:issue_date',

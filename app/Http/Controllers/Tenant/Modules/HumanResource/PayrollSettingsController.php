@@ -38,7 +38,7 @@ class PayrollSettingsController extends Controller
             PayrollSetting::setValue($key, $value);
         }
 
-        return redirect()->route('tenant.modules.human_resources.payroll-settings.index')
+        return redirect()->route('tenant.modules.human-resource.payroll-settings.index')
                         ->with('success', 'Payroll settings updated successfully.');
     }
 
@@ -162,7 +162,7 @@ class PayrollSettingsController extends Controller
             PayrollSetting::setValue($key, $value);
         }
 
-        return redirect()->route('tenant.modules.human_resources.payroll-settings.index')
+        return redirect()->route('tenant.modules.human-resource.payroll-settings.index')
                         ->with('success', 'Payroll settings updated successfully.');
     }
 
@@ -170,7 +170,7 @@ class PayrollSettingsController extends Controller
     {
         $this->authorize('delete', $payrollSetting);
         $payrollSetting->delete();
-        return redirect()->route('tenant.modules.human_resources.payroll-settings.index')
+        return redirect()->route('tenant.modules.human-resource.payroll-settings.index')
                         ->with('success', 'Payroll setting deleted successfully.');
     }
 
@@ -215,7 +215,7 @@ class PayrollSettingsController extends Controller
             PayrollSetting::setValue($key, $value);
         }
 
-        return redirect()->route('tenant.modules.human_resources.payroll-settings.index')
+        return redirect()->route('tenant.modules.human-resource.payroll-settings.index')
                         ->with('success', 'Payroll settings reset to defaults.');
     }
 

@@ -120,7 +120,7 @@ class MailSettingsController extends Controller
         $this->configurator->apply();
 
         return redirect()
-            ->route('settings.mail.edit')
+            ->route('tenant.settings.admin.mail')
             ->with('status', 'Mail settings updated successfully.');
     }
 

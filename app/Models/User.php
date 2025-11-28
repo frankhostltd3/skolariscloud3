@@ -6,17 +6,25 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\UserType;
 use App\Models\School;
+use App\Models\Academic\Enrollment;
 use App\Notifications\TenantResetPasswordNotification;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles {
+        HasRoles::hasRole as traitHasRole;
+        HasRoles::hasAnyRole as traitHasAnyRole;
+        HasRoles::hasAllRoles as traitHasAllRoles;
+    }
 
     protected $connection = 'tenant';
 
@@ -26,14 +34,13 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getConnectionName()
     {
-        $tenantDb = config('database.connections.tenant.database');
+        $defaultConnection = config('database.default', 'mysql');
 
-        // If no tenant database is configured, use central connection
-        if (empty($tenantDb)) {
-            return config('database.default', 'mysql');
+        if ($defaultConnection === 'tenant' || app()->bound('currentSchool')) {
+            return 'tenant';
         }
 
-        return $this->connection;
+        return $defaultConnection;
     }
 
     /**
@@ -48,6 +55,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'user_type',
         'school_id',
         'approval_status',
+        'profile_photo', // Added profile_photo
+        'is_active',
     ];
 
     /**
@@ -75,7 +84,19 @@ class User extends Authenticatable implements MustVerifyEmail
             'suspended_at' => 'datetime',
             'expelled_at' => 'datetime',
             'registration_data' => 'array',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if the user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->is_active
+            && $this->approval_status === 'approved'
+            && is_null($this->suspended_at)
+            && is_null($this->expelled_at);
     }
 
     public function hasUserType(UserType|string $type): bool
@@ -91,6 +112,49 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $userType === $expected;
+    }
+
+    /**
+     * Tenant-level Admins should always satisfy role checks.
+     */
+    public function hasRole($roles, ?string $guard = null): bool
+    {
+        if ($this->hasTenantAdminAuthority()) {
+            return true;
+        }
+
+        return $this->traitHasRole($roles, $guard);
+    }
+
+    public function hasAnyRole(...$roles): bool
+    {
+        if ($this->hasTenantAdminAuthority()) {
+            return true;
+        }
+
+        return $this->traitHasAnyRole(...$roles);
+    }
+
+    public function hasAllRoles($roles, ?string $guard = null): bool
+    {
+        if ($this->hasTenantAdminAuthority()) {
+            return true;
+        }
+
+        return $this->traitHasAllRoles($roles, $guard);
+    }
+
+    protected function hasTenantAdminAuthority(): bool
+    {
+        if ($this->getIsLandlordAttribute()) {
+            return false;
+        }
+
+        $type = $this->user_type instanceof UserType
+            ? $this->user_type->value
+            : (string) $this->user_type;
+
+        return strcasecmp($type, UserType::ADMIN->value) === 0;
     }
 
     /**
@@ -125,21 +189,57 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /**
-     * Get the CSS badge class based on approval status.
-     */
-    public function getApprovalBadgeClass(): string
+    public function grades(): HasMany
     {
-        return match($this->approval_status) {
-            'approved' => 'bg-success',
-            'rejected' => 'bg-danger',
-            'pending' => 'bg-warning text-dark',
-            default => 'bg-secondary',
-        };
+        return $this->hasMany(\App\Models\Grade::class, 'student_id');
     }
 
     /**
-     * Get the human-readable approval status label.
+     * Subjects assigned to this user (as a teacher).
+     */
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Academic\Subject::class, 'class_subject', 'teacher_id', 'subject_id')
+            ->withPivot('class_id', 'is_compulsory')
+            ->withTimestamps();
+    }
+
+    /**
+     * Active class enrollments for student-type users.
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'student_id');
+    }
+
+    /**
+     * Active class enrollments for student-type users.
+     */
+    public function activeEnrollments()
+    {
+        return $this->enrollments()->where('status', 'active');
+    }
+
+    /**
+     * Get the current enrollment (most recent active enrollment).
+     */
+    public function currentEnrollment()
+    {
+        return $this->enrollments()
+            ->where('status', 'active')
+            ->latest('enrollment_date');
+    }
+
+    /**
+     * Get the user's preferences.
+     */
+    public function preference(): HasOne
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
+    /**
+     * Get the CSS badge class based on approval status.
      */
     public function getApprovalLabel(): string
     {
@@ -148,6 +248,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'rejected' => __('Rejected'),
             'pending' => __('Pending Approval'),
             default => __('Unknown'),
+        };
+    }
+
+    public function getApprovalBadgeClass(): string
+    {
+        return match($this->approval_status) {
+            'approved' => 'bg-success',
+            'rejected' => 'bg-danger',
+            'pending' => 'bg-warning text-dark',
+            default => 'bg-secondary',
         };
     }
 
@@ -160,5 +270,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new TenantResetPasswordNotification($token));
+    }
+
+    /**
+     * Subjects assigned to this user (as a student).
+     */
+    public function studentSubjects(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Academic\Subject::class, 'student_subject', 'student_id', 'subject_id')
+            ->withPivot('academic_year', 'is_core', 'status')
+            ->withTimestamps();
     }
 }

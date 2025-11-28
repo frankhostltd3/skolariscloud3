@@ -97,7 +97,7 @@ class LeaveRequestsController extends Controller
     {
         $this->authorize('create', LeaveRequest::class);
         $leaveRequest = LeaveRequest::create($request->validated());
-        return redirect()->route('human_resources.leave-requests.index')->with('success', 'Leave request created successfully.');
+        return redirect()->route('tenant.modules.human-resource.leave-requests.index')->with('success', 'Leave request created successfully.');
     }
 
     public function show(LeaveRequest $leaveRequest): View
@@ -124,7 +124,7 @@ class LeaveRequestsController extends Controller
             default => 'Leave request updated successfully.'
         };
 
-        return redirect()->route('tenant.modules.human_resources.leave-requests.show', $leaveRequest)
+        return redirect()->route('tenant.modules.human-resource.leave-requests.show', $leaveRequest)
                         ->with('success', __($statusMessage));
     }
 
@@ -132,7 +132,7 @@ class LeaveRequestsController extends Controller
     {
         $this->authorize('delete', $leaveRequest);
         $leaveRequest->delete();
-        return redirect()->route('human_resources.leave-requests.index')->with('success', 'Leave request deleted successfully.');
+        return redirect()->route('tenant.modules.human-resource.leave-requests.index')->with('success', 'Leave request deleted successfully.');
     }
 
     /**

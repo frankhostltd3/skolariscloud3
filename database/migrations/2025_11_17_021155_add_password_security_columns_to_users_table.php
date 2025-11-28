@@ -11,10 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('password_changed_at')->nullable()->after('password');
-            $table->timestamp('password_expires_at')->nullable()->after('password_changed_at');
-            $table->json('password_history')->nullable()->after('password_expires_at');
+            if (! Schema::hasColumn('users', 'password_changed_at')) {
+                $table->timestamp('password_changed_at')->nullable()->after('password');
+            }
+
+            if (! Schema::hasColumn('users', 'password_expires_at')) {
+                $table->timestamp('password_expires_at')->nullable()->after('password_changed_at');
+            }
+
+            if (! Schema::hasColumn('users', 'password_history')) {
+                $table->json('password_history')->nullable()->after('password_expires_at');
+            }
         });
     }
 
@@ -23,8 +35,18 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['password_changed_at', 'password_expires_at', 'password_history']);
+            $columns = collect(['password_changed_at', 'password_expires_at', 'password_history'])
+                ->filter(fn ($column) => Schema::hasColumn('users', $column))
+                ->all();
+
+            if (! empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

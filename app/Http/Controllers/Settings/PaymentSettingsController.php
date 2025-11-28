@@ -85,7 +85,7 @@ class PaymentSettingsController extends Controller
 
         $this->configurator->apply();
 
-        return redirect()->route('settings.payments.edit')->with('status', 'Payment gateways updated successfully.');
+        return redirect()->route('tenant.settings.admin.finance')->with('status', 'Payment gateways updated successfully.');
     }
 
     private function authorizeAdmin(Request $request): void

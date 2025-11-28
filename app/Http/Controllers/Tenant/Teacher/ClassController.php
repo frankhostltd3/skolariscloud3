@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Tenant\Teacher;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Academic\ClassRoom;
-use App\Models\Subject;
 use App\Models\Grade;
-use App\Models\Academic\Enrollment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ClassController extends Controller
@@ -19,17 +18,93 @@ class ClassController extends Controller
     public function index()
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
 
         // Class ownership based on class_teacher_id
         // Classes where teacher is class teacher OR assigned to any subject in the class
-        $classes = ClassRoom::where('class_teacher_id', $teacher->id)
-            ->orWhereHas('subjects', function ($q) use ($teacher) {
-                // Use the correct pivot table name in whereHas callback
-                $q->where('class_subjects.teacher_id', $teacher->id);
-            })
-            ->with(['academicYear', 'students', 'subjects'])
-            ->withCount(['students', 'subjects'])
-            ->get();
+        $classesQuery = ClassRoom::query();
+
+        $classesQuery->where(function ($query) use ($teacher, $classSubjectTable, $hasClassTeacherColumn) {
+            $applied = false;
+
+            if ($hasClassTeacherColumn) {
+                $query->where('class_teacher_id', $teacher->id);
+                $applied = true;
+            }
+
+            if ($classSubjectTable) {
+                $constraint = function ($subjectQuery) use ($teacher, $classSubjectTable) {
+                    $subjectQuery->where($classSubjectTable . '.teacher_id', $teacher->id);
+                };
+
+                if ($applied) {
+                    $query->orWhereHas('subjects', $constraint);
+                } else {
+                    $query->whereHas('subjects', $constraint);
+                }
+
+                $applied = true;
+            }
+
+            if (! $applied) {
+                $query->whereRaw('0 = 1');
+            }
+        });
+
+        $relations = [];
+
+        if ($classSubjectTable) {
+            $relations['subjects'] = function ($query) use ($teacher, $classSubjectTable) {
+                $query->where($classSubjectTable . '.teacher_id', $teacher->id);
+            };
+        }
+
+        $classesQuery->with($relations);
+
+        $withCounts = [];
+
+        if ($classSubjectTable) {
+            $withCounts['subjects as subjects_count'] = function ($query) use ($teacher, $classSubjectTable) {
+                $query->where($classSubjectTable . '.teacher_id', $teacher->id);
+            };
+        }
+
+        if ($hasEnrollments) {
+            $withCounts['students as students_count'] = function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            };
+        } elseif ($hasStudentTable) {
+            $withCounts['students as students_count'] = function ($query) {
+                // Default count without additional filtering for legacy schema
+            };
+        }
+
+        if (! empty($withCounts)) {
+            $classesQuery->withCount($withCounts);
+        }
+
+        $classes = $classesQuery->get();
+
+        if (! $hasEnrollments && ! $hasStudentTable) {
+            $classes->each(function ($class) {
+                $class->setAttribute('students_count', 0);
+            });
+        }
+
+        if (! $classSubjectTable) {
+            $classes->each(function ($class) {
+                $class->setAttribute('subjects_count', 0);
+                $class->setRelation('subjects', collect());
+            });
+        }
 
         return view('tenant.teacher.classes.index', compact('classes'));
     }
@@ -40,22 +115,50 @@ class ClassController extends Controller
     public function show(ClassRoom $class)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
 
         // Ensure teacher can only view their own classes
-        $isClassTeacher = $class->class_teacher_id === $teacher->id;
-        $isSubjectTeacher = $class->subjects()->wherePivot('teacher_id', $teacher->id)->exists();
+        $isClassTeacher = $hasClassTeacherColumn && $class->class_teacher_id === $teacher->id;
+        $isSubjectTeacher = $classSubjectTable
+            ? $class->subjects()->where($classSubjectTable . '.teacher_id', $teacher->id)->exists()
+            : false;
         if (!$isClassTeacher && !$isSubjectTeacher) {
             abort(403, 'You are not authorized to view this class.');
         }
 
-        $class->load([
-            'academicYear',
-            // 'students' already returns User models; no nested 'user' relation exists on User
-            'students',
-            'subjects' => function ($query) use ($teacher) {
-                $query->wherePivot('teacher_id', $teacher->id);
-            }
-        ]);
+        $relations = [];
+
+        if ($classSubjectTable) {
+            $relations['subjects'] = function ($query) use ($teacher, $classSubjectTable) {
+                $query->where($classSubjectTable . '.teacher_id', $teacher->id);
+            };
+        }
+
+        if ($hasEnrollments || $hasStudentTable) {
+            $relations['students'] = function ($query) use ($hasEnrollments) {
+                if ($hasEnrollments) {
+                    $query->where(function ($subQuery) {
+                        $subQuery->where('enrollments.status', 'active')
+                            ->orWhereNull('enrollments.status');
+                    });
+                }
+            };
+        }
+
+        $class->load($relations);
+
+        if (! ($hasEnrollments || $hasStudentTable)) {
+            $class->setRelation('students', collect());
+        }
+
+        if (! $classSubjectTable) {
+            $class->setRelation('subjects', collect());
+        }
 
         // Get recent grades for this class
         $recentGrades = Grade::where('class_id', $class->id)
@@ -90,18 +193,30 @@ class ClassController extends Controller
     public function students(ClassRoom $class)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
 
-        $isClassTeacher = $class->class_teacher_id === $teacher->id;
-        $isSubjectTeacher = $class->subjects()->wherePivot('teacher_id', $teacher->id)->exists();
+        $isClassTeacher = $hasClassTeacherColumn && $class->class_teacher_id === $teacher->id;
+        $isSubjectTeacher = $classSubjectTable
+            ? $class->subjects()->where($classSubjectTable . '.teacher_id', $teacher->id)->exists()
+            : false;
         if (!$isClassTeacher && !$isSubjectTeacher) {
             abort(403, 'You are not authorized to view this class.');
         }
 
-        $students = $class->students()
-            ->with(['grades' => function ($query) use ($teacher) {
-                $query->where('teacher_id', $teacher->id);
-            }])
-            ->get();
+        if (! ($hasEnrollments || $hasStudentTable)) {
+            $students = collect();
+        } else {
+            $students = $class->students()
+                ->with(['grades' => function ($query) use ($teacher) {
+                    $query->where('teacher_id', $teacher->id);
+                }])
+                ->get();
+        }
 
         // Calculate average percentage for each student (use model accessor percentage)
         $students->each(function ($student) {
@@ -123,17 +238,27 @@ class ClassController extends Controller
     public function grades(ClassRoom $class, Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
 
-        $isClassTeacher = $class->class_teacher_id === $teacher->id;
-        $isSubjectTeacher = $class->subjects()->wherePivot('teacher_id', $teacher->id)->exists();
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $isClassTeacher = $hasClassTeacherColumn && $class->class_teacher_id === $teacher->id;
+        $isSubjectTeacher = $classSubjectTable
+            ? $class->subjects()->where($classSubjectTable . '.teacher_id', $teacher->id)->exists()
+            : false;
         if (!$isClassTeacher && !$isSubjectTeacher) {
             abort(403, 'You are not authorized to view this class.');
         }
 
         // Get teacher's subjects for this class
-        $subjects = $class->subjects()
-            ->wherePivot('teacher_id', $teacher->id)
-            ->get();
+        if ($classSubjectTable) {
+            $subjects = $class->subjects()
+                ->where($classSubjectTable . '.teacher_id', $teacher->id)
+                ->get();
+        } else {
+            $subjects = collect();
+        }
 
         $query = Grade::where('class_id', $class->id)
             ->where('teacher_id', $teacher->id)
@@ -191,6 +316,12 @@ class ClassController extends Controller
     {
         $percentageExpr = Grade::percentageValueExpression();
 
+        $connection = $class->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        if (! ($schema->hasTable('enrollments') || $schema->hasTable('students'))) {
+            return collect();
+        }
+
         return $class->students()
             ->select('users.*')
             // Students who have any grade below threshold in this class by this teacher
@@ -212,5 +343,16 @@ class ClassController extends Controller
             ->having('average_grade', '<', 70)
             ->limit(5)
             ->get();
+    }
+
+    private function resolveClassSubjectTable(string $connection): ?string
+    {
+        foreach (['class_subjects', 'class_subject'] as $table) {
+            if (tenant_table_exists($table, $connection)) {
+                return $table;
+            }
+        }
+
+        return null;
     }
 }

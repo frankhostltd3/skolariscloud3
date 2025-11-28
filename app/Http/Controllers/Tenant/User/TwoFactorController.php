@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Tenant\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\SecurityAuditLog;
+use App\Services\QrCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PragmaRX\Google2FA\Google2FA;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TwoFactorController extends Controller
 {
     protected Google2FA $google2fa;
 
-    public function __construct()
+    public function __construct(private QrCodeGenerator $qrCodes)
     {
         $this->middleware('auth');
         $this->google2fa = app(Google2FA::class);
@@ -60,9 +60,7 @@ class TwoFactorController extends Controller
             $secret
         );
 
-        $qrCode = QrCode::size(config('google2fa.qr_code_size', 200))
-            ->format('svg')
-            ->generate($qrCodeUrl);
+        $qrCode = $this->qrCodes->svg($qrCodeUrl, (int) config('google2fa.qr_code_size', 200));
 
         return view('tenant.user.two-factor.enable', [
             'secret' => $secret,

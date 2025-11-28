@@ -12,8 +12,6 @@ class SchoolUserInvitation extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
-
     protected $fillable = [
         'school_id',
         'email',
@@ -28,6 +26,13 @@ class SchoolUserInvitation extends Model
         'expires_at' => 'datetime',
         'accepted_at' => 'datetime',
     ];
+
+    public function getConnectionName(): ?string
+    {
+        $configured = config('database.central_connection');
+
+        return $configured ?? parent::getConnectionName() ?? config('database.default');
+    }
 
     public function school(): BelongsTo
     {

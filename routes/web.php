@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\UserApprovalsController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -44,6 +43,28 @@ use Illuminate\Support\Facades\Route;
 // Home page (Landing page)
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Public Bookstore Routes
+Route::prefix('bookstore')->name('bookstore.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Tenant\BookstoreController::class, 'index'])->name('index');
+    Route::get('/cart', [\App\Http\Controllers\Tenant\BookstoreController::class, 'cart'])->name('cart');
+    Route::post('/cart/add/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'addToCart'])->name('cart.add');
+    Route::post('/cart/update', [\App\Http\Controllers\Tenant\BookstoreController::class, 'updateCart'])->name('cart.update');
+    Route::post('/cart/remove', [\App\Http\Controllers\Tenant\BookstoreController::class, 'removeFromCart'])->name('cart.remove');
+    Route::post('/cart/clear', [\App\Http\Controllers\Tenant\BookstoreController::class, 'clearCart'])->name('cart.clear');
+    Route::get('/checkout', [\App\Http\Controllers\Tenant\BookstoreController::class, 'checkout'])->name('checkout');
+    Route::post('/checkout', [\App\Http\Controllers\Tenant\BookstoreController::class, 'processCheckout'])->name('checkout.process');
+    Route::get('/payment/callback', [\App\Http\Controllers\Tenant\BookstoreController::class, 'paymentCallback'])->name('payment.callback');
+    Route::get('/order-success/{order}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'orderSuccess'])->name('order.success');
+    Route::get('/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'show'])->name('show');
+
+    // Authenticated Bookstore Routes
+    Route::middleware('auth')->group(function () {
+        Route::get('/account/orders', [\App\Http\Controllers\Tenant\BookstoreController::class, 'myOrders'])->name('my-orders');
+        Route::get('/account/orders/{order}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'showOrder'])->name('order.show');
+        Route::get('/account/orders/{order}/download/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'download'])->name('download');
+    });
+});
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
@@ -80,6 +101,12 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/logout', [LoginController::class, 'destroy'])->name('logout.get'); // Temporary: allow GET logout
 
     require base_path('routes/authenticated.php');
+});
+
+// Profile Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [\App\Http\Controllers\Tenant\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [\App\Http\Controllers\Tenant\ProfileController::class, 'update'])->name('profile.update');
 });
 
 // ======================================================================

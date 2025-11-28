@@ -47,4 +47,19 @@ return [
         ],
     ],
 
+    'exam_generation' => [
+        'driver' => env('EXAM_GENERATION_DRIVER'),
+        'providers' => [
+            'openai' => [
+                'api_key' => env('OPENAI_API_KEY'),
+                'model' => env('OPENAI_EXAM_MODEL', 'gpt-4o-mini'),
+            ],
+            'azure_openai' => [
+                'endpoint' => env('AZURE_OPENAI_ENDPOINT'),
+                'deployment' => env('AZURE_OPENAI_DEPLOYMENT'),
+                'api_key' => env('AZURE_OPENAI_API_KEY'),
+            ],
+        ],
+    ],
+
 ];

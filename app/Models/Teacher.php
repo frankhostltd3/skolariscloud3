@@ -16,6 +16,8 @@ class Teacher extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
+        'school_id',
         'name',
         'first_name',
         'last_name',
@@ -118,6 +120,16 @@ class Teacher extends Model
     {
         return $this->belongsToMany(Subject::class, 'subject_teacher', 'teacher_id', 'subject_id')
             ->withPivot('class_id', 'academic_year')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the streams this teacher is assigned to
+     */
+    public function streams()
+    {
+        return $this->belongsToMany(\App\Models\Academic\ClassStream::class, 'class_stream_teacher', 'teacher_id', 'class_stream_id')
+            ->withPivot('academic_year')
             ->withTimestamps();
     }
 

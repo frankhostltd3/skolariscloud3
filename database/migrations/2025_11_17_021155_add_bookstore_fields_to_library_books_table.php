@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('library_books')) {
+            return;
+        }
+
         Schema::table('library_books', function (Blueprint $table) {
             // Bookstore specific fields
             $table->boolean('is_for_sale')->default(false)->after('pages');
@@ -18,12 +22,12 @@ return new class extends Migration
             $table->integer('stock_quantity')->default(0)->after('sale_price');
             $table->boolean('is_featured')->default(false)->after('stock_quantity');
             $table->string('cover_image_path')->nullable()->after('cover_image');
-            
+
             // Additional useful fields for bookstore
             $table->text('short_description')->nullable()->after('description');
             $table->integer('sold_count')->default(0)->after('stock_quantity');
             $table->decimal('discount_percentage', 5, 2)->default(0)->after('sale_price');
-            
+
             // Indexes for bookstore queries
             $table->index('is_for_sale');
             $table->index('is_featured');
@@ -36,11 +40,15 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('library_books')) {
+            return;
+        }
+
         Schema::table('library_books', function (Blueprint $table) {
             $table->dropIndex(['is_for_sale']);
             $table->dropIndex(['is_featured']);
             $table->dropIndex(['sold_count']);
-            
+
             $table->dropColumn([
                 'is_for_sale',
                 'sale_price',

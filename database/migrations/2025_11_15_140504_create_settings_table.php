@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Skip - settings table already created by earlier migration
         if (Schema::hasTable('settings')) {
             return;
         }
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Skip - handled by earlier migration
+        Schema::dropIfExists('settings');
     }
 };

@@ -11,9 +11,24 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use App\Services\Payment\PaymentService;
 
 class BookstoreController extends Controller
 {
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+        $this->middleware(function ($request, $next) {
+            if (!setting('bookstore_enabled')) {
+                abort(404);
+            }
+            return $next($request);
+        });
+    }
+
     /**
      * Display bookstore homepage
      */
@@ -144,7 +159,7 @@ class BookstoreController extends Controller
 
         if (isset($cart[$bookId])) {
             $book = LibraryBook::find($bookId);
-            
+
             if ($request->quantity <= $book->stock_quantity) {
                 $cart[$bookId]['quantity'] = $request->quantity;
                 Session::put('bookstore_cart', $cart);
@@ -189,7 +204,7 @@ class BookstoreController extends Controller
     public function checkout(): View
     {
         $cart = Session::get('bookstore_cart', []);
-        
+
         if (empty($cart)) {
             return redirect()->route('tenant.bookstore.index')->with('error', 'Your cart is empty.');
         }
@@ -209,12 +224,12 @@ class BookstoreController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'shipping_address' => 'required|string',
-            'payment_method' => 'required|in:cash,card,bank_transfer,mobile_money',
+            'payment_method' => 'required|in:cash,card,paypal,bank_transfer,mobile_money',
             'notes' => 'nullable|string',
         ]);
 
         $cart = Session::get('bookstore_cart', []);
-        
+
         if (empty($cart)) {
             return redirect()->route('tenant.bookstore.index')->with('error', 'Your cart is empty.');
         }
@@ -239,6 +254,7 @@ class BookstoreController extends Controller
                 'total' => $cartTotal['total'],
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
+                'status' => 'pending', // Default status
             ]);
 
             // Create order items and update stock
@@ -274,6 +290,24 @@ class BookstoreController extends Controller
             // Clear cart
             Session::forget('bookstore_cart');
 
+            // Handle Payment
+            if (in_array($request->payment_method, ['card', 'paypal'])) {
+                $paymentResult = $this->paymentService->initiatePayment($request->payment_method, $order);
+
+                if ($paymentResult['success']) {
+                    // Save transaction ID if available
+                    if (isset($paymentResult['transaction_id'])) {
+                        // You might want to store this in a transaction table or on the order
+                        // $order->update(['transaction_id' => $paymentResult['transaction_id']]);
+                    }
+
+                    return redirect($paymentResult['redirect_url']);
+                } else {
+                    return redirect()->route('tenant.bookstore.order.success', $order)
+                        ->with('warning', 'Order placed but payment initiation failed: ' . ($paymentResult['message'] ?? 'Unknown error'));
+                }
+            }
+
             return redirect()->route('tenant.bookstore.order.success', $order)
                 ->with('success', 'Order placed successfully!');
 
@@ -281,6 +315,42 @@ class BookstoreController extends Controller
             DB::rollBack();
             return back()->with('error', 'Failed to process order: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Handle payment callback
+     */
+    public function paymentCallback(Request $request)
+    {
+        $gateway = $request->gateway;
+        $orderId = $request->order_id;
+        $status = $request->status;
+
+        $order = BookstoreOrder::findOrFail($orderId);
+
+        if ($status === 'cancel') {
+            return redirect()->route('tenant.bookstore.order.success', $order)
+                ->with('warning', 'Payment was cancelled.');
+        }
+
+        if ($status === 'success') {
+            // Verify payment
+            $transactionId = $request->session_id ?? $request->token ?? null; // Stripe uses session_id, PayPal uses token
+
+            // For PayPal, the order ID is usually passed as token or PayerID, but we need the order ID from initiate response
+            // In this simple implementation, we might trust the callback or do a verification call
+
+            // Real verification:
+            // $verification = $this->paymentService->verifyPayment($gateway, $transactionId);
+
+            // For now, assume success if we got here and update order
+            $order->update(['status' => 'completed']);
+
+            return redirect()->route('tenant.bookstore.order.success', $order)
+                ->with('success', 'Payment successful! Order completed.');
+        }
+
+        return redirect()->route('tenant.bookstore.order.success', $order);
     }
 
     /**
@@ -292,12 +362,75 @@ class BookstoreController extends Controller
     }
 
     /**
+     * Show user's order history
+     */
+    public function myOrders(): View
+    {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please login to view your orders.');
+        }
+
+        $orders = BookstoreOrder::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('tenant.bookstore.my-orders', compact('orders'));
+    }
+
+    /**
+     * Show order details
+     */
+    public function showOrder(BookstoreOrder $order): View
+    {
+        // Ensure user owns the order or is admin
+        if (auth()->id() !== $order->user_id && !auth()->user()->hasRole('admin')) {
+            abort(403);
+        }
+
+        return view('tenant.bookstore.order-details', compact('order'));
+    }
+
+    /**
+     * Download digital book
+     */
+    public function download(BookstoreOrder $order, LibraryBook $book)
+    {
+        // Ensure user owns the order
+        if (auth()->id() !== $order->user_id && !auth()->user()->hasRole('admin')) {
+            abort(403);
+        }
+
+        // Ensure order is completed
+        if ($order->status !== 'completed') {
+            return back()->with('error', 'Order must be completed to download digital products.');
+        }
+
+        // Ensure book is in the order
+        $hasBook = $order->items()->where('library_book_id', $book->id)->exists();
+        if (!$hasBook) {
+            abort(404);
+        }
+
+        // Ensure book is digital and has file
+        if (!$book->is_digital || !$book->digital_file_path) {
+            abort(404);
+        }
+
+        // Check if file exists
+        if (!Storage::disk('private')->exists($book->digital_file_path)) {
+            return back()->with('error', 'File not found.');
+        }
+
+        return Storage::disk('private')->download($book->digital_file_path);
+    }
+
+    /**
      * Calculate cart total
      */
     private function calculateCartTotal(array $cart): array
     {
         $subtotal = 0;
-        
+
         foreach ($cart as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }

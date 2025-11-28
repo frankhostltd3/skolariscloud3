@@ -12,13 +12,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('settings') || ! Schema::hasColumn('settings', 'tenant_id')) {
+            return;
+        }
+
         $connection = Schema::getConnection();
         $driver = $connection->getDriverName();
 
-        Schema::table('settings', function (Blueprint $table) {
-            $table->dropUnique('settings_key_tenant_id_unique');
-            $table->dropIndex('settings_category_tenant_id_index');
-        });
+        if ($driver === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS settings_key_tenant_id_unique');
+            DB::statement('DROP INDEX IF EXISTS settings_category_tenant_id_index');
+        } else {
+            Schema::table('settings', function (Blueprint $table) {
+                $table->dropUnique('settings_key_tenant_id_unique');
+                $table->dropIndex('settings_category_tenant_id_index');
+            });
+        }
 
         if ($driver === 'mysql') {
             DB::statement('ALTER TABLE `settings` MODIFY `tenant_id` VARCHAR(36) NULL');
@@ -39,8 +48,12 @@ return new class extends Migration
         }
 
         Schema::table('settings', function (Blueprint $table) {
-            $table->index(['category', 'tenant_id']);
-            $table->unique(['key', 'tenant_id']);
+            if (! Schema::hasColumn('settings', 'category') || ! Schema::hasColumn('settings', 'tenant_id')) {
+                return;
+            }
+
+            $table->index(['category', 'tenant_id'], 'settings_category_tenant_id_index');
+            $table->unique(['key', 'tenant_id'], 'settings_key_tenant_id_unique');
         });
     }
 
@@ -49,13 +62,22 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('settings') || ! Schema::hasColumn('settings', 'tenant_id')) {
+            return;
+        }
+
         $connection = Schema::getConnection();
         $driver = $connection->getDriverName();
 
-        Schema::table('settings', function (Blueprint $table) {
-            $table->dropUnique('settings_key_tenant_id_unique');
-            $table->dropIndex('settings_category_tenant_id_index');
-        });
+        if ($driver === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS settings_key_tenant_id_unique');
+            DB::statement('DROP INDEX IF EXISTS settings_category_tenant_id_index');
+        } else {
+            Schema::table('settings', function (Blueprint $table) {
+                $table->dropUnique('settings_key_tenant_id_unique');
+                $table->dropIndex('settings_category_tenant_id_index');
+            });
+        }
 
         if ($driver === 'mysql') {
             DB::statement('ALTER TABLE `settings` MODIFY `tenant_id` BIGINT UNSIGNED NULL');
@@ -76,8 +98,12 @@ return new class extends Migration
         }
 
         Schema::table('settings', function (Blueprint $table) {
-            $table->index(['category', 'tenant_id']);
-            $table->unique(['key', 'tenant_id']);
+            if (! Schema::hasColumn('settings', 'category') || ! Schema::hasColumn('settings', 'tenant_id')) {
+                return;
+            }
+
+            $table->index(['category', 'tenant_id'], 'settings_category_tenant_id_index');
+            $table->unique(['key', 'tenant_id'], 'settings_key_tenant_id_unique');
         });
     }
 };

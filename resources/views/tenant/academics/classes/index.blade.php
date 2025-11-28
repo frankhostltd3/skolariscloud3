@@ -10,7 +10,7 @@
             <h1 class="h4 fw-semibold mb-1">{{ __('Classes') }}</h1>
             <p class="text-muted mb-0">{{ __('Manage your school classes and their details') }}</p>
         </div>
-        <a class="btn btn-primary" href="{{ url('/tenant/academics/classes/create') }}">
+        <a class="btn btn-primary" href="{{ route('tenant.academics.classes.create') }}">
             <i class="bi bi-plus-circle me-1"></i>{{ __('Create Class') }}
         </a>
     </div>
@@ -26,7 +26,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">{{ __('Total Classes') }}</p>
-                            <h3 class="mb-0 fw-bold">{{ $classes->total() }}</h3>
+                            <h3 class="mb-0 fw-bold">{{ number_format($stats['total_classes'] ?? 0) }}</h3>
                         </div>
                         <div class="bg-primary bg-opacity-10 rounded p-3">
                             <i class="bi bi-building text-primary" style="font-size: 1.5rem;"></i>
@@ -41,7 +41,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">{{ __('Active Classes') }}</p>
-                            <h3 class="mb-0 fw-bold">{{ $classes->where('is_active', true)->count() }}</h3>
+                            <h3 class="mb-0 fw-bold">{{ number_format($stats['active_classes'] ?? 0) }}</h3>
                         </div>
                         <div class="bg-success bg-opacity-10 rounded p-3">
                             <i class="bi bi-check-circle text-success" style="font-size: 1.5rem;"></i>
@@ -56,7 +56,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">{{ __('Total Students') }}</p>
-                            <h3 class="mb-0 fw-bold">{{ $classes->sum('active_students_count') }}</h3>
+                            <h3 class="mb-0 fw-bold">{{ number_format($stats['total_students'] ?? 0) }}</h3>
                         </div>
                         <div class="bg-info bg-opacity-10 rounded p-3">
                             <i class="bi bi-people text-info" style="font-size: 1.5rem;"></i>
@@ -71,7 +71,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">{{ __('Total Capacity') }}</p>
-                            <h3 class="mb-0 fw-bold">{{ $classes->sum('capacity') ?? 0 }}</h3>
+                            <h3 class="mb-0 fw-bold">{{ number_format($stats['total_capacity'] ?? 0) }}</h3>
                         </div>
                         <div class="bg-warning bg-opacity-10 rounded p-3">
                             <i class="bi bi-clipboard-data text-warning" style="font-size: 1.5rem;"></i>
@@ -88,16 +88,16 @@
             <form method="get" class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label for="q" class="form-label small">{{ __('Search') }}</label>
-                    <input type="text" id="q" name="q" value="{{ request('q') }}" class="form-control"
-                        placeholder="{{ __('Search by name or code...') }}" />
+                    <input type="text" id="q" name="q" value="{{ $filters['q'] ?? '' }}"
+                        class="form-control" placeholder="{{ __('Search by name or code...') }}" />
                 </div>
                 <div class="col-md-3">
                     <label for="education_level_id" class="form-label small">{{ __('Education Level') }}</label>
                     <select class="form-select" id="education_level_id" name="education_level_id">
                         <option value="">{{ __('All Levels') }}</option>
-                        @foreach (get_education_levels() as $level)
+                        @foreach ($educationLevels as $level)
                             <option value="{{ $level->id }}"
-                                {{ request('education_level_id') == $level->id ? 'selected' : '' }}>
+                                {{ (string) ($filters['education_level_id'] ?? '') === (string) $level->id ? 'selected' : '' }}>
                                 {{ $level->name }}
                             </option>
                         @endforeach
@@ -107,9 +107,11 @@
                     <label for="is_active" class="form-label small">{{ __('Status') }}</label>
                     <select class="form-select" id="is_active" name="is_active">
                         <option value="">{{ __('All Statuses') }}</option>
-                        <option value="1" {{ request('is_active') === '1' ? 'selected' : '' }}>{{ __('Active') }}
+                        <option value="1" {{ ($filters['is_active'] ?? '') === '1' ? 'selected' : '' }}>
+                            {{ __('Active') }}
                         </option>
-                        <option value="0" {{ request('is_active') === '0' ? 'selected' : '' }}>{{ __('Inactive') }}
+                        <option value="0" {{ ($filters['is_active'] ?? '') === '0' ? 'selected' : '' }}>
+                            {{ __('Inactive') }}
                         </option>
                     </select>
                 </div>
@@ -119,7 +121,7 @@
                             <i class="bi bi-search me-1"></i>{{ __('Filter') }}
                         </button>
                         @if (request()->hasAny(['q', 'education_level_id', 'is_active']))
-                            <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
+                            <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
                                 <i class="bi bi-x-circle me-1"></i>{{ __('Clear') }}
                             </a>
                         @endif
@@ -172,7 +174,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <span class="fw-semibold">{{ $class->active_students_count ?? 0 }}</span>
+                                    <span class="fw-semibold">{{ $class->computed_students_count }}</span>
                                 </td>
                                 <td class="text-center">
                                     @if ($class->capacity)
@@ -219,7 +221,7 @@
                                 <td colspan="8" class="text-center py-5">
                                     <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
                                     <p class="text-muted mb-2">{{ __('No classes found.') }}</p>
-                                    <a href="{{ url('/tenant/academics/classes/create') }}" class="btn btn-primary">
+                                    <a href="{{ route('tenant.academics.classes.create') }}" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-1"></i>{{ __('Create Your First Class') }}
                                     </a>
                                 </td>
@@ -254,4 +256,3 @@
         });
     </script>
 @endsection
-

@@ -62,7 +62,7 @@ class LandlordInvoice extends Model
 
     public function getConnectionName(): ?string
     {
-        return config('tenancy.database.central_connection');
+        return central_connection();
     }
 
     protected static function booted(): void

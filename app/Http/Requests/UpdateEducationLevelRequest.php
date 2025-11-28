@@ -11,7 +11,7 @@ class UpdateEducationLevelRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,13 @@ class UpdateEducationLevelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+            'min_grade' => 'required|integer|min:0',
+            'max_grade' => 'required|integer|gte:min_grade',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer|min:0',
         ];
     }
 }

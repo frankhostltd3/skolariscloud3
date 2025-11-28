@@ -1,21 +1,23 @@
 <div class="card shadow-sm mx-3 my-3">
     <div class="card-header fw-semibold">{{ __('Admin menu') }}</div>
     <div class="list-group list-group-flush">
-        <a class="list-group-item list-group-item-action {{ request()->is('dashboard*') ? 'active' : '' }}"
-            href="{{ url('/dashboard') }}" @if (request()->is('dashboard*')) aria-current="page" @endif>
+        <a class="list-group-item list-group-item-action {{ request()->routeIs('tenant.admin') || request()->routeIs('tenant.dashboard') ? 'active' : '' }}"
+            href="{{ route('tenant.dashboard') }}" @if (request()->routeIs('tenant.admin') || request()->routeIs('tenant.dashboard')) aria-current="page" @endif>
             <span class="bi bi-speedometer2 me-2"></span>{{ __('Overview') }}
         </a>
 
         {{-- User Approvals --}}
-        <a class="list-group-item list-group-item-action {{ request()->is('admin/user-approvals*') ? 'active' : '' }}"
-            href="{{ url('/admin/user-approvals') }}" @if (request()->is('admin/user-approvals*')) aria-current="page" @endif>
+        <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.user-approvals.*') ? 'active' : '' }}"
+            href="{{ route('admin.user-approvals.index') }}"
+            @if (request()->routeIs('admin.user-approvals.*')) aria-current="page" @endif>
             <span class="bi bi-person-check me-2"></span>{{ __('User Approvals') }}
         </a>
 
         @php
-            $portalsActive = request()->routeIs('tenant.student.*')
-                || request()->routeIs('tenant.staff')
-                || request()->routeIs('tenant.teacher.*');
+            $portalsActive =
+                request()->routeIs('tenant.student.*') ||
+                request()->routeIs('tenant.staff') ||
+                request()->routeIs('tenant.teacher.*');
             $portalLinks = [
                 'student_basic' => \Illuminate\Support\Facades\Route::has('tenant.student')
                     ? route('tenant.student')
@@ -23,16 +25,47 @@
                 'student_full' => \Illuminate\Support\Facades\Route::has('tenant.student.dashboard')
                     ? route('tenant.student.dashboard')
                     : null,
-                'staff_basic' => \Illuminate\Support\Facades\Route::has('tenant.staff')
-                    ? route('tenant.staff')
-                    : null,
+                'staff_basic' => \Illuminate\Support\Facades\Route::has('tenant.staff') ? route('tenant.staff') : null,
                 'teacher_full' => \Illuminate\Support\Facades\Route::has('tenant.teacher.dashboard')
                     ? route('tenant.teacher.dashboard')
                     : null,
             ];
         @endphp
 
-        @php($settingsActive = request()->routeIs('settings.*'))
+        @php
+            $userMgmtActive =
+                $userMgmtActive ??
+                request()->routeIs('tenant.users.*') ||
+                    request()->routeIs('admin.users.password.*') ||
+                    request()->is('users/*') ||
+                    request()->is('admin/users/password*');
+
+            $userMgmtLinks = $userMgmtLinks ?? [
+                'admins' => \Illuminate\Support\Facades\Route::has('tenant.users.admins')
+                    ? route('tenant.users.admins')
+                    : null,
+                'staff' => \Illuminate\Support\Facades\Route::has('tenant.users.staff')
+                    ? route('tenant.users.staff')
+                    : null,
+                'students' => \Illuminate\Support\Facades\Route::has('tenant.users.students')
+                    ? route('tenant.users.students')
+                    : null,
+                'parents' => \Illuminate\Support\Facades\Route::has('tenant.users.parents')
+                    ? route('tenant.users.parents')
+                    : null,
+                'password' => \Illuminate\Support\Facades\Route::has('admin.users.password.index')
+                    ? route('admin.users.password.index')
+                    : null,
+            ];
+        @endphp
+
+        @php
+            $settingsActive = request()->routeIs('settings.*');
+            $currentTenantUser = auth()->user();
+            $canAccessHumanResources = $currentTenantUser
+                ? $currentTenantUser->hasAnyRole(['super-admin', 'Admin', 'admin', 'Staff', 'staff'])
+                : false;
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $settingsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#settingsMenu" role="button"
             aria-expanded="{{ $settingsActive ? 'true' : 'false' }}" aria-controls="settingsMenu">
@@ -41,46 +74,53 @@
         </a>
         <div class="collapse {{ $settingsActive ? 'show' : '' }}" id="settingsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings') ? 'active' : '' }}"
-                    href="{{ url('/settings') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.general') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.general') }}">
                     <span class="bi bi-house-gear me-2"></span>{{ __('Overview') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/general*') ? 'active' : '' }}"
-                    href="{{ url('/settings/general') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.general') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.general') }}">
                     <span class="bi bi-gear me-2"></span>{{ __('General Settings') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/mail*') ? 'active' : '' }}"
-                    href="{{ url('/settings/mail') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.mail') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.mail') }}">
                     <span class="bi bi-envelope me-2"></span>{{ __('Mail Delivery') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/payments*') ? 'active' : '' }}"
-                    href="{{ url('/settings/payments') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.finance') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.finance') }}">
                     <span class="bi bi-credit-card me-2"></span>{{ __('Payment Settings') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/currencies*') ? 'active' : '' }}"
-                    href="{{ url('/settings/currencies') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.currencies.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.currencies.index') }}">
                     <span class="bi bi-currency-exchange me-2"></span>{{ __('Currencies') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/messaging*') ? 'active' : '' }}"
-                    href="{{ url('/settings/messaging') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.messaging') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.messaging') }}">
                     <span class="bi bi-chat-dots me-2"></span>{{ __('Messaging') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/academic*') ? 'active' : '' }}"
-                    href="{{ url('/settings/academic') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.academic') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.academic') }}">
                     <span class="bi bi-mortarboard me-2"></span>{{ __('Academic Settings') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/system*') ? 'active' : '' }}"
-                    href="{{ url('/settings/system') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.system') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.system') }}">
                     <span class="bi bi-server me-2"></span>{{ __('System') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/admin/permissions*') ? 'active' : '' }}"
-                    href="{{ url('/settings/admin/permissions') }}">
+                {{-- Integrations route missing --}}
+                {{-- <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('settings/admin/integrations*') ? 'active' : '' }}"
+                    href="{{ url('/settings/admin/integrations') }}">
+                    <span class="bi bi-plug me-2"></span>{{ __('Integrations') }}
+                </a> --}}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.permissions') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.admin.permissions') }}">
                     <span class="bi bi-shield-lock me-2"></span>{{ __('Permissions') }}
                 </a>
             </div>
         </div>
 
-        @php($reportsActive = request()->is('admin/reports*'))
+        @php
+            $reportsActive = request()->routeIs('admin.reports.*');
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $reportsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#reportsMenu" role="button"
             aria-expanded="{{ $reportsActive ? 'true' : 'false' }}" aria-controls="reportsMenu">
@@ -89,21 +129,30 @@
         </a>
         <div class="collapse {{ $reportsActive ? 'show' : '' }}" id="reportsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/reports/attendance*') ? 'active' : '' }}"
-                    href="{{ url('/admin/reports/attendance') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.attendance') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.attendance') }}">
                     <span class="bi bi-calendar-check me-2"></span>{{ __('Attendance') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/reports/financial*') ? 'active' : '' }}"
-                    href="{{ url('/admin/reports/financial') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.financial') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.financial') }}">
                     <span class="bi bi-cash me-2"></span>{{ __('Financial') }}
                 </a>
-                {{-- Other report routes not yet implemented --}}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.report-cards') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.report-cards') }}">
+                    <span class="bi bi-file-earmark-pdf me-2"></span>{{ __('Report Cards') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.reports.settings.edit') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.settings.edit') }}">
+                    <span class="bi bi-gear me-2"></span>{{ __('Report Settings') }}
+                </a>
             </div>
         </div>
 
 
 
-        @php($academicsActive = request()->is('tenant/academics*'))
+        @php
+            $academicsActive = request()->routeIs('tenant.academics.*') || request()->routeIs('admin.exams.*');
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $academicsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#academicsMenu" role="button"
             aria-expanded="{{ $academicsActive ? 'true' : 'false' }}" aria-controls="academicsMenu">
@@ -112,52 +161,72 @@
         </a>
         <div class="collapse {{ $academicsActive ? 'show' : '' }}" id="academicsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/education-levels.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/education-levels') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.education-levels.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.education-levels.index') }}">
                     <span class="bi bi-mortarboard-fill me-2"></span>{{ __('Education Levels') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/examination-bodies.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/examination-bodies') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.examination-bodies.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.examination-bodies.index') }}">
                     <span class="bi bi-award me-2"></span>{{ __('Examination Bodies') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/countries.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/countries') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.countries.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.countries.index') }}">
                     <span class="bi bi-globe me-2"></span>{{ __('Countries') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/grading_schemes.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/grading_schemes') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.grading_schemes.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.grading_schemes.index') }}">
                     <span class="bi bi-award-fill me-2"></span>{{ __('Grading Systems') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/classes.*') && !request()->is('tenant/academics/streams.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/classes') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.classes.*') && !request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.classes.index') }}">
                     <span class="bi bi-building me-2"></span>{{ __('Classes') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/streams.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/classes') }}"
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.rooms.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.rooms.index') }}">
+                    <span class="bi bi-door-open me-2"></span>{{ __('Rooms') }}
+                </a>
+                {{-- Streams route is nested under classes usually, but let's check if there is a direct index or if it redirects --}}
+                {{-- The original link pointed to classes, so I'll keep it pointing to classes but maybe with a query param or just classes index --}}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.classes.index') }}"
                     title="{{ __('Select a class to manage its streams') }}">
                     <span class="bi bi-diagram-3 me-2"></span>{{ __('Class streams') }}
                     <small class="text-muted ms-1">({{ __('via Classes') }})</small>
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/subjects.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/subjects') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.subjects.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.subjects.index') }}">
                     <span class="bi bi-book me-2"></span>{{ __('Subjects') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/teacher-allocations.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/teacher-allocations') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.teacher-allocations.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.teacher-allocations.index') }}">
                     <span class="bi bi-person-badge me-2"></span>{{ __('Teacher Allocation') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/terms.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/terms') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.enrollments.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.enrollments.index') }}">
+                    <span class="bi bi-card-checklist me-2"></span>{{ __('Enrollments') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.admin.lesson-plans.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.admin.lesson-plans.index') }}">
+                    <span class="bi bi-journal-check me-2"></span>{{ __('Lesson Plan Reviews') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.terms.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.terms.index') }}">
                     <span class="bi bi-calendar-event me-2"></span>{{ __('Terms') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/academics/timetable.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/academics/timetable') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.timetable.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.timetable.index') }}">
                     <span class="bi bi-calendar3 me-2"></span>{{ __('Timetable') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.exams.*') ? 'active' : '' }}"
+                    href="{{ route('admin.exams.index') }}">
+                    <span class="bi bi-clipboard-check me-2"></span>{{ __('Exams') }}
                 </a>
             </div>
         </div>
 
-        @php($financeActive = request()->is('tenant/finance.*'))
+        @php
+            $financeActive = request()->routeIs('tenant.finance.*');
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $financeActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#financeMenu" role="button"
             aria-expanded="{{ $financeActive ? 'true' : 'false' }}" aria-controls="financeMenu">
@@ -166,80 +235,130 @@
         </a>
         <div class="collapse {{ $financeActive ? 'show' : '' }}" id="financeMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/finance.expense-categories.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/finance/expense-categories') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expense-categories.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expense-categories.index') }}">
                     <span class="bi bi-tags me-2"></span>{{ __('Expense Categories') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/finance.expenses.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/finance/expenses') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expenses.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expenses.index') }}">
                     <span class="bi bi-receipt me-2"></span>{{ __('Expenses') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/finance.fee-structures.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/finance/fee-structures') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.fee-structures.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.fee-structures.index') }}">
                     <span class="bi bi-file-earmark-text me-2"></span>{{ __('Fee Structures') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/finance.invoices.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/finance/invoices') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.invoices.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.invoices.index') }}">
                     <span class="bi bi-file-earmark-ruled me-2"></span>{{ __('Invoices') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/finance.payments.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/finance/payments') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.payments.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.payments.index') }}">
                     <span class="bi bi-credit-card me-2"></span>{{ __('Payments') }}
                 </a>
             </div>
         </div>
 
-        @php($hrActive = request()->is('tenant/modules/human-resource.*'))
-        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#hrMenu" role="button"
-            aria-expanded="{{ $hrActive ? 'true' : 'false' }}" aria-controls="hrMenu">
-            <span><span class="bi bi-person-workspace me-2"></span>{{ __('Human Resources') }}</span>
+        @if ($canAccessHumanResources)
+            @php
+                $hrActive = request()->routeIs('tenant.modules.human-resource.*');
+            @endphp
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive ? 'active' : '' }}"
+                data-bs-toggle="collapse" href="#hrMenu" role="button"
+                aria-expanded="{{ $hrActive ? 'true' : 'false' }}" aria-controls="hrMenu">
+                <span><span class="bi bi-person-workspace me-2"></span>{{ __('Human Resources') }}</span>
+                <span class="bi bi-chevron-down small"></span>
+            </a>
+            <div class="collapse {{ $hrActive ? 'show' : '' }}" id="hrMenu">
+                <div class="list-group list-group-flush ms-3">
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.index') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.index') }}">
+                        <span class="bi bi-house-door me-2"></span>{{ __('HR Overview') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.employees.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.employees.index') }}">
+                        <span class="bi bi-people me-2"></span>{{ __('Employees') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.departments.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.departments.index') }}">
+                        <span class="bi bi-diagram-3 me-2"></span>{{ __('Departments') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.positions.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.positions.index') }}">
+                        <span class="bi bi-briefcase me-2"></span>{{ __('Positions') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.salary-scales.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.salary-scales.index') }}">
+                        <span class="bi bi-cash-coin me-2"></span>{{ __('Salary Scales') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave-types.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.leave-types.index') }}">
+                        <span class="bi bi-calendar-x me-2"></span>{{ __('Leave Types') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave-requests.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.leave-requests.index') }}">
+                        <span class="bi bi-calendar-event me-2"></span>{{ __('Leave Requests') }}
+                    </a>
+                    <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.payroll-settings.*') ? 'active' : '' }}"
+                        href="{{ route('tenant.modules.human-resource.payroll-settings.index') }}">
+                        <span class="bi bi-gear me-2"></span>{{ __('Payroll Settings') }}
+                    </a>
+                    {{-- Payslips route missing, commenting out or leaving as url if needed --}}
+                    {{-- <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.payroll-payslip.*') ? 'active' : '' }}"
+                        href="{{ url('/tenant/modules/human-resource/payroll-payslip') }}">
+                        <span class="bi bi-receipt-cutoff me-2"></span>{{ __('Payslips') }}
+                    </a> --}}
+                </div>
+            </div>
+        @endif
+
+        @php
+            $libraryActive =
+                request()->routeIs('tenant.modules.library.*') || request()->routeIs('tenant.modules.bookstore.*');
+        @endphp
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $libraryActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#libraryMenu" role="button"
+            aria-expanded="{{ $libraryActive ? 'true' : 'false' }}" aria-controls="libraryMenu">
+            <span><span class="bi bi-book me-2"></span>{{ __('Library & Bookstore') }}</span>
             <span class="bi bi-chevron-down small"></span>
         </a>
-        <div class="collapse {{ $hrActive ? 'show' : '' }}" id="hrMenu">
+        <div class="collapse {{ $libraryActive ? 'show' : '' }}" id="libraryMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.index') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource') }}">
-                    <span class="bi bi-house-door me-2"></span>{{ __('HR Overview') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.library.index') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.library.index') }}">
+                    <span class="bi bi-speedometer2 me-2"></span>{{ __('Overview') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.employees.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/employees') }}">
-                    <span class="bi bi-people me-2"></span>{{ __('Employees') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.library.books.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.library.books.index') }}">
+                    <span class="bi bi-journal-bookmark me-2"></span>{{ __('Books') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.departments.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/departments') }}">
-                    <span class="bi bi-diagram-3 me-2"></span>{{ __('Departments') }}
-                </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.positions.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/positions') }}">
-                    <span class="bi bi-briefcase me-2"></span>{{ __('Positions') }}
-                </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.salary-scales.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/salary-scales') }}">
-                    <span class="bi bi-cash-coin me-2"></span>{{ __('Salary Scales') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.library.transactions.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.library.transactions.index') }}">
+                    <span class="bi bi-arrow-left-right me-2"></span>{{ __('Transactions') }}
                 </a>
                 <div class="border-top my-2"></div>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.leave-types.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/leave-types') }}">
-                    <span class="bi bi-calendar-x me-2"></span>{{ __('Leave Types') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.bookstore.orders.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.bookstore.orders.index') }}">
+                    <span class="bi bi-cart me-2"></span>{{ __('Bookstore Orders') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.leave-requests.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/leave-requests') }}">
-                    <span class="bi bi-calendar-event me-2"></span>{{ __('Leave Requests') }}
-                </a>
-                <div class="border-top my-2"></div>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.payroll-settings.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/payroll-settings') }}">
-                    <span class="bi bi-gear me-2"></span>{{ __('Payroll Settings') }}
-                </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/modules/human-resource.payroll-payslip.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/modules/human-resource/payroll-payslip') }}">
-                    <span class="bi bi-receipt-cutoff me-2"></span>{{ __('Payslips') }}
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.bookstore.index') ? 'active' : '' }}"
+                    href="{{ route('tenant.bookstore.index') }}" target="_blank">
+                    <span class="bi bi-shop me-2"></span>{{ __('Visit Bookstore') }}
                 </a>
             </div>
         </div>
 
-        @php($attendanceActive = request()->is('admin/attendance.*') || request()->is('admin/staff-attendance.*') || request()->is('admin/exam-attendance.*') || request()->is('admin/qr-scanner.*') || request()->is('admin/biometric.*') || request()->is('admin/omr.*') || request()->is('admin/attendance-analytics.*') || request()->is('admin/device-monitoring.*') || request()->is('tenant/attendance/settings.*'))
+        @php
+            $attendanceActive =
+                request()->routeIs('tenant.modules.attendance.*') ||
+                request()->routeIs('admin.staff-attendance.*') ||
+                request()->routeIs('admin.exam-attendance.*') ||
+                request()->routeIs('admin.qr-scanner.*') ||
+                request()->routeIs('admin.biometric.*') ||
+                request()->routeIs('admin.omr.*') ||
+                request()->routeIs('admin.attendance-analytics.*') ||
+                request()->routeIs('admin.device-monitoring.*') ||
+                request()->routeIs('tenant.attendance.settings.*');
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $attendanceActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#attendanceMenu" role="button"
             aria-expanded="{{ $attendanceActive ? 'true' : 'false' }}" aria-controls="attendanceMenu">
@@ -248,48 +367,74 @@
         </a>
         <div class="collapse {{ $attendanceActive ? 'show' : '' }}" id="attendanceMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/attendance.*') && !request()->is('admin/attendance-analytics.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/attendance') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.attendance.*') && !request()->routeIs('admin.attendance-analytics.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.attendance.index') }}">
                     <span class="bi bi-people me-2"></span>{{ __('Student Attendance') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/staff-attendance.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/staff-attendance') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.staff-attendance.*') ? 'active' : '' }}"
+                    href="{{ route('admin.staff-attendance.index') }}">
                     <span class="bi bi-person-badge me-2"></span>{{ __('Staff Attendance') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/exam-attendance.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/exam-attendance') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.exam-attendance.*') ? 'active' : '' }}"
+                    href="{{ route('admin.exam-attendance.index') }}">
                     <span class="bi bi-clipboard2-check me-2"></span>{{ __('Exam Attendance') }}
                 </a>
                 <div class="border-top my-2"></div>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/qr-scanner.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/qr-scanner') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.qr-scanner.*') ? 'active' : '' }}"
+                    href="{{ route('admin.qr-scanner.index') }}">
                     <span class="bi bi-qr-code-scan me-2"></span>{{ __('QR Scanner') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/biometric.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/biometric') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.biometric.*') ? 'active' : '' }}"
+                    href="{{ route('admin.biometric.index') }}">
                     <span class="bi bi-fingerprint me-2"></span>{{ __('Biometric Enrollment') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/omr.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/omr') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.omr.*') ? 'active' : '' }}"
+                    href="{{ route('admin.omr.index') }}">
                     <span class="bi bi-file-earmark-ruled me-2"></span>{{ __('OMR Template') }}
                 </a>
                 <div class="border-top my-2"></div>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/attendance-analytics.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/attendance-analytics') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.attendance-analytics.*') ? 'active' : '' }}"
+                    href="{{ route('admin.attendance-analytics.index') }}">
                     <span class="bi bi-graph-up me-2"></span>{{ __('Analytics Dashboard') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('admin/device-monitoring.*') ? 'active' : '' }}"
-                    href="{{ url('/admin/device-monitoring') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.device-monitoring.*') ? 'active' : '' }}"
+                    href="{{ route('admin.device-monitoring.index') }}">
                     <span class="bi bi-hdd-network me-2"></span>{{ __('Device Monitoring') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->is('tenant/attendance/settings.*') ? 'active' : '' }}"
-                    href="{{ url('/tenant/attendance/settings') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.attendance.settings.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.attendance.settings.index') }}">
                     <span class="bi bi-gear me-2"></span>{{ __('Attendance Settings') }}
                 </a>
             </div>
         </div>
 
-        @php($userMgmtActive = false)
+        @php
+            $userMgmtActive =
+                request()->routeIs('tenant.users.*') ||
+                request()->routeIs('admin.users.password.*') ||
+                request()->is('users/*') ||
+                request()->is('admin/users/password*') ||
+                request()->routeIs('tenant.modules.teachers.*') ||
+                request()->routeIs('tenant.modules.students.*');
+
+            $userMgmtLinks = [
+                'admins' => \Illuminate\Support\Facades\Route::has('tenant.users.admins')
+                    ? route('tenant.users.admins')
+                    : null,
+                'staff' => \Illuminate\Support\Facades\Route::has('tenant.modules.teachers.index')
+                    ? route('tenant.modules.teachers.index')
+                    : null,
+                'students' => \Illuminate\Support\Facades\Route::has('tenant.modules.students.index')
+                    ? route('tenant.modules.students.index')
+                    : null,
+                'parents' => \Illuminate\Support\Facades\Route::has('tenant.users.parents')
+                    ? route('tenant.users.parents')
+                    : null,
+                'password' => \Illuminate\Support\Facades\Route::has('admin.users.password.index')
+                    ? route('admin.users.password.index')
+                    : null,
+            ];
+        @endphp
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $userMgmtActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#userMgmtMenu" role="button"
             aria-expanded="{{ $userMgmtActive ? 'true' : 'false' }}" aria-controls="userMgmtMenu">
@@ -298,20 +443,30 @@
         </a>
         <div class="collapse {{ $userMgmtActive ? 'show' : '' }}" id="userMgmtMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.users.admins*') ? 'active' : '' }} @if (!$userMgmtLinks['admins']) disabled @endif"
+                    href="{{ $userMgmtLinks['admins'] ?? '#' }}"
+                    @if (!$userMgmtLinks['admins']) aria-disabled="true" @endif>
                     <span class="bi bi-person-gear me-2"></span>{{ __('Administrators') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.teachers.*') ? 'active' : '' }} @if (!$userMgmtLinks['staff']) disabled @endif"
+                    href="{{ $userMgmtLinks['staff'] ?? '#' }}"
+                    @if (!$userMgmtLinks['staff']) aria-disabled="true" @endif>
                     <span class="bi bi-person-badge me-2"></span>{{ __('Employees') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.students.*') ? 'active' : '' }} @if (!$userMgmtLinks['students']) disabled @endif"
+                    href="{{ $userMgmtLinks['students'] ?? '#' }}"
+                    @if (!$userMgmtLinks['students']) aria-disabled="true" @endif>
                     <span class="bi bi-mortarboard-fill me-2"></span>{{ __('Students') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.users.parents*') ? 'active' : '' }} @if (!$userMgmtLinks['parents']) disabled @endif"
+                    href="{{ $userMgmtLinks['parents'] ?? '#' }}"
+                    @if (!$userMgmtLinks['parents']) aria-disabled="true" @endif>
                     <span class="bi bi-people me-2"></span>{{ __('Parents') }}
                 </a>
                 <div class="border-top my-2"></div>
-                <a class="list-group-item list-group-item-action text-decoration-none" href="#">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.users.password.*') ? 'active' : '' }} @if (!$userMgmtLinks['password']) disabled @endif"
+                    href="{{ $userMgmtLinks['password'] ?? '#' }}"
+                    @if (!$userMgmtLinks['password']) aria-disabled="true" @endif>
                     <span class="bi bi-shield-lock me-2"></span>{{ __('Password Management') }}
                     <span class="badge bg-warning text-dark ms-2">Admin</span>
                 </a>
@@ -326,66 +481,95 @@
         </a>
         <div class="collapse {{ $portalsActive ? 'show' : '' }}" id="portalsMenu">
             <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none @if(!$portalLinks['student_basic']) disabled @endif"
+                <a class="list-group-item list-group-item-action text-decoration-none @if (!$portalLinks['student_basic']) disabled @endif"
                     href="{{ $portalLinks['student_basic'] ?? '#' }}" target="_blank"
-                    @if(!$portalLinks['student_basic']) aria-disabled="true" @endif>
+                    @if (!$portalLinks['student_basic']) aria-disabled="true" @endif>
                     <span class="bi bi-mortarboard me-2"></span>{{ __('Student Portal') }}
                     <small class="text-muted ms-1">(Basic)</small>
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none @if(!$portalLinks['student_full']) disabled @endif"
+                <a class="list-group-item list-group-item-action text-decoration-none @if (!$portalLinks['student_full']) disabled @endif"
                     href="{{ $portalLinks['student_full'] ?? '#' }}" target="_blank"
-                    @if(!$portalLinks['student_full']) aria-disabled="true" @endif>
+                    @if (!$portalLinks['student_full']) aria-disabled="true" @endif>
                     <span class="bi bi-mortarboard-fill me-2"></span>{{ __('Student Portal') }}
                     <small class="text-muted ms-1">(Full)</small>
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none @if(!$portalLinks['staff_basic']) disabled @endif"
+                <a class="list-group-item list-group-item-action text-decoration-none @if (!$portalLinks['staff_basic']) disabled @endif"
                     href="{{ $portalLinks['staff_basic'] ?? '#' }}" target="_blank"
-                    @if(!$portalLinks['staff_basic']) aria-disabled="true" @endif>
+                    @if (!$portalLinks['staff_basic']) aria-disabled="true" @endif>
                     <span class="bi bi-person-badge me-2"></span>{{ __('Staff Portal') }}
                     <small class="text-muted ms-1">(Basic)</small>
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none @if(!$portalLinks['teacher_full']) disabled @endif"
+                <a class="list-group-item list-group-item-action text-decoration-none @if (!$portalLinks['teacher_full']) disabled @endif"
                     href="{{ $portalLinks['teacher_full'] ?? '#' }}" target="_blank"
-                    @if(!$portalLinks['teacher_full']) aria-disabled="true" @endif>
+                    @if (!$portalLinks['teacher_full']) aria-disabled="true" @endif>
                     <span class="bi bi-person-badge-fill me-2"></span>{{ __('Teacher Portal') }}
                     <small class="text-muted ms-1">(Full)</small>
                 </a>
             </div>
         </div>
 
-        @php($notificationsActive = request()->routeIs('admin.notifications.*') || request()->routeIs('admin.messages.*'))
-        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $notificationsActive ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#notificationsMenu" role="button"
-            aria-expanded="{{ $notificationsActive ? 'true' : 'false' }}" aria-controls="notificationsMenu">
-            <span><span class="bi bi-bell me-2"></span>{{ __('Notifications') }}</span>
-            <span class="bi bi-chevron-down small"></span>
-        </a>
-        <div class="collapse {{ $notificationsActive ? 'show' : '' }}" id="notificationsMenu">
-            <div class="list-group list-group-flush ms-3">
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.notifications.index') ? 'active' : '' }}"
-                    href="{{ route('admin.notifications.index') }}">
-                    <span class="bi bi-list-ul me-2"></span>{{ __('All Notifications') }}
-                </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.notifications.create') ? 'active' : '' }}"
-                    href="{{ route('admin.notifications.create') }}">
-                    <span class="bi bi-plus-circle me-2"></span>{{ __('Create Notification') }}
-                </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}"
-                    href="{{ route('admin.messages.index') }}">
-                    <span class="bi bi-chat-dots me-2"></span>{{ __('Messages') }}
-                </a>
+        @php
+            $hasNotificationRoutes =
+                Route::has('admin.notifications.index') ||
+                Route::has('admin.notifications.create') ||
+                Route::has('admin.messages.index');
+        @endphp
+
+        @if ($hasNotificationRoutes)
+            @php
+                $notificationsActive =
+                    request()->routeIs('admin.notifications.*') || request()->routeIs('admin.messages.*');
+            @endphp
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $notificationsActive ? 'active' : '' }}"
+                data-bs-toggle="collapse" href="#notificationsMenu" role="button"
+                aria-expanded="{{ $notificationsActive ? 'true' : 'false' }}" aria-controls="notificationsMenu">
+                <span><span class="bi bi-bell me-2"></span>{{ __('Notifications') }}</span>
+                <span class="bi bi-chevron-down small"></span>
+            </a>
+            <div class="collapse {{ $notificationsActive ? 'show' : '' }}" id="notificationsMenu">
+                <div class="list-group list-group-flush ms-3">
+                    @if (Route::has('admin.notifications.index'))
+                        <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.notifications.index') ? 'active' : '' }}"
+                            href="{{ route('admin.notifications.index') }}">
+                            <span class="bi bi-list-ul me-2"></span>{{ __('All Notifications') }}
+                        </a>
+                    @endif
+
+                    @if (Route::has('admin.notifications.create'))
+                        <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.notifications.create') ? 'active' : '' }}"
+                            href="{{ route('admin.notifications.create') }}">
+                            <span class="bi bi-plus-circle me-2"></span>{{ __('Create Notification') }}
+                        </a>
+                    @endif
+
+                    @if (Route::has('admin.messages.index'))
+                        <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}"
+                            href="{{ route('admin.messages.index') }}">
+                            <span class="bi bi-chat-dots me-2"></span>{{ __('Messages') }}
+                        </a>
+                    @endif
+                </div>
             </div>
-        </div>
+        @endif
 
         {{-- Logout at the bottom --}}
         <div class="mt-auto">
-            <form method="POST" action="{{ route('tenant.logout') }}" class="m-0">
-                @csrf
-                <button type="submit"
-                    class="list-group-item list-group-item-action text-decoration-none border-0 bg-transparent text-start w-100">
-                    <span class="bi bi-box-arrow-right me-2"></span>{{ __('Logout') }}
-                </button>
-            </form>
+            @php
+                $logoutRouteName = Route::has('tenant.logout')
+                    ? 'tenant.logout'
+                    : (Route::has('logout')
+                        ? 'logout'
+                        : null);
+            @endphp
+            @if ($logoutRouteName)
+                <form method="POST" action="{{ route($logoutRouteName) }}" class="m-0">
+                    @csrf
+                    <button type="submit"
+                        class="list-group-item list-group-item-action text-decoration-none border-0 bg-transparent text-start w-100">
+                        <span class="bi bi-box-arrow-right me-2"></span>{{ __('Logout') }}
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 

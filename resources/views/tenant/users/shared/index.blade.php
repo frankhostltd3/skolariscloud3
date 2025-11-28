@@ -22,7 +22,7 @@
               <a href="{{ route('tenant.modules.teachers.index') }}" class="btn btn-sm btn-primary me-2">
                 <i class="bi bi-person-video3 me-1"></i>{{ __('Go to Enhanced Teachers Module') }}
               </a>
-              <a href="{{ route('tenant.modules.human_resources.employees.index') }}" class="btn btn-sm btn-primary">
+              <a href="{{ route('tenant.modules.human-resource.employees.index') }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-person-badge me-1"></i>{{ __('Go to Enhanced Employees Module') }}
               </a>
             @endif

@@ -85,11 +85,11 @@ class TimetableController extends Controller
             ->get();
 
         // Group streams by class for JavaScript
-        $streamsByClass = $streams->groupBy('class_id')->map(function ($items) {
-            return $items->map(function ($item) {
+        $streamsByClass = $streams->groupBy('class_id')->mapWithKeys(function ($items, $key) {
+            return [(string)$key => $items->map(function ($item) {
                 return ['id' => $item->id, 'name' => $item->name];
-            });
-        });
+            })];
+        })->toArray();
 
         return view('tenant.academics.timetable.create', compact(
             'classes',
@@ -149,7 +149,7 @@ class TimetableController extends Controller
             return $items->map(function ($item) {
                 return ['id' => $item->id, 'name' => $item->name];
             });
-        });
+        })->toArray();
 
         return view('tenant.academics.timetable.edit', compact(
             'entry',
@@ -378,6 +378,15 @@ class TimetableController extends Controller
 
         // Get data for generation form
         $classes = ClassRoom::forSchool($schoolId)->orderBy('name')->get();
+        $streams = ClassStream::whereIn('class_id', $classes->pluck('id'))->orderBy('name')->get();
+
+        // Group streams by class for JavaScript
+        $streamsByClass = $streams->groupBy('class_id')->mapWithKeys(function ($items, $key) {
+            return [(string)$key => $items->map(function ($item) {
+                return ['id' => $item->id, 'name' => $item->name];
+            })];
+        })->toArray();
+
         $subjects = Subject::forSchool($schoolId)->active()->orderBy('name')->get();
         $teachers = User::where('school_id', $schoolId)
             ->where('user_type', 'teaching_staff')
@@ -392,7 +401,7 @@ class TimetableController extends Controller
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-        return view('admin.timetable.generate', compact('classes', 'subjects', 'teachers', 'days', 'subjectsCount', 'teachersCount', 'entriesCount'));
+        return view('admin.timetable.generate', compact('classes', 'streams', 'streamsByClass', 'subjects', 'teachers', 'days', 'subjectsCount', 'teachersCount', 'entriesCount'));
     }
 
     /**
@@ -400,46 +409,270 @@ class TimetableController extends Controller
      */
     public function storeGenerated(Request $request)
     {
+        // If 'entries' is present, it's a manual save or result of a frontend generator
+        if ($request->has('entries')) {
+            $request->validate([
+                'entries' => 'required|array',
+                'entries.*.class_id' => 'required|exists:classes,id',
+                'entries.*.subject_id' => 'required|exists:subjects,id',
+                'entries.*.teacher_id' => 'nullable|exists:users,id',
+                'entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+                'entries.*.starts_at' => 'required|date_format:H:i',
+                'entries.*.ends_at' => 'required|date_format:H:i|after:entries.*.starts_at',
+            ]);
+
+            $schoolId = auth()->user()->school_id;
+
+            DB::beginTransaction();
+            try {
+                // Optionally clear existing timetable
+                if ($request->input('clear_existing')) {
+                    TimetableEntry::forSchool($schoolId)->delete();
+                }
+
+                // Create entries
+                foreach ($request->input('entries') as $entryData) {
+                    TimetableEntry::create([
+                        'school_id' => $schoolId,
+                        'class_id' => $entryData['class_id'],
+                        'class_stream_id' => $entryData['class_stream_id'] ?? null,
+                        'subject_id' => $entryData['subject_id'],
+                        'teacher_id' => $entryData['teacher_id'] ?? null,
+                        'day_of_week' => $entryData['day_of_week'],
+                        'starts_at' => $entryData['starts_at'],
+                        'ends_at' => $entryData['ends_at'],
+                    ]);
+                }
+
+                DB::commit();
+
+                return redirect()->route('tenant.academics.timetable.index')
+                    ->with('success', 'Timetable generated successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->with('error', 'Failed to generate timetable: ' . $e->getMessage());
+            }
+        }
+
+        // Otherwise, it's a request to generate the timetable on the server
         $request->validate([
-            'entries' => 'required|array',
-            'entries.*.class_id' => 'required|exists:classes,id',
-            'entries.*.subject_id' => 'required|exists:subjects,id',
-            'entries.*.teacher_id' => 'nullable|exists:users,id',
-            'entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'entries.*.starts_at' => 'required|date_format:H:i',
-            'entries.*.ends_at' => 'required|date_format:H:i|after:entries.*.starts_at',
+            'scope' => 'nullable|in:single,all',
+            'class_id' => 'required_if:scope,single|nullable|exists:classes,id',
+            'class_stream_id' => 'nullable|exists:class_streams,id',
+            'max_periods_per_day' => 'required|integer|min:1|max:12',
+            'working_days' => 'required|array|min:1',
+            'working_days.*' => 'integer|between:1,7',
+            'start_time' => 'nullable|date_format:H:i',
+            'period_duration' => 'nullable|integer|min:30|max:90',
+            'break_duration' => 'nullable|integer|min:5|max:60',
+            'overwrite_existing' => 'nullable|boolean',
         ]);
 
         $schoolId = auth()->user()->school_id;
+        $scope = $request->input('scope', 'single');
+        $maxPeriods = $request->input('max_periods_per_day');
+        $workingDays = $request->input('working_days'); // Array of day numbers (1=Mon, 7=Sun)
+        $overwrite = $request->boolean('overwrite_existing');
+        $startTime = $request->input('start_time', '08:00');
+        $periodDuration = $request->input('period_duration', 40);
+        $breakDuration = $request->input('break_duration', 15);
 
         DB::beginTransaction();
         try {
-            // Optionally clear existing timetable
-            if ($request->input('clear_existing')) {
-                TimetableEntry::forSchool($schoolId)->delete();
+            $targets = [];
+
+            if ($scope === 'all') {
+                // Get all active classes
+                $classes = ClassRoom::forSchool($schoolId)->get();
+                foreach ($classes as $class) {
+                    $streams = ClassStream::where('class_id', $class->id)->get();
+                    if ($streams->count() > 0) {
+                        foreach ($streams as $stream) {
+                            $targets[] = ['class_id' => $class->id, 'stream_id' => $stream->id];
+                        }
+                    } else {
+                        $targets[] = ['class_id' => $class->id, 'stream_id' => null];
+                    }
+                }
+            } else {
+                // Single class scope
+                $classId = $request->input('class_id');
+                $streamId = $request->input('class_stream_id');
+
+                if ($streamId) {
+                    // Specific stream selected
+                    $targets[] = ['class_id' => $classId, 'stream_id' => $streamId];
+                } else {
+                    // No stream selected, check if class has streams
+                    $streams = ClassStream::where('class_id', $classId)->get();
+                    if ($streams->count() > 0) {
+                        // Generate for ALL streams of this class
+                        foreach ($streams as $stream) {
+                            $targets[] = ['class_id' => $classId, 'stream_id' => $stream->id];
+                        }
+                    } else {
+                        // Class has no streams
+                        $targets[] = ['class_id' => $classId, 'stream_id' => null];
+                    }
+                }
             }
 
-            // Create entries
-            foreach ($request->input('entries') as $entryData) {
-                TimetableEntry::create([
-                    'school_id' => $schoolId,
-                    'class_id' => $entryData['class_id'],
-                    'class_stream_id' => $entryData['class_stream_id'] ?? null,
-                    'subject_id' => $entryData['subject_id'],
-                    'teacher_id' => $entryData['teacher_id'] ?? null,
-                    'day_of_week' => $entryData['day_of_week'],
-                    'starts_at' => $entryData['starts_at'],
-                    'ends_at' => $entryData['ends_at'],
-                ]);
+            $totalGenerated = 0;
+            $totalSkipped = 0;
+
+            foreach ($targets as $target) {
+                $classId = $target['class_id'];
+                $streamId = $target['stream_id'];
+
+                // Clear existing if requested
+                if ($overwrite) {
+                    $query = TimetableEntry::forSchool($schoolId)->forClass($classId);
+                    if ($streamId) {
+                        $query->forStream($streamId);
+                    } else {
+                        $query->whereNull('class_stream_id');
+                    }
+                    $query->delete();
+                }
+
+                $class = ClassRoom::with(['subjects' => function ($query) {
+                    $query->withPivot('teacher_id');
+                }])->findOrFail($classId);
+
+                $subjects = $class->subjects;
+                if ($subjects->isEmpty()) {
+                    continue; // Skip classes with no subjects
+                }
+
+                // Create slots (Interleaved: P1-AllDays, P2-AllDays...)
+                $slots = [];
+                for ($period = 1; $period <= $maxPeriods; $period++) {
+                    foreach ($workingDays as $dayNum) {
+                        if ($dayNum < 1 || $dayNum > 7) continue;
+                        $slots[] = ['day' => $dayNum, 'period' => $period];
+                    }
+                }
+
+                // Prepare lessons to schedule
+                $lessons = [];
+                foreach ($subjects as $subject) {
+                    $frequency = isset($subject->required_periods_per_week) && $subject->required_periods_per_week > 0
+                        ? $subject->required_periods_per_week
+                        : 4; // Default frequency
+
+                    for ($i = 0; $i < $frequency; $i++) {
+                        $lessons[] = [
+                            'subject_id' => $subject->id,
+                            'subject_name' => $subject->name,
+                            'teacher_id' => $subject->pivot->teacher_id ?? null,
+                        ];
+                    }
+                }
+
+                // Shuffle lessons for better distribution
+                shuffle($lessons);
+
+                foreach ($lessons as $lesson) {
+                    if (empty($slots)) {
+                        $totalSkipped++;
+                        continue;
+                    }
+
+                    // Find a valid slot
+                    $assignedSlotIndex = null;
+                    foreach ($slots as $index => $slot) {
+                        $slotStartTime = $this->getStartTime($slot['period'], $startTime, $periodDuration, $breakDuration);
+
+                        // Check teacher availability
+                        if ($lesson['teacher_id']) {
+                            $isTeacherBusy = TimetableEntry::where('school_id', $schoolId)
+                                ->where('teacher_id', $lesson['teacher_id'])
+                                ->where('day_of_week', $slot['day'])
+                                ->where('starts_at', $slotStartTime)
+                                ->exists();
+
+                            if ($isTeacherBusy) continue;
+                        }
+
+                        $assignedSlotIndex = $index;
+                        break;
+                    }
+
+                    if ($assignedSlotIndex !== null) {
+                        $slot = $slots[$assignedSlotIndex];
+
+                        TimetableEntry::create([
+                            'school_id' => $schoolId,
+                            'class_id' => $classId,
+                            'class_stream_id' => $streamId,
+                            'subject_id' => $lesson['subject_id'],
+                            'teacher_id' => $lesson['teacher_id'],
+                            'day_of_week' => $slot['day'],
+                            'starts_at' => $this->getStartTime($slot['period'], $startTime, $periodDuration, $breakDuration),
+                            'ends_at' => $this->getEndTime($slot['period'], $startTime, $periodDuration, $breakDuration),
+                        ]);
+
+                        unset($slots[$assignedSlotIndex]);
+                        $slots = array_values($slots);
+                        $totalGenerated++;
+                    } else {
+                        $totalSkipped++;
+                    }
+                }
             }
 
             DB::commit();
 
+            $message = "Timetable generated successfully! Created {$totalGenerated} entries.";
+            if ($totalSkipped > 0) {
+                $message .= " {$totalSkipped} lessons could not be scheduled.";
+            }
+
             return redirect()->route('tenant.academics.timetable.index')
-                ->with('success', 'Timetable generated successfully!');
+                ->with('success', $message);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to generate timetable: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Generation failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Helper to get start time for a period
+     */
+    private function getStartTime($period, $startTime = '08:00', $periodDuration = 40, $breakDuration = 15)
+    {
+        list($startHour, $startMinute) = explode(':', $startTime);
+        $startHour = (int)$startHour;
+        $startMinute = (int)$startMinute;
+
+        // Calculate minutes from start for this period
+        $minutesFromStart = ($period - 1) * ($periodDuration + $breakDuration);
+
+        $totalMinutes = ($startHour * 60 + $startMinute) + $minutesFromStart;
+        $hour = floor($totalMinutes / 60);
+        $minute = $totalMinutes % 60;
+
+        return sprintf('%02d:%02d', $hour, $minute);
+    }
+
+    /**
+     * Helper to get end time for a period
+     */
+    private function getEndTime($period, $startTime = '08:00', $periodDuration = 40, $breakDuration = 15)
+    {
+        list($startHour, $startMinute) = explode(':', $startTime);
+        $startHour = (int)$startHour;
+        $startMinute = (int)$startMinute;
+
+        // Calculate minutes from start for end of this period (before break)
+        $minutesFromStart = ($period - 1) * ($periodDuration + $breakDuration) + $periodDuration;
+
+        $totalMinutes = ($startHour * 60 + $startMinute) + $minutesFromStart;
+        $hour = floor($totalMinutes / 60);
+        $minute = $totalMinutes % 60;
+
+        return sprintf('%02d:%02d', $hour, $minute);
+    }
 }
+

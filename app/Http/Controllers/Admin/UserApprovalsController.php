@@ -244,26 +244,38 @@ class UserApprovalsController extends Controller
             }
 
             // Update or create employee record
+            $nameParts = explode(' ', $user->name, 2);
+            $firstName = $nameParts[0];
+            $lastName = $nameParts[1] ?? '';
+
             $employee = Employee::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'school_id' => $user->school_id,
                     'employee_type' => $request->employee_type,
                     'department_id' => $request->department_id,
                     'position_id' => $request->position_id,
+                    'email' => $user->email,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'employment_status' => 'active',
                 ]
             );
 
             // If role is Teacher, update teacher-specific data
             if ($request->employment_role === 'Teacher') {
+                $user->update(['user_type' => UserType::TEACHING_STAFF]);
+
                 $teacher = Teacher::updateOrCreate(
                     ['email' => $user->email],
                     [
                         'user_id' => $user->id,
                         'school_id' => $user->school_id,
                         'name' => $user->name,
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
                         'employment_type' => $request->employee_type,
                         'class_id' => $request->class_id,
+                        'status' => 'active',
                     ]
                 );
 
@@ -271,6 +283,9 @@ class UserApprovalsController extends Controller
                 if ($request->subject_ids) {
                     $teacher->subjects()->sync($request->subject_ids);
                 }
+            } else {
+                // For other staff roles, ensure user_type is general_staff
+                $user->update(['user_type' => UserType::GENERAL_STAFF]);
             }
 
             DB::commit();
@@ -304,6 +319,9 @@ class UserApprovalsController extends Controller
 
         DB::beginTransaction();
         try {
+            // Ensure user type is set to student
+            $user->update(['user_type' => UserType::STUDENT]);
+
             // Update or create student record
             $student = Student::updateOrCreate(
                 ['email' => $user->email],

@@ -37,7 +37,7 @@ class LeaveTypesController extends Controller
     {
         $this->authorize('create', LeaveType::class);
         $leaveType = LeaveType::create($request->validated());
-        return redirect()->route('tenant.modules.human_resources.leave-types.index')->with('success', 'Leave type created successfully.');
+        return redirect()->route('tenant.modules.human-resource.leave-types.index')->with('success', 'Leave type created successfully.');
     }
 
     public function show(LeaveType $leaveType): View
@@ -56,14 +56,14 @@ class LeaveTypesController extends Controller
     {
         $this->authorize('update', $leaveType);
         $leaveType->update($request->validated());
-        return redirect()->route('tenant.modules.human_resources.leave-types.index')->with('success', 'Leave type updated successfully.');
+        return redirect()->route('tenant.modules.human-resource.leave-types.index')->with('success', 'Leave type updated successfully.');
     }
 
     public function destroy(LeaveType $leaveType): RedirectResponse
     {
         $this->authorize('delete', $leaveType);
         $leaveType->delete();
-        return redirect()->route('tenant.modules.human_resources.leave-types.index')->with('success', 'Leave type deleted successfully.');
+        return redirect()->route('tenant.modules.human-resource.leave-types.index')->with('success', 'Leave type deleted successfully.');
     }
 
     // Export Excel template for import

@@ -11,6 +11,8 @@ use App\Models\Grade;
 use App\Models\Academic\Enrollment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use App\Services\RegistrationPipelineService;
 
 class DashboardController extends Controller
 {
@@ -22,6 +24,33 @@ class DashboardController extends Controller
     public function index()
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
+        $hasGradesTable = $schema->hasTable('grades');
+
+        $classSubjectTable = null;
+        foreach (['class_subjects', 'class_subject'] as $candidate) {
+            if (tenant_table_exists($candidate, $connection)) {
+                $classSubjectTable = $candidate;
+                break;
+            }
+        }
+
+        $classRelations = [];
+
+        if ($classSubjectTable) {
+            $classRelations['subjects'] = function ($query) use ($teacher, $classSubjectTable) {
+                $query->where($classSubjectTable . '.teacher_id', $teacher->id);
+            };
+        }
+
+        if ($hasEnrollments || $hasStudentTable) {
+            $classRelations[] = 'students';
+        }
 
         // Get the teacher record (not just the user)
         $teacherRecord = \App\Models\Teacher::where('employee_record_id', $teacher->employee_record_id ?? null)
@@ -34,45 +63,113 @@ class DashboardController extends Controller
         }
 
         // Classes where teacher is class teacher (stored with user ID)
-        $classesAsClassTeacher = ClassRoom::where('class_teacher_id', $teacher->id)
-            ->with([
-                'academicYear',
-                'students',
-                'subjects' => function ($query) use ($teacher) {
-                    $query->wherePivot('teacher_id', $teacher->id);
-                },
-            ])
-            ->get();
+        $classesAsClassTeacher = collect();
+        if ($hasClassTeacherColumn) {
+            try {
+                $classesAsClassTeacher = ClassRoom::where('class_teacher_id', $teacher->id)
+                    ->with($classRelations)
+                    ->get();
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($classSubjectTable && $this->isMissingTableException($e, $classSubjectTable)) {
+                    unset($classRelations['subjects']);
+                    $classSubjectTable = null;
+                    $classesAsClassTeacher = ClassRoom::where('class_teacher_id', $teacher->id)
+                        ->with($classRelations)
+                        ->get();
+                } else {
+                    throw $e;
+                }
+            }
+        }
+
+        if (! ($hasEnrollments || $hasStudentTable)) {
+            $classesAsClassTeacher->each(function ($class) {
+                $class->setRelation('students', collect());
+            });
+        }
+
+        if (! $classSubjectTable) {
+            $classesAsClassTeacher->each(function ($class) {
+                $class->setRelation('subjects', collect());
+            });
+        }
 
         // Classes where teacher teaches at least one subject (based on class_subjects.teacher_id)
-        $subjectClassIds = DB::table('class_subjects')
-            ->where('teacher_id', $teacher->id)
-            ->distinct()
-            ->pluck('class_id')
-            ->filter()
-            ->values();
+        $subjectClassIds = collect();
+        if ($classSubjectTable) {
+            try {
+                $subjectClassIds = DB::connection($connection)
+                    ->table($classSubjectTable)
+                    ->where('teacher_id', $teacher->id)
+                    ->distinct()
+                    ->pluck('class_id')
+                    ->filter()
+                    ->values();
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($this->isMissingTableException($e, $classSubjectTable)) {
+                    unset($classRelations['subjects']);
+                    $classSubjectTable = null;
+                    $subjectClassIds = collect();
+                } else {
+                    throw $e;
+                }
+            }
+        }
 
-        $allocatedClasses = $subjectClassIds->isEmpty()
-            ? collect()
-            : ClassRoom::whereIn('id', $subjectClassIds)
-                ->with([
-                    'academicYear',
-                    'students',
-                    'subjects' => function ($query) use ($teacher) {
-                        $query->wherePivot('teacher_id', $teacher->id);
-                    },
-                ])
-                ->get();
+        $allocatedClasses = collect();
+        if ($subjectClassIds->isNotEmpty()) {
+            try {
+                $allocatedClasses = ClassRoom::whereIn('id', $subjectClassIds)
+                    ->with($classRelations)
+                    ->get();
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($classSubjectTable && $this->isMissingTableException($e, $classSubjectTable)) {
+                    unset($classRelations['subjects']);
+                    $classSubjectTable = null;
+                    $allocatedClasses = ClassRoom::whereIn('id', $subjectClassIds)
+                        ->with($classRelations)
+                        ->get();
+                } else {
+                    throw $e;
+                }
+            }
+        }
+
+        if (! ($hasEnrollments || $hasStudentTable)) {
+            $allocatedClasses->each(function ($class) {
+                $class->setRelation('students', collect());
+            });
+        }
+
+        if (! $classSubjectTable) {
+            $allocatedClasses->each(function ($class) {
+                $class->setRelation('subjects', collect());
+            });
+        }
 
         // Merge all classes (remove duplicates)
-        $allClasses = $classesAsClassTeacher->merge($allocatedClasses)->unique('id');
+        $allClasses = $classesAsClassTeacher
+            ->merge($allocatedClasses)
+            ->unique('id')
+            ->values();
 
         // Subjects allocated to teacher (derived from class_subjects)
-        $allSubjects = Subject::whereHas('classes', function ($query) use ($teacher) {
-                $query->where('class_subjects.teacher_id', $teacher->id);
-            })
-            ->with('educationLevel')
-            ->get();
+        $allSubjects = collect();
+        if ($classSubjectTable) {
+            try {
+                $allSubjects = Subject::whereHas('classes', function ($query) use ($teacher, $classSubjectTable) {
+                    $query->where($classSubjectTable . '.teacher_id', $teacher->id);
+                    })
+                    ->with('educationLevel')
+                    ->get();
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($this->isMissingTableException($e, $classSubjectTable)) {
+                    $allSubjects = collect();
+                } else {
+                    throw $e;
+                }
+            }
+        }
 
         // Today's timetable entries for this teacher
         $teacherIdForSchedule = $teacherRecord?->id ?? $teacher->id; // Prefer Teacher model ID if available
@@ -95,11 +192,13 @@ class DashboardController extends Controller
         ];
 
         // Recent grade entries by this teacher
-        $recentGrades = Grade::where('teacher_id', $teacher->id)
-            ->with(['student', 'subject', 'class'])
-            ->latest()
-            ->limit(5)
-            ->get();
+        $recentGrades = $hasGradesTable
+            ? Grade::where('teacher_id', $teacher->id)
+                ->with(['student', 'subject', 'class'])
+                ->latest()
+                ->limit(5)
+                ->get()
+            : collect();
 
         // Classes needing attention (low enrollment or no subjects)
         $classesNeedingAttention = $allClasses->filter(function ($class) {
@@ -111,12 +210,14 @@ class DashboardController extends Controller
         $classIds = $allClasses->pluck('id');
 
         $studentsNeedingGrades = collect();
-        if ($classIds->isNotEmpty() && $subjectIds->isNotEmpty()) {
+        if ($hasEnrollments && $classIds->isNotEmpty() && $subjectIds->isNotEmpty()) {
             $studentsNeedingGrades = \App\Models\Academic\Enrollment::whereIn('class_id', $classIds)
                 ->with(['student', 'class'])
                 ->where('status', 'active')
                 ->get();
         }
+
+        $registrationInsights = app(RegistrationPipelineService::class)->teacherOverview($teacher, $allClasses);
 
         return view('tenant.teacher.dashboard', compact(
             'stats',
@@ -126,6 +227,25 @@ class DashboardController extends Controller
             'recentGrades',
             'classesNeedingAttention',
             'studentsNeedingGrades',
+            'registrationInsights'
         ));
+    }
+
+    /**
+     * Determine if the query exception was caused by a missing table.
+     */
+    private function isMissingTableException(\Illuminate\Database\QueryException $exception, string $table): bool
+    {
+        $sqlState = $exception->getCode();
+        $errorInfo = $exception->errorInfo ?? [];
+        if ((! is_string($sqlState) || $sqlState === '') && is_array($errorInfo) && isset($errorInfo[0])) {
+            $sqlState = $errorInfo[0];
+        }
+
+        $message = $exception->getMessage();
+
+        return in_array($sqlState, ['42S02', '42S22'], true)
+            || str_contains($message, 'Base table or view not found')
+            || (str_contains($message, 'Unknown column') && str_contains($message, $table));
     }
 }

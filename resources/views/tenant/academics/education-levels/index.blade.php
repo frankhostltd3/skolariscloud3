@@ -11,7 +11,7 @@
             <p class="text-muted mb-0">{{ __('Manage education levels like Primary, Secondary, O-Level, A-Level, etc.') }}
             </p>
         </div>
-        <a class="btn btn-primary" href="{{ url('/tenant/academics/education-levels/create') }}">
+        <a class="btn btn-primary" href="{{ route('tenant.academics.education-levels.create') }}">
             <i class="bi bi-plus-circle me-1"></i>{{ __('Add Education Level') }}
         </a>
     </div>
@@ -27,7 +27,7 @@
                     <h3 class="mt-3">{{ __('No Education Levels Yet') }}</h3>
                     <p class="text-muted mb-4">
                         {{ __('Create education levels to organize your classes by educational stages.') }}</p>
-                    <a href="{{ url('/tenant/academics/education-levels/create') }}" class="btn btn-primary">
+                    <a href="{{ route('tenant.academics.education-levels.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>{{ __('Create First Education Level') }}
                     </a>
                 </div>
@@ -121,10 +121,9 @@
     <script>
         function confirmDelete(levelId) {
             if (confirm(
-                '{{ __('Are you sure you want to delete this education level? This action cannot be undone.') }}')) {
+                    '{{ __('Are you sure you want to delete this education level? This action cannot be undone.') }}')) {
                 document.getElementById('delete-form-' + levelId).submit();
             }
         }
     </script>
 @endpush
-

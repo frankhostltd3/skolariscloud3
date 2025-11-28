@@ -81,6 +81,43 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="form-check">
+                                <input type="checkbox" name="is_mandatory" class="form-check-input" id="is_mandatory"
+                                    value="1"
+                                    {{ old('is_mandatory', $feeStructure->is_mandatory ?? true) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_mandatory">Mandatory Fee</label>
+                                <div class="form-text">Uncheck for optional fees like clubs or trips.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_recurring" class="form-check-input" id="is_recurring"
+                                    value="1"
+                                    {{ old('is_recurring', $feeStructure->is_recurring ?? false) ? 'checked' : '' }}
+                                    onchange="toggleFrequency()">
+                                <label class="form-check-label" for="is_recurring">Recurring Fee</label>
+                                <div class="form-text">Check if this fee repeats (e.g. every term).</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3" id="frequency_div" style="display: none;">
+                            <label class="form-label">Frequency</label>
+                            <select name="frequency" class="form-select @error('frequency') is-invalid @enderror">
+                                <option value="">Select Frequency</option>
+                                <option value="once"
+                                    {{ old('frequency', $feeStructure->frequency ?? '') == 'once' ? 'selected' : '' }}>
+                                    One-time</option>
+                                <option value="per_term"
+                                    {{ old('frequency', $feeStructure->frequency ?? '') == 'per_term' ? 'selected' : '' }}>
+                                    Per Term</option>
+                                <option value="per_year"
+                                    {{ old('frequency', $feeStructure->frequency ?? '') == 'per_year' ? 'selected' : '' }}>
+                                    Per Year</option>
+                            </select>
+                            @error('frequency')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
                                 <input type="checkbox" name="is_active" class="form-check-input" id="is_active"
                                     value="1"
                                     {{ old('is_active', $feeStructure->is_active ?? true) ? 'checked' : '' }}>
@@ -96,4 +133,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleFrequency() {
+            const isRecurring = document.getElementById('is_recurring').checked;
+            const frequencyDiv = document.getElementById('frequency_div');
+            if (isRecurring) {
+                frequencyDiv.style.display = 'block';
+            } else {
+                frequencyDiv.style.display = 'none';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleFrequency();
+        });
+    </script>
 @endsection

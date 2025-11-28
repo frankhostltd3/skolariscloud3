@@ -42,6 +42,7 @@
                 transform: scale(1);
                 opacity: 1;
             }
+
             to {
                 transform: scale(2.25);
                 opacity: 0;
@@ -54,14 +55,15 @@
     @php
         $headcountTotal = max($headcount['total'] ?? 0, 1);
         $activePercent = ($headcount['total'] ?? 0) > 0 ? round(($headcount['active'] / $headcount['total']) * 100) : 0;
-        $onLeavePercent = ($headcount['total'] ?? 0) > 0 ? round(($headcount['on_leave'] / $headcount['total']) * 100) : 0;
+        $onLeavePercent =
+            ($headcount['total'] ?? 0) > 0 ? round(($headcount['on_leave'] / $headcount['total']) * 100) : 0;
         $pendingLeaves = $leaveSummary['pending'] ?? 0;
         $pendingRuns = $payrollSummary['pending_runs'] ?? 0;
         $lastPayroll = $payrollSummary['last_run'] ?? null;
         $employeeIdStudioUrl = Route::has('tenant.modules.human-resource.employee-ids.index')
             ? route('tenant.modules.human-resource.employee-ids.index')
             : null;
-        @endphp
+    @endphp
 
     <div class="container-fluid py-2">
         <div class="card hr-hero text-white border-0 shadow-lg mb-4">
@@ -154,11 +156,11 @@
                             <span class="badge bg-success-subtle text-success">{{ $activePercent }}%</span>
                         </div>
                         <div class="progress bg-light" style="height: 5px;">
-                            <div class="progress-bar bg-success" role="progressbar"
-                                style="width: {{ $activePercent }}%" aria-valuenow="{{ $activePercent }}" aria-valuemin="0"
-                                aria-valuemax="100"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $activePercent }}%"
+                                aria-valuenow="{{ $activePercent }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                        <small class="text-muted d-block mt-2">{{ number_format($headcount['probation']) }} on probation</small>
+                        <small class="text-muted d-block mt-2">{{ number_format($headcount['probation']) }} on
+                            probation</small>
                     </div>
                 </div>
             </div>
@@ -177,7 +179,8 @@
                                 <small class="text-muted">Avg tenure</small>
                             </div>
                         </div>
-                        <span class="badge bg-info-subtle text-info">{{ number_format($headcount['on_leave']) }} on leave</span>
+                        <span class="badge bg-info-subtle text-info">{{ number_format($headcount['on_leave']) }} on
+                            leave</span>
                     </div>
                 </div>
             </div>
@@ -195,7 +198,8 @@
                                 <small class="text-muted">Queued payroll</small>
                             </div>
                         </div>
-                        <small class="text-muted">{{ formatMoney($payrollSummary['current_month_net'] ?? 0) }} net this month</small>
+                        <small class="text-muted">{{ formatMoney($payrollSummary['current_month_net'] ?? 0) }} net this
+                            month</small>
                     </div>
                 </div>
             </div>

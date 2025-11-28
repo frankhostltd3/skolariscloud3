@@ -32,7 +32,8 @@ class SwitchTenantDatabase
 
             if ($sessionSchoolId) {
                 // Use central connection to fetch school
-                $sessionSchool = School::on('mysql')->find($sessionSchoolId);
+            $centralConnection = config('database.central_connection', config('database.default'));
+            $sessionSchool = School::on($centralConnection)->find($sessionSchoolId);
 
                 if ($sessionSchool instanceof School) {
                     $school = $sessionSchool;

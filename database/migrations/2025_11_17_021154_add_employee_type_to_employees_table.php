@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
-            $table->string('employee_type')->default('full_time')->after('id');
+            if (! Schema::hasColumn('employees', 'employee_type')) {
+                $table->string('employee_type')->default('full_time')->after('id');
+            }
         });
     }
 
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
-            $table->dropColumn('employee_type');
+            if (Schema::hasColumn('employees', 'employee_type')) {
+                $table->dropColumn('employee_type');
+            }
         });
     }
 };

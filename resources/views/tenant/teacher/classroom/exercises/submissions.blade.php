@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.teacher._sidebar')
-@endsection
+@extends('layouts.dashboard-teacher')
 
 @section('title', 'Assignment Submissions - ' . $exercise->title)
 
@@ -570,4 +566,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
-

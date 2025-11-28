@@ -274,4 +274,23 @@ class ClassStreamController extends Controller
                 ->with('error', __('Failed to create streams. Please try again.'));
         }
     }
+
+    /**
+     * Get streams for a class as JSON.
+     */
+    public function list(ClassRoom $class)
+    {
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school;
+
+        if ($class->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to class.');
+        }
+
+        $streams = $class->streams()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json($streams);
+    }
 }

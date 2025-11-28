@@ -2,8 +2,10 @@
 
 namespace App\Models\Academic;
 
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class ClassStream extends Model
 {
@@ -34,7 +36,7 @@ class ClassStream extends Model
 
     public function students()
     {
-        return $this->hasMany(\App\Models\Student::class, 'stream_id');
+        return $this->hasMany(\App\Models\Student::class, 'class_stream_id');
     }
 
     public function getFullNameAttribute()
@@ -93,5 +95,28 @@ class ClassStream extends Model
         }
 
         return max(0, $this->capacity - ($this->active_students_count ?? 0));
+    }
+
+    /**
+     * Recalculate and persist the number of active students in this stream.
+     */
+    public function updateEnrollmentCount(): void
+    {
+        $connection = $this->getConnectionName() ?? config('database.default');
+
+        if (Schema::connection($connection)->hasTable('enrollments') && Schema::connection($connection)->hasColumn('enrollments', 'class_stream_id')) {
+            $count = Enrollment::on($connection)
+                ->where('class_stream_id', $this->id)
+                ->where('status', 'active')
+                ->count();
+        } elseif (Schema::connection($connection)->hasTable('students')) {
+            $count = Student::on($connection)
+                ->where('class_stream_id', $this->id)
+                ->count();
+        } else {
+            $count = 0;
+        }
+
+        $this->forceFill(['active_students_count' => $count])->save();
     }
 }

@@ -51,8 +51,8 @@ class ParentsController extends Controller
         $data = $request->validate([
             // User Account
             'email' => ['required','email','max:255','unique:users,email'],
-            'password' => ['required','confirmed','min:8'],
-            
+            'password' => ['nullable','confirmed','min:8'],
+
             // Personal Information
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -62,7 +62,7 @@ class ParentsController extends Controller
             'national_id' => ['nullable', 'string', 'max:50', 'unique:parents,national_id'],
             'blood_group' => ['nullable', 'in:A+,A-,B+,B-,O+,O-,AB+,AB-'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            
+
             // Contact Information
             'phone' => ['required', 'string', 'max:20'],
             'alternate_phone' => ['nullable', 'string', 'max:20'],
@@ -71,25 +71,25 @@ class ParentsController extends Controller
             'state' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:100'],
-            
+
             // Occupation Information
             'occupation' => ['nullable', 'string', 'max:255'],
             'employer' => ['nullable', 'string', 'max:255'],
             'work_phone' => ['nullable', 'string', 'max:20'],
             'work_address' => ['nullable', 'string', 'max:500'],
             'annual_income' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            
+
             // Relationships
             'students' => ['nullable', 'array'],
             'students.*' => ['exists:students,id'],
             'relationships' => ['nullable', 'array'],
             'relationships.*' => ['in:father,mother,guardian,relative,other'],
-            
+
             // Emergency Contact
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
             'emergency_contact_relation' => ['nullable', 'string', 'max:100'],
-            
+
             // Additional Information
             'medical_conditions' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -100,7 +100,7 @@ class ParentsController extends Controller
         $user = User::create([
             'name' => $data['first_name'] . ' ' . $data['last_name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => !empty($data['password']) ? $data['password'] : 'Parent@123',
         ]);
         $user->assignRole($this->role);
 
@@ -160,11 +160,11 @@ class ParentsController extends Controller
     public function show(User $user): View
     {
         abort_unless($user->hasRole($this->role), 404);
-        
+
         // Load parent profile with students and their classes
         $user->load(['parentProfile.students.class']);
         $profile = $user->parentProfile;
-        
+
         return view('tenant.users.parents.show', [
             'user' => $user,
             'profile' => $profile,
@@ -174,7 +174,7 @@ class ParentsController extends Controller
     public function edit(User $user): View
     {
         abort_unless($user->hasRole($this->role), 404);
-        
+
         // Load parent profile with students
         $user->load(['parentProfile.students']);
         $profile = $user->parentProfile;
@@ -185,10 +185,10 @@ class ParentsController extends Controller
             ]);
             $profile->setRelation('students', collect());
         }
-        
+
         // Get all students for dropdown
         $students = Student::orderBy('first_name')->get();
-        
+
         return view('tenant.users.parents.edit', [
             'user' => $user,
             'profile' => $profile,
@@ -199,12 +199,12 @@ class ParentsController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         abort_unless($user->hasRole($this->role), 404);
-        
+
         $data = $request->validate([
             // User Account
             'email' => ['required','email','max:255','unique:users,email,' . $user->id],
             'password' => ['nullable','confirmed','min:8'],
-            
+
             // Personal Information
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -214,7 +214,7 @@ class ParentsController extends Controller
             'national_id' => ['nullable', 'string', 'max:50', 'unique:parents,national_id,' . $user->parentProfile?->id],
             'blood_group' => ['nullable', 'in:A+,A-,B+,B-,O+,O-,AB+,AB-'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            
+
             // Contact Information
             'phone' => ['required', 'string', 'max:20'],
             'alternate_phone' => ['nullable', 'string', 'max:20'],
@@ -223,25 +223,25 @@ class ParentsController extends Controller
             'state' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:100'],
-            
+
             // Occupation Information
             'occupation' => ['nullable', 'string', 'max:255'],
             'employer' => ['nullable', 'string', 'max:255'],
             'work_phone' => ['nullable', 'string', 'max:20'],
             'work_address' => ['nullable', 'string', 'max:500'],
             'annual_income' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            
+
             // Relationships
             'students' => ['nullable', 'array'],
             'students.*' => ['exists:students,id'],
             'relationships' => ['nullable', 'array'],
             'relationships.*' => ['in:father,mother,guardian,relative,other'],
-            
+
             // Emergency Contact
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
             'emergency_contact_relation' => ['nullable', 'string', 'max:100'],
-            
+
             // Additional Information
             'medical_conditions' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -253,11 +253,11 @@ class ParentsController extends Controller
             'name' => $data['first_name'] . ' ' . $data['last_name'],
             'email' => $data['email'],
         ];
-        
+
         if (!empty($data['password'])) {
             $userData['password'] = $data['password'];
         }
-        
+
         $user->update($userData);
 
         // Handle profile photo upload
@@ -337,22 +337,22 @@ class ParentsController extends Controller
     public function activate(User $user): RedirectResponse
     {
         abort_unless($user->hasRole($this->role), 404);
-        
+
         $user->activate();
-        
+
         return redirect()->back()->with('success', __('User activated successfully.'));
     }
 
     public function deactivate(Request $request, User $user): RedirectResponse
     {
         abort_unless($user->hasRole($this->role), 404);
-        
+
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
-        
+
         $user->deactivate($request->input('reason'));
-        
+
         return redirect()->back()->with('success', __('User deactivated successfully.'));
     }
 }

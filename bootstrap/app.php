@@ -31,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         \App\Console\Commands\MigrateTenants::class,
         \App\Console\Commands\RunTenantBackups::class,
+        \App\Console\Commands\SeedTenantCurrencies::class,
+        \App\Console\Commands\SeedTenantPlatformIntegrations::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -38,17 +40,20 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'approved' => \App\Http\Middleware\EnsureUserApproved::class,
         ]);
 
     // Set high priority so these run early
     $middleware->priority([
         \App\Http\Middleware\IdentifySchoolFromHost::class,
         \App\Http\Middleware\SwitchTenantDatabase::class,
+        \App\Http\Middleware\SetPermissionTeamContext::class,
     ]);
 
     $middleware->appendToGroup('web', \App\Http\Middleware\ForceHttps::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\IdentifySchoolFromHost::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\SwitchTenantDatabase::class);
+    $middleware->appendToGroup('web', \App\Http\Middleware\SetPermissionTeamContext::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\PreserveSubdomainContext::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\ApplySchoolMailConfiguration::class);
     $middleware->appendToGroup('web', \App\Http\Middleware\ApplyPaymentGatewayConfiguration::class);
@@ -60,6 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
     $middleware->appendToGroup('api', \App\Http\Middleware\IdentifySchoolFromHost::class);
     $middleware->appendToGroup('api', \App\Http\Middleware\SwitchTenantDatabase::class);
+    $middleware->appendToGroup('api', \App\Http\Middleware\SetPermissionTeamContext::class);
     $middleware->appendToGroup('api', \App\Http\Middleware\ApplySchoolMailConfiguration::class);
     $middleware->appendToGroup('api', \App\Http\Middleware\ApplyPaymentGatewayConfiguration::class);
     $middleware->appendToGroup('api', \App\Http\Middleware\ApplyMessagingConfiguration::class);

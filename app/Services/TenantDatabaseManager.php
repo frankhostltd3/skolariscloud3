@@ -12,7 +12,6 @@ use RuntimeException;
 
 class TenantDatabaseManager
 {
-    protected string $centralConnection;
 
     protected bool $usingTenant = false;
 
@@ -22,7 +21,6 @@ class TenantDatabaseManager
 
     public function __construct(private ConfigRepository $config)
     {
-        $this->centralConnection = (string) $this->config->get('database.default', env('DB_CONNECTION', 'mysql'));
     }
 
     public function connect(?School $school): void
@@ -71,6 +69,9 @@ class TenantDatabaseManager
         $this->usingTenant = true;
         $this->currentSchoolId = $school->id;
         $this->tenantDepth = 1;
+
+        app()->instance('currentSchool', $school);
+        Config::set('tenant.school_id', $school->id);
     }
 
     public function disconnect(): void
@@ -90,15 +91,21 @@ class TenantDatabaseManager
         $this->usingTenant = false;
         $this->currentSchoolId = null;
         $this->tenantDepth = 0;
+
+        if (app()->bound('currentSchool')) {
+            app()->forgetInstance('currentSchool');
+        }
+
+        Config::set('tenant.school_id', null);
     }
 
-    public function runFor(School $school, callable $callback, bool $runMigrations = false, bool $fresh = false, bool $seed = false)
+    public function runFor(School $school, callable $callback, bool $runMigrations = false, bool $fresh = false, bool $seed = false, ?string $path = null)
     {
         $this->connect($school);
 
         try {
             if ($runMigrations) {
-                $this->migrate($fresh, $seed);
+                $this->migrate($fresh, $seed, $path);
             }
 
             return $callback();
@@ -107,19 +114,20 @@ class TenantDatabaseManager
         }
     }
 
-    public function migrate(bool $fresh = false, bool $seed = false): void
+    public function migrate(bool $fresh = false, bool $seed = false, ?string $path = null): void
     {
         $command = $fresh ? 'migrate:fresh' : 'migrate';
 
         $parameters = [
             '--database' => 'tenant',
-            '--path' => 'database/migrations/tenants',
             '--force' => true,
         ];
 
         if ($fresh) {
             $parameters['--drop-views'] = true;
-            $parameters['--drop-types'] = true;
+            // $parameters['--drop-types'] = true; // Not supported by MySQL
+        } else {
+            $parameters['--path'] = $path ?: 'database/migrations/tenants';
         }
 
         Artisan::call($command, $parameters);
@@ -134,8 +142,10 @@ class TenantDatabaseManager
 
     protected function useCentral(): void
     {
-        Config::set('database.default', $this->centralConnection);
-        DB::setDefaultConnection($this->centralConnection);
+        $central = $this->centralConnection();
+
+        Config::set('database.default', $central);
+        DB::setDefaultConnection($central);
     }
 
     protected function prepareDatabaseName(School $school): string
@@ -162,8 +172,16 @@ class TenantDatabaseManager
 
         $escapedDatabase = str_replace('`', '``', $database);
 
-        DB::connection($this->centralConnection)->statement(
+        DB::connection($this->centralConnection())->statement(
             "CREATE DATABASE IF NOT EXISTS `{$escapedDatabase}` CHARACTER SET {$charset} COLLATE {$collation}"
+        );
+    }
+
+    protected function centralConnection(): string
+    {
+        return (string) $this->config->get(
+            'database.central_connection',
+            $this->config->get('database.default', env('DB_CONNECTION', 'mysql'))
         );
     }
 }

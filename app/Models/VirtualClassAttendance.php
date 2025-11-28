@@ -16,6 +16,7 @@ class VirtualClassAttendance extends Model
         'joined_at',
         'left_at',
         'duration_minutes',
+        'status',
     ];
 
     protected $casts = [

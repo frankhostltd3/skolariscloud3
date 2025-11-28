@@ -61,6 +61,7 @@ class AssignRoleToUser extends Command
                         'role_id' => $role->id,
                         'model_type' => 'App\\Models\\User',
                         'model_id' => $user->id,
+                        'tenant_id' => $school->id,
                     ]);
                     $this->info("  ✓ Assigned role '{$roleName}' to {$email}");
                 }

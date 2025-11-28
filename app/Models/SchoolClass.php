@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Academic\Enrollment;
 
 class SchoolClass extends Model
 {
@@ -52,6 +53,21 @@ class SchoolClass extends Model
     public function quizzes(): HasMany
     {
         return $this->hasMany(Quiz::class, 'class_id');
+    }
+
+    /**
+     * Get the students enrolled in this class.
+     */
+    public function students()
+    {
+        return $this->hasManyThrough(
+            Student::class,
+            Enrollment::class,
+            'class_id', // Foreign key on enrollments table...
+            'id', // Foreign key on students table...
+            'id', // Local key on classes table...
+            'student_id' // Local key on enrollments table...
+        );
     }
 
     /**

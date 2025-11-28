@@ -22,7 +22,7 @@
                             {{ __('School Information') }}
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('settings.general.update') }}" method="POST"
+                            <form action="{{ route('tenant.settings.admin.general.update') }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
@@ -31,9 +31,8 @@
                                 <div class="row">
                                     <div class="col-12 mb-3">
                                         @php
-                                            $currentSchool = request()->attributes->get('currentSchool');
-                                            $currentLogo =
-                                                $currentSchool?->logo_url ?: $settings['school_logo'] ?? null;
+                                            $logoPath = $settings['school_logo'] ?? null;
+                                            $currentLogo = $logoPath ? asset('storage/' . $logoPath) : null;
                                         @endphp
                                         <label class="form-label">{{ __('Current Logo') }}</label>
                                         <div class="d-flex align-items-center gap-3">
@@ -222,7 +221,7 @@
                             Application Settings
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('settings.general.update') }}" method="POST">
+                            <form action="{{ route('tenant.settings.admin.general.update') }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="form_type" value="application">
@@ -370,6 +369,19 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+
+                                    <div class="col-12 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="bookstore_enabled"
+                                                name="bookstore_enabled" value="1"
+                                                {{ !empty($settings['bookstore_enabled']) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="bookstore_enabled">Enable Online
+                                                Bookstore</label>
+                                        </div>
+                                        <small class="text-muted">When enabled, a public bookstore page will be accessible
+                                            at <a href="{{ route('tenant.bookstore.index') }}"
+                                                target="_blank">{{ route('tenant.bookstore.index') }}</a></small>
+                                    </div>
                                 </div>
 
                                 <div class="d-flex justify-content-end">
@@ -412,13 +424,16 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="{{ route('settings.mail.edit') }}" class="btn btn-outline-primary btn-sm">
+                                <a href="{{ route('tenant.settings.admin.mail') }}"
+                                    class="btn btn-outline-primary btn-sm">
                                     <span class="bi bi-envelope me-2"></span>{{ __('Mail Settings') }}
                                 </a>
-                                <a href="{{ route('settings.payments.edit') }}" class="btn btn-outline-success btn-sm">
+                                <a href="{{ route('tenant.settings.admin.finance') }}"
+                                    class="btn btn-outline-success btn-sm">
                                     <span class="bi bi-credit-card me-2"></span>{{ __('Payment Settings') }}
                                 </a>
-                                <a href="{{ route('settings.messaging.edit') }}" class="btn btn-outline-info btn-sm">
+                                <a href="{{ route('tenant.settings.admin.messaging') }}"
+                                    class="btn btn-outline-info btn-sm">
                                     <span class="bi bi-chat-dots me-2"></span>{{ __('Messaging Channels') }}
                                 </a>
                                 <button class="btn btn-outline-danger btn-sm" onclick="clearCache()">
@@ -436,7 +451,7 @@
         async function clearCache() {
             if (!confirm('Are you sure you want to clear the application cache?')) return;
             try {
-                const resp = await fetch("{{ route('settings.general.clear-cache') }}", {
+                const resp = await fetch("{{ route('tenant.settings.admin.general.clear-cache') }}", {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',

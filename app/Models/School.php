@@ -11,8 +11,6 @@ class School extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
-
     protected $fillable = [
         'name',
         'code',
@@ -25,6 +23,13 @@ class School extends Model
     protected $casts = [
         'meta' => 'array',
     ];
+
+    public function getConnectionName(): ?string
+    {
+        $configured = config('database.central_connection');
+
+        return $configured ?? parent::getConnectionName() ?? config('database.default');
+    }
 
     public function users(): HasMany
     {
@@ -74,7 +79,7 @@ class School extends Model
         $logoPath = setting('school_logo');
 
         if ($logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)) {
-            return \Illuminate\Support\Facades\Storage::url($logoPath);
+            return asset('storage/' . $logoPath);
         }
 
         return null;

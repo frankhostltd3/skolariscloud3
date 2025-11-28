@@ -9,17 +9,15 @@ use App\Notifications\LandlordInvoiceSuspended;
 use App\Notifications\LandlordInvoiceTerminated;
 use App\Notifications\LandlordInvoiceWarning;
 use App\Observers\OrderObserver;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
 use Stancl\Tenancy\Contracts\Tenant as TenantContract;
-use Tests\TestCase;
+use Tests\CentralTestCase;
 
-class LandlordInvoiceIntegrationTest extends TestCase
+class LandlordInvoiceIntegrationTest extends CentralTestCase
 {
-    use RefreshDatabase;
 
     protected function tearDown(): void
     {

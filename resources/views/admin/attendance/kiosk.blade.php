@@ -16,7 +16,7 @@
                 </h2>
                 <p class="text-muted mb-0">Self-service attendance check-in system</p>
             </div>
-            <a href="{{ route('admin.attendance.index') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('tenant.modules.attendance.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-1"></i>Back to Attendance
             </a>
         </div>

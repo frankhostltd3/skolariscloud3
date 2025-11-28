@@ -35,7 +35,19 @@ class EnsureUserApproved
 
         // Redirect pending users to waiting page
         if ($user->approval_status === 'pending') {
-            if (!$request->routeIs('pending-approval')) {
+            // Check if OTP approval is enabled
+            try {
+                if (function_exists('setting') && setting('user_approval_mode') === 'otp_approval') {
+                    if (!$request->routeIs('verification.otp.*')) {
+                        return redirect()->route('verification.otp.notice');
+                    }
+                    return $next($request);
+                }
+            } catch (\Throwable $e) {
+                // Fallback to standard pending page
+            }
+
+            if (!$request->routeIs('pending-approval') && !$request->routeIs('verification.otp.*')) {
                 return redirect()->route('pending-approval');
             }
             return $next($request);

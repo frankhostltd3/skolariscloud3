@@ -23,11 +23,11 @@ class ClassroomController extends Controller
 
         // Get student's enrolled classes with eager loading
         $enrolledClasses = $student->enrollments()
-            ->with(['schoolClass:id,name,grade_level,section', 'academicYear:id,name,is_current'])
+            ->with(['schoolClass', 'academicYear:id,name,is_current'])
             ->where('status', 'active')
             ->get();
 
-        $classIds = $enrolledClasses->pluck('school_class_id');
+        $classIds = $enrolledClasses->pluck('class_id');
 
         // Upcoming virtual classes with optimized eager loading
         $upcomingClasses = VirtualClass::whereIn('class_id', $classIds)
@@ -35,7 +35,7 @@ class ClassroomController extends Controller
             ->where('scheduled_at', '>=', Carbon::now()->subHours(3))
             ->orderBy('scheduled_at', 'asc')
             ->with([
-                'class:id,name,grade_level,section',
+                'class',
                 'subject:id,name,code',
                 'teacher:id,name,email'
             ])
@@ -92,7 +92,7 @@ class ClassroomController extends Controller
         // Cache class IDs query base
         $classesQuery = VirtualClass::whereIn('class_id', $classIds);
         $materialsQuery = LearningMaterial::whereIn('class_id', $classIds);
-        
+
         $stats = [
             'total_classes' => (clone $classesQuery)->count(),
             'attended_classes' => (clone $classesQuery)
@@ -148,7 +148,7 @@ class ClassroomController extends Controller
     public function classes()
     {
         $student = Auth::user();
-        
+
         $enrolledClasses = $student->enrollments()
             ->with(['schoolClass.grade', 'academicYear'])
             ->where('status', 'active')
@@ -166,7 +166,7 @@ class ClassroomController extends Controller
 
         // Verify student is enrolled in this class
         $enrollment = $student->enrollments()
-            ->where('school_class_id', $classId)
+            ->where('class_id', $classId)
             ->where('status', 'active')
             ->firstOrFail();
 

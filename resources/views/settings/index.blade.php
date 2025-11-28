@@ -27,7 +27,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary">Configuration</span>
-                                <a class="btn btn-outline-secondary" href="{{ route('settings.general.edit') }}">
+                                <a class="btn btn-outline-secondary" href="{{ route('tenant.settings.admin.general') }}">
                                     Manage
                                 </a>
                             </div>
@@ -52,7 +52,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-primary bg-opacity-10 text-primary">Notification</span>
-                                <a class="btn btn-outline-primary" href="{{ route('settings.mail.edit') }}">
+                                <a class="btn btn-outline-primary" href="{{ route('tenant.settings.admin.mail') }}">
                                     Manage
                                 </a>
                             </div>
@@ -77,7 +77,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-success bg-opacity-10 text-success">Finance</span>
-                                <a class="btn btn-outline-success" href="{{ route('settings.payments.edit') }}">
+                                <a class="btn btn-outline-success" href="{{ route('tenant.settings.admin.finance') }}">
                                     Manage
                                 </a>
                             </div>
@@ -102,7 +102,8 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-success bg-opacity-10 text-success">Finance</span>
-                                <a class="btn btn-outline-success" href="{{ route('settings.currencies.index') }}">
+                                <a class="btn btn-outline-success"
+                                    href="{{ route('tenant.settings.admin.currencies.index') }}">
                                     Manage
                                 </a>
                             </div>
@@ -128,7 +129,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-info bg-opacity-10 text-info">Communication</span>
-                                <a class="btn btn-outline-info" href="{{ route('settings.messaging.edit') }}">
+                                <a class="btn btn-outline-info" href="{{ route('tenant.settings.admin.messaging') }}">
                                     Manage
                                 </a>
                             </div>
@@ -153,7 +154,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-warning bg-opacity-10 text-warning">Academic</span>
-                                <a class="btn btn-outline-warning" href="{{ route('settings.academic.edit') }}">
+                                <a class="btn btn-outline-warning" href="{{ route('tenant.settings.admin.academic') }}">
                                     Manage
                                 </a>
                             </div>
@@ -178,7 +179,7 @@
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <span class="badge bg-danger bg-opacity-10 text-danger">System</span>
-                                <a class="btn btn-outline-danger" href="{{ route('settings.system.edit') }}">
+                                <a class="btn btn-outline-danger" href="{{ route('tenant.settings.admin.system') }}">
                                     Manage
                                 </a>
                             </div>

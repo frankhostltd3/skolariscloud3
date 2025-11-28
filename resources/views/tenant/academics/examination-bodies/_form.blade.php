@@ -75,7 +75,7 @@
 
 <div class="mt-4 d-flex gap-2">
     <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>{{ $buttonText }}</button>
-    <a href="{{ url('/tenant/academics/examination-bodies') }}"
-        class="btn btn-outline-secondary">{{ __('Cancel') }}</a>
+    <a href="{{ route('tenant.academics.examination-bodies.index') }}" class="btn btn-outline-secondary">
+        {{ __('Cancel') }}
+    </a>
 </div>
-

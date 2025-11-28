@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sessions')) {
+            return;
+        }
+
         // Sessions should be stored in central database, not tenant database
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
@@ -27,6 +31,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('sessions')) {
+            return;
+        }
+
         Schema::dropIfExists('sessions');
     }
 };

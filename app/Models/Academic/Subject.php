@@ -114,7 +114,19 @@ class Subject extends Model
      */
     public function classes(): BelongsToMany
     {
-        return $this->belongsToMany(ClassRoom::class, 'class_subject', 'subject_id', 'class_id')
+        $connection = $this->getConnectionName() ?? config('database.default');
+
+        $pivotTable = null;
+        foreach (['class_subjects', 'class_subject'] as $candidate) {
+            if (tenant_table_exists($candidate, $connection)) {
+                $pivotTable = $candidate;
+                break;
+            }
+        }
+
+        $pivotTable ??= 'class_subjects';
+
+        return $this->belongsToMany(ClassRoom::class, $pivotTable, 'subject_id', 'class_id')
             ->withPivot('teacher_id', 'is_compulsory')
             ->withTimestamps();
     }

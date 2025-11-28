@@ -6,15 +6,29 @@
             <span class="bi bi-speedometer2 me-2"></span>{{ __('Overview') }}
         </a>
 
+        <a class="list-group-item list-group-item-action {{ request()->routeIs('tenant.reports.index') ? 'active' : '' }}"
+            href="{{ route('tenant.reports.index') }}">
+            <span class="bi bi-file-earmark-text me-2"></span>{{ __('Academic Reports') }}
+        </a>
+
+        @php($examOversightActive = request()->routeIs('admin.exams.*'))
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $examOversightActive ? 'active' : '' }}"
+            href="{{ route('admin.exams.index') }}" @if ($examOversightActive) aria-current="page" @endif>
+            <span><span class="bi bi-clipboard2-check me-2"></span>{{ __('Exam Oversight') }}</span>
+            @php($pendingExams = \App\Models\OnlineExam::where('approval_status', 'pending_review')->count())
+            @if ($pendingExams > 0)
+                <span class="badge bg-danger-subtle text-danger">{{ $pendingExams }}</span>
+            @endif
+        </a>
+
         {{-- User Approvals --}}
         <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.user-approvals*') ? 'active' : '' }}"
-            href="{{ url('/admin/user-approvals') }}" @if (request()->routeIs('admin.user-approvals*')) aria-current="page" @endif>
+            href="{{ route('admin.user-approvals.index') }}"
+            @if (request()->routeIs('admin.user-approvals*')) aria-current="page" @endif>
             <span class="bi bi-person-check me-2"></span>{{ __('User Approvals') }}
-            @php
-                $pendingCount = \App\Models\User::where('approval_status', 'pending')->count();
-            @endphp
-            @if ($pendingCount > 0)
-                <span class="badge bg-warning text-dark ms-2">{{ $pendingCount }}</span>
+            @php($pendingApprovals = \App\Models\User::where('approval_status', 'pending')->count())
+            @if ($pendingApprovals > 0)
+                <span class="badge bg-warning text-dark ms-2">{{ $pendingApprovals }}</span>
             @endif
         </a>
 
@@ -96,7 +110,7 @@
             <span class="bi bi-person me-2"></span>{{ __('My Profile') }}
         </a>
 
-        @php($academicsActive = request()->routeIs('tenant.academics.*'))
+        @php($academicsActive = request()->routeIs('tenant.academics.*') || request()->routeIs('admin.exams.*'))
         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $academicsActive ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#academicsMenu" role="button"
             aria-expanded="{{ $academicsActive ? 'true' : 'false' }}" aria-controls="academicsMenu">
@@ -109,13 +123,17 @@
                     href="{{ route('tenant.academics.classes.index') }}">
                     <span class="bi bi-house-door me-2"></span>{{ __('Classes') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.class_streams.*') ? 'active' : '' }}"
-                    href="{{ route('tenant.academics.class_streams.index') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.streams.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.streams.index', ['class' => 1]) }}">
                     <span class="bi bi-diagram-2 me-2"></span>{{ __('Class streams') }}
                 </a>
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.subjects.*') ? 'active' : '' }}"
                     href="{{ route('tenant.academics.subjects.index') }}">
                     <span class="bi bi-book me-2"></span>{{ __('Subjects') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.admin.lesson-plans.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.admin.lesson-plans.index') }}">
+                    <span class="bi bi-journal-check me-2"></span>{{ __('Lesson Plan Reviews') }}
                 </a>
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.terms.*') ? 'active' : '' }}"
                     href="{{ route('tenant.academics.terms.index') }}">
@@ -125,63 +143,88 @@
                     href="{{ route('tenant.academics.grading_schemes.index') }}">
                     <span class="bi bi-journal-check me-2"></span>{{ __('Grading Systems') }}
                 </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.exams.*') ? 'active' : '' }}"
+                    href="{{ route('admin.exams.index') }}">
+                    <span class="bi bi-clipboard-check me-2"></span>{{ __('Exams') }}
+                </a>
             </div>
         </div>
 
-        @php($hrActive = request()->routeIs('tenant.modules.human_resources.*'))
+        {{-- ASSIGNMENT SYSTEM - World-Class Features --}}
+        @php($assignmentActive = request()->routeIs('tenant.teacher.classroom.exercises.*'))
+        <div class="list-group-item bg-light border-0 py-1">
+            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                {{ __('ASSIGNMENT SYSTEM') }}
+            </small>
+        </div>
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $assignmentActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#assignmentMenu" role="button"
+            aria-expanded="{{ $assignmentActive ? 'true' : 'false' }}" aria-controls="assignmentMenu">
+            <span><span class="bi bi-list-task me-2"></span>{{ __('Assignments') }}</span>
+            <span class="badge bg-success badge-sm">NEW</span>
+            <span class="bi bi-chevron-down small ms-auto"></span>
+        </a>
+        <div class="collapse {{ $assignmentActive ? 'show' : '' }}" id="assignmentMenu">
+            <div class="list-group list-group-flush ms-3">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.teacher.classroom.exercises.index') ? 'active' : '' }}"
+                    href="{{ route('tenant.teacher.classroom.exercises.index') }}">
+                    <span class="bi bi-grid-3x3-gap me-2"></span>{{ __('All Assignments') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.teacher.classroom.exercises.create') ? 'active' : '' }}"
+                    href="{{ route('tenant.teacher.classroom.exercises.create') }}">
+                    <span class="bi bi-plus-circle me-2"></span>{{ __('Create Assignment') }}
+                </a>
+            </div>
+        </div>
+
+        @php($financeActive = request()->routeIs('tenant.finance.*'))
+        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $financeActive ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#financeMenu" role="button"
+            aria-expanded="{{ $financeActive ? 'true' : 'false' }}" aria-controls="financeMenu">
+            <span><span class="bi bi-cash-stack me-2"></span>{{ __('Finance') }}</span>
+            <span class="bi bi-chevron-down small"></span>
+        </a>
+        <div class="collapse {{ $financeActive ? 'show' : '' }}" id="financeMenu">
+            <div class="list-group list-group-flush ms-3">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expense-categories.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expense-categories.index') }}">
+                    <span class="bi bi-tags me-2"></span>{{ __('Expense Categories') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.expenses.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.expenses.index') }}">
+                    <span class="bi bi-receipt me-2"></span>{{ __('Expenses') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.fee-structures.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.fee-structures.index') }}">
+                    <span class="bi bi-file-earmark-text me-2"></span>{{ __('Fee Structures') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.invoices.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.invoices.index') }}">
+                    <span class="bi bi-file-earmark-ruled me-2"></span>{{ __('Invoices') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.payments.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.finance.payments.index') }}">
+                    <span class="bi bi-credit-card me-2"></span>{{ __('Payments') }}
+                </a>
+            </div>
+        </div>
+
+        @php($hrActive = request()->routeIs('tenant.modules.human-resource.*'))
         @php($libraryActive = request()->routeIs('tenant.modules.library.*'))
-        @php($bookstoreActive = request()->routeIs('admin.bookstore.*'))
-        @php($financialsActive = request()->routeIs('tenant.modules.financials.*') || request()->routeIs('tenant.modules.fees.*'))
+        @php($bookstoreActive = request()->routeIs('tenant.bookstore.*') || request()->routeIs('tenant.modules.bookstore.*'))
         @php($timetableActive = request()->routeIs('tenant.academics.timetable.*'))
 
         @hasanyrole('Admin|Staff|admin')
-            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive || $libraryActive || $bookstoreActive || $financialsActive || $timetableActive ? 'active' : '' }}"
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive || $libraryActive || $bookstoreActive || $timetableActive ? 'active' : '' }}"
                 data-bs-toggle="collapse" href="#modulesMenu" role="button"
-                aria-expanded="{{ $hrActive || $libraryActive || $bookstoreActive || $financialsActive || $timetableActive ? 'true' : 'false' }}"
+                aria-expanded="{{ $hrActive || $libraryActive || $bookstoreActive || $timetableActive ? 'true' : 'false' }}"
                 aria-controls="modulesMenu">
                 <span><span class="bi bi-boxes me-2"></span>{{ __('Modules') }}</span>
                 <span class="bi bi-chevron-down small"></span>
             </a>
-            <div class="collapse {{ $hrActive || $libraryActive || $bookstoreActive || $financialsActive || $timetableActive ? 'show' : '' }}"
+            <div class="collapse {{ $hrActive || $libraryActive || $bookstoreActive || $timetableActive ? 'show' : '' }}"
                 id="modulesMenu">
                 <div class="list-group list-group-flush ms-3">
-
-                    @canany(['manage fees', 'view fees'])
-                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $financialsActive ? 'active' : '' }}"
-                            data-bs-toggle="collapse" href="#financialsMenu" role="button"
-                            aria-expanded="{{ $financialsActive ? 'true' : 'false' }}" aria-controls="financialsMenu">
-                            <span><span class="bi bi-cash-stack me-2"></span>{{ __('Financials') }}</span>
-                            <span class="bi bi-chevron-down small"></span>
-                        </a>
-                        <div class="collapse {{ $financialsActive ? 'show' : '' }}" id="financialsMenu">
-                            <div class="list-group list-group-flush ms-3">
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.financials.overview') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.financials.overview') }}">
-                                    {{ __('Overview') }}
-                                </a>
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.fees.*') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.fees.index') }}">
-                                    {{ __('Fee management') }}
-                                </a>
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.financials.expenses') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.financials.expenses') }}">
-                                    {{ __('Expense management') }}
-                                </a>
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.financials.expense-categories.*') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.financials.expense_categories') }}">
-                                    {{ __('Expense categories') }}
-                                </a>
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.financials.tuition_plans') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.financials.tuition_plans') }}">
-                                    {{ __('Tuition plans') }}
-                                </a>
-                                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.financials.invoices') ? 'active' : '' }}"
-                                    href="{{ route('tenant.modules.financials.invoices') }}">
-                                    {{ __('Invoices') }}
-                                </a>
-                            </div>
-                        </div>
-                    @endcanany
 
                     <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-decoration-none {{ $hrActive ? 'active' : '' }}"
                         data-bs-toggle="collapse" href="#humanResourceMenu" role="button"
@@ -191,36 +234,36 @@
                     </a>
                     <div class="collapse {{ $hrActive ? 'show' : '' }}" id="humanResourceMenu">
                         <div class="list-group list-group-flush ms-3">
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.departments.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.departments.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.departments.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.departments.index') }}">
                                 <span class="bi bi-diagram-3 me-2"></span>{{ __('Departments') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.positions.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.positions.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.positions.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.positions.index') }}">
                                 <span class="bi bi-person-badge me-2"></span>{{ __('Positions') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.employees.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.employees.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.employees.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.employees.index') }}">
                                 <span class="bi bi-people-fill me-2"></span>{{ __('Employees') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.leave_types.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.leave_types.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave_types.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.leave_types.index') }}">
                                 <span class="bi bi-calendar-x me-2"></span>{{ __('Leave types') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.leave_requests.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.leave_requests.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.leave_requests.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.leave_requests.index') }}">
                                 <span class="bi bi-calendar-check me-2"></span>{{ __('Leave management') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.payroll-settings.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.payroll-settings.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.payroll-settings.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.payroll-settings.index') }}">
                                 <span class="bi bi-cash-coin me-2"></span>{{ __('Payroll settings') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.employee-ids.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.employee-ids.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.employee-ids.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.employee-ids.index') }}">
                                 <span class="bi bi-upc me-2"></span>{{ __('Employee IDs') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.salary_scales.index') ? 'active' : '' }}"
-                                href="{{ route('tenant.modules.human_resources.salary_scales.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.salary_scales.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.human-resource.salary_scales.index') }}">
                                 <span class="bi bi-graph-up me-2"></span>{{ __('Salary scales') }}
                             </a>
                         </div>
@@ -257,16 +300,16 @@
                     </a>
                     <div class="collapse {{ $bookstoreActive ? 'show' : '' }}" id="bookstoreMenu">
                         <div class="list-group list-group-flush ms-3">
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.bookstore.index') ? 'active' : '' }}"
-                                href="{{ route('admin.bookstore.index') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.bookstore.index') ? 'active' : '' }}"
+                                href="{{ route('tenant.bookstore.index') }}">
                                 {{ __('Dashboard') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.bookstore.inventory') ? 'active' : '' }}"
-                                href="{{ route('admin.bookstore.inventory') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.bookstore.books.*') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.bookstore.books.index') }}">
                                 {{ __('Inventory') }}
                             </a>
-                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('admin.bookstore.orders') ? 'active' : '' }}"
-                                href="{{ route('admin.bookstore.orders') }}">
+                            <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.bookstore.orders.*') ? 'active' : '' }}"
+                                href="{{ route('tenant.modules.bookstore.orders.index') }}">
                                 {{ __('Orders') }}
                             </a>
                         </div>
@@ -318,13 +361,17 @@
                     href="{{ route('tenant.users.admins') }}">
                     <span class="bi bi-person-gear me-2"></span>{{ __('Administrators') }}
                 </a>
-                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human_resources.employees*') ? 'active' : '' }}"
-                    href="{{ route('tenant.modules.human_resources.employees.index') }}">
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.human-resource.employees*') ? 'active' : '' }}"
+                    href="{{ route('tenant.modules.human-resource.employees.index') }}">
                     <span class="bi bi-person-badge me-2"></span>{{ __('Employees') }}
                 </a>
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.modules.students*') ? 'active' : '' }}"
                     href="{{ route('tenant.modules.students.index') }}">
                     <span class="bi bi-mortarboard-fill me-2"></span>{{ __('Students') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.academics.enrollments*') ? 'active' : '' }}"
+                    href="{{ route('tenant.academics.enrollments.index') }}">
+                    <span class="bi bi-person-plus me-2"></span>{{ __('Enrollments') }}
                 </a>
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.users.parents*') ? 'active' : '' }}"
                     href="{{ route('tenant.users.parents') }}">

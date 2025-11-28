@@ -20,7 +20,7 @@
                     {{ __('Academic Year Settings') }}
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.academic.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.academic.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="academic_year">
@@ -97,7 +97,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.academic.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.academic.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="grading">
@@ -238,6 +238,97 @@
                 </div>
             </div>
 
+            <!-- Assessment Configuration -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <span class="bi bi-clipboard-check me-2 text-primary"></span>
+                        Assessment Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Define the types of assessments (e.g., Mid Term, End of Term) and their
+                        contribution to the final grade.</p>
+
+                    <form action="{{ route('tenant.settings.admin.academic.update') }}" method="POST"
+                        id="assessmentForm">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="form_type" value="assessment_configuration">
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered" id="assessmentTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Assessment Name</th>
+                                        <th>Short Code</th>
+                                        <th style="width: 150px;">Weight (%)</th>
+                                        <th style="width: 80px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assessmentTableBody">
+                                    @php
+                                        $assessments = $settings['assessment_configuration'] ?? [];
+                                        if (empty($assessments)) {
+                                            // Default if empty
+                                            $assessments = [
+                                                ['name' => 'Beginning of Term', 'code' => 'BOT', 'weight' => 10],
+                                                ['name' => 'Mid Term', 'code' => 'MOT', 'weight' => 30],
+                                                ['name' => 'End of Term', 'code' => 'EOT', 'weight' => 60],
+                                            ];
+                                        }
+                                    @endphp
+
+                                    @foreach ($assessments as $index => $assessment)
+                                        <tr class="assessment-row">
+                                            <td>
+                                                <input type="text" class="form-control"
+                                                    name="assessments[{{ $index }}][name]"
+                                                    value="{{ $assessment['name'] }}" required
+                                                    placeholder="e.g. Mid Term">
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control"
+                                                    name="assessments[{{ $index }}][code]"
+                                                    value="{{ $assessment['code'] }}" required placeholder="e.g. MOT">
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control weight-input"
+                                                    name="assessments[{{ $index }}][weight]"
+                                                    value="{{ $assessment['weight'] }}" required min="0"
+                                                    max="100" step="0.1">
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-row"
+                                                    {{ count($assessments) <= 1 ? 'disabled' : '' }}>
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2" class="text-end fw-bold">Total Weight:</td>
+                                        <td class="fw-bold"><span id="totalWeight">0</span>%</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-outline-primary" id="addAssessmentBtn">
+                                <i class="bi bi-plus-circle me-2"></i>Add Assessment Type
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="bi bi-floppy me-2"></span>{{ __('Save Configuration') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Attendance Settings -->
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
@@ -247,7 +338,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('settings.academic.update') }}" method="POST">
+                    <form action="{{ route('tenant.settings.admin.academic.update') }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="form_type" value="attendance">
@@ -390,16 +481,16 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('settings.general.edit') }}" class="btn btn-outline-primary">
+                        <a href="{{ route('tenant.settings.admin.general') }}" class="btn btn-outline-primary">
                             <span class="bi bi-gear me-2"></span>{{ __('General Settings') }}
                         </a>
-                        <a href="{{ route('settings.mail.edit') }}" class="btn btn-outline-info">
+                        <a href="{{ route('tenant.settings.admin.mail') }}" class="btn btn-outline-info">
                             <span class="bi bi-envelope me-2"></span>{{ __('Mail Delivery') }}
                         </a>
-                        <a href="{{ route('settings.payments.edit') }}" class="btn btn-outline-success">
+                        <a href="{{ route('tenant.settings.admin.finance') }}" class="btn btn-outline-success">
                             <span class="bi bi-credit-card me-2"></span>{{ __('Payment Settings') }}
                         </a>
-                        <a href="{{ route('settings.messaging.edit') }}" class="btn btn-outline-warning">
+                        <a href="{{ route('tenant.settings.admin.messaging') }}" class="btn btn-outline-warning">
                             <span class="bi bi-chat-dots me-2"></span>{{ __('Messaging') }}
                         </a>
                     </div>
@@ -408,4 +499,96 @@
         </div>
     </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableBody = document.getElementById('assessmentTableBody');
+            const addBtn = document.getElementById('addAssessmentBtn');
+            const totalWeightSpan = document.getElementById('totalWeight');
+
+            // Calculate initial total
+            calculateTotal();
+
+            // Add new row
+            addBtn.addEventListener('click', function() {
+                const rowCount = tableBody.querySelectorAll('tr').length;
+                const newRow = document.createElement('tr');
+                newRow.className = 'assessment-row';
+                newRow.innerHTML = `
+                    <td>
+                        <input type="text" class="form-control" name="assessments[${rowCount}][name]" required placeholder="e.g. Test">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" name="assessments[${rowCount}][code]" required placeholder="e.g. TST">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control weight-input" name="assessments[${rowCount}][weight]" value="0" required min="0" max="100" step="0.1">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-row">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+                updateRemoveButtons();
+                calculateTotal();
+            });
+
+            // Remove row
+            tableBody.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-row')) {
+                    const row = e.target.closest('tr');
+                    row.remove();
+                    // Re-index names to avoid gaps (optional but good for array handling)
+                    reindexRows();
+                    updateRemoveButtons();
+                    calculateTotal();
+                }
+            });
+
+            // Update total on input change
+            tableBody.addEventListener('input', function(e) {
+                if (e.target.classList.contains('weight-input')) {
+                    calculateTotal();
+                }
+            });
+
+            function calculateTotal() {
+                let total = 0;
+                const inputs = document.querySelectorAll('.weight-input');
+                inputs.forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
+                totalWeightSpan.textContent = total.toFixed(1);
+
+                if (total !== 100) {
+                    totalWeightSpan.classList.remove('text-success');
+                    totalWeightSpan.classList.add('text-danger');
+                } else {
+                    totalWeightSpan.classList.remove('text-danger');
+                    totalWeightSpan.classList.add('text-success');
+                }
+            }
+
+            function updateRemoveButtons() {
+                const rows = tableBody.querySelectorAll('tr');
+                const buttons = tableBody.querySelectorAll('.remove-row');
+                if (rows.length <= 1) {
+                    buttons.forEach(btn => btn.disabled = true);
+                } else {
+                    buttons.forEach(btn => btn.disabled = false);
+                }
+            }
+
+            function reindexRows() {
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    row.querySelector('input[name$="[name]"]').name = `assessments[${index}][name]`;
+                    row.querySelector('input[name$="[code]"]').name = `assessments[${index}][code]`;
+                    row.querySelector('input[name$="[weight]"]').name = `assessments[${index}][weight]`;
+                });
+            }
+        });
+    </script>
 @endsection

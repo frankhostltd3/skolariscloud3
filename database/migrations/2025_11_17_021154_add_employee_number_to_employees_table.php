@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
-            $table->string('employee_number')->nullable()->unique()->after('id');
+            if (! Schema::hasColumn('employees', 'employee_number')) {
+                $table->string('employee_number')->nullable()->unique()->after('id');
+            }
         });
     }
 
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
-            $table->dropColumn('employee_number');
+            if (Schema::hasColumn('employees', 'employee_number')) {
+                $table->dropColumn('employee_number');
+            }
         });
     }
 };

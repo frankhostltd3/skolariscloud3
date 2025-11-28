@@ -4,7 +4,7 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
             <div class="d-flex align-items-center mb-4">
-                <a href="{{ route('settings.currencies.index') }}" class="btn btn-outline-secondary me-3">
+                <a href="{{ route('tenant.settings.admin.currencies.index') }}" class="btn btn-outline-secondary me-3">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
@@ -15,7 +15,8 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4 p-lg-5">
-                    <form method="POST" action="{{ route('settings.currencies.update', $currency) }}" novalidate>
+                    <form method="POST" action="{{ route('tenant.settings.admin.currencies.update', $currency) }}"
+                        novalidate>
                         @csrf
                         @method('PUT')
 
@@ -130,7 +131,7 @@
                         </div>
 
                         <div class="d-flex gap-2 justify-content-end">
-                            <a href="{{ route('settings.currencies.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('tenant.settings.admin.currencies.index') }}" class="btn btn-secondary">
                                 Cancel
                             </a>
                             <button type="submit" class="btn btn-primary">

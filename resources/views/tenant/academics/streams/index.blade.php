@@ -11,7 +11,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a
-                            href="{{ url('/tenant/academics/classes') }}">{{ __('Classes') }}</a></li>
+                            href="{{ route('tenant.academics.classes.index') }}">{{ __('Classes') }}</a></li>
                     <li class="breadcrumb-item"><a
                             href="{{ route('tenant.academics.classes.show', $class) }}">{{ $class->name }}</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ __('Streams') }}</li>
@@ -90,14 +90,14 @@
                                     </td>
                                     <td>{{ $stream->capacity ?? __('Not set') }}</td>
                                     <td>
-                                        <span class="fw-semibold">{{ $stream->students_count ?? 0 }}</span>
+                                        <span class="fw-semibold">{{ $stream->active_students_count ?? 0 }}</span>
                                     </td>
                                     <td>
                                         @if ($stream->capacity)
                                             @php
-                                                $available = $stream->capacity - ($stream->students_count ?? 0);
-                                                $percentage =
-                                                    (($stream->students_count ?? 0) / $stream->capacity) * 100;
+                                                $enrolled = $stream->active_students_count ?? 0;
+                                                $available = max(0, $stream->capacity - $enrolled);
+                                                $percentage = ($enrolled / $stream->capacity) * 100;
                                             @endphp
                                             <span
                                                 class="{{ $available <= 0 ? 'text-danger' : ($percentage >= 80 ? 'text-warning' : 'text-success') }}">
@@ -251,4 +251,3 @@
         }
     </script>
 @endpush
-

@@ -95,16 +95,78 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="small text-secondary">{{ __('Exam bodies') }}</div>
-                    @php($examBodiesCount = \App\Models\Academic\ExaminationBody::where('is_active', true)->count())
+                    @php
+                        $examBodiesCount = \App\Models\Academic\ExaminationBody::where('is_active', true)->count();
+                    @endphp
                     <div class="display-6">{{ number_format($examBodiesCount) }}</div>
                     @hasanyrole('Admin|Staff')
                         <a class="small d-inline-block mt-1"
-                            href="{{ route('tenant.academics.examination_bodies.index') }}">{{ __('Manage') }}</a>
+                            href="{{ route('tenant.academics.examination-bodies.index') }}">{{ __('Manage') }}</a>
                     @endhasanyrole
                 </div>
             </div>
         </div>
     </div>
+
+    @if (!empty($registrationOverview))
+        <x-registration.pipeline context="admin" :stages="$registrationOverview['stages']" :summary="$registrationOverview['summary']" :mode="$registrationOverview['stats']['mode'] ?? null" />
+
+        @if (isset($latestApplicants) && $latestApplicants->isNotEmpty())
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">{{ __('Most recent student applications') }}</h5>
+                        <small class="text-muted">{{ __('Live feed of the five latest submissions') }}</small>
+                    </div>
+                    <span class="badge text-bg-primary-subtle text-primary-emphasis">{{ __('Admissions queue') }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ __('Student') }}</th>
+                                <th>{{ __('Status') }}</th>
+                                <th>{{ __('Submitted') }}</th>
+                                <th>{{ __('Email verification') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($latestApplicants as $applicant)
+                                @php
+                                    $status = strtolower($applicant->approval_status ?? 'pending');
+                                    $badgeClass = 'bg-secondary-subtle text-secondary';
+
+                                    if ($status === 'approved') {
+                                        $badgeClass = 'bg-success-subtle text-success';
+                                    } elseif ($status === 'rejected') {
+                                        $badgeClass = 'bg-danger-subtle text-danger';
+                                    } elseif ($status === 'pending') {
+                                        $badgeClass = 'bg-warning-subtle text-warning';
+                                    }
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ $applicant->name ?? __('Student') }}</div>
+                                        <div class="text-muted small">{{ $applicant->email }}</div>
+                                    </td>
+                                    <td><span class="badge {{ $badgeClass }}">{{ ucfirst($status) }}</span></td>
+                                    <td class="text-muted small">
+                                        {{ optional($applicant->created_at)->format('M j, g:i A') }}</td>
+                                    <td>
+                                        @if (!empty($applicant->email_verified_at))
+                                            <span class="badge text-bg-success">{{ __('Verified') }}</span>
+                                        @else
+                                            <span class="badge text-bg-light text-muted">{{ __('Pending') }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+    @endif
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -120,11 +182,11 @@
                     <a class="btn btn-outline-secondary btn-sm"
                         href="{{ route('tenant.modules.students.create') }}">{{ __('Add new student') }}</a>
                     <a class="btn btn-outline-secondary btn-sm"
-                        href="{{ route('tenant.modules.subjects.create') }}">{{ __('Add new subject') }}</a>
+                        href="{{ route('tenant.academics.subjects.create') }}">{{ __('Add new subject') }}</a>
                     <a class="btn btn-outline-secondary btn-sm"
-                        href="{{ route('tenant.modules.classes.create') }}">{{ __('Create a new class') }}</a>
+                        href="{{ route('tenant.academics.classes.create') }}">{{ __('Create a new class') }}</a>
                     <a class="btn btn-outline-secondary btn-sm"
-                        href="{{ route('tenant.modules.class_streams.create') }}">{{ __('Create a new class stream') }}</a>
+                        href="{{ route('tenant.academics.classes.index') }}">{{ __('Manage class streams') }}</a>
                 @endhasanyrole
             </div>
         </div>

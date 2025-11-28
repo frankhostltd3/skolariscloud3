@@ -194,12 +194,30 @@ class FingerprintService
                 ->get("http://{$this->deviceIp}:{$this->devicePort}/status");
 
             if ($response->successful()) {
-                return $response->json();
+                $data = $response->json();
+                
+                // Ensure 'connected' key exists
+                return [
+                    'connected' => $data['connected'] ?? true,
+                    'status' => $data['status'] ?? 'online',
+                    'message' => $data['message'] ?? 'Device connected',
+                    'device_name' => $data['device_name'] ?? 'Fingerprint Scanner',
+                ];
             }
 
-            return ['status' => 'offline', 'message' => 'Device not responding'];
+            return [
+                'connected' => false,
+                'status' => 'offline',
+                'message' => 'Device not responding',
+                'device_name' => 'Unknown Device',
+            ];
         } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => $e->getMessage()];
+            return [
+                'connected' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'device_name' => 'Unknown Device',
+            ];
         }
     }
 }

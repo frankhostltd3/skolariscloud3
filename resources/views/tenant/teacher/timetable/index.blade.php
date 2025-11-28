@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.teacher._sidebar')
-@endsection
+@extends('layouts.dashboard-teacher')
 
 @section('title', 'My Teaching Schedule')
 
@@ -186,5 +182,4 @@
     @endif
 </div>
 @endsection
-
 

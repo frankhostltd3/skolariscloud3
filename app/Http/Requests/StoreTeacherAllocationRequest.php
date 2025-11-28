@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -13,7 +14,7 @@ class StoreTeacherAllocationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->user_type === 'admin';
+        return auth()->check() && auth()->user()->user_type === UserType::ADMIN;
     }
 
     /**
@@ -27,7 +28,7 @@ class StoreTeacherAllocationRequest extends FormRequest
                 'integer',
                 Rule::exists('users', 'id')->where(function ($query) {
                     $query->where('school_id', auth()->user()->school_id)
-                          ->where('user_type', 'teacher')
+                          ->where('user_type', UserType::TEACHING_STAFF->value)
                           ->where('is_active', true);
                 })
             ],
@@ -69,19 +70,6 @@ class StoreTeacherAllocationRequest extends FormRequest
      */
     public function withValidator($validator)
     {
-        $validator->after(function ($validator) {
-            // Check if subject is assigned to the selected class
-            $subjectAssigned = DB::table('class_subject')
-                ->where('class_id', $this->class_id)
-                ->where('subject_id', $this->subject_id)
-                ->exists();
-
-            if (!$subjectAssigned) {
-                $validator->errors()->add(
-                    'subject_id',
-                    'This subject is not assigned to the selected class. Please assign the subject to the class first.'
-                );
-            }
-        });
+        // Validation logic removed to allow creating new class-subject assignments on the fly
     }
 }

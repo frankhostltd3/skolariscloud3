@@ -341,6 +341,13 @@
                                 <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
                             </a>
                         @endguest
+
+                        @if (function_exists('setting') && setting('bookstore_enabled') && Route::has('tenant.bookstore.index'))
+                            <a href="{{ route('tenant.bookstore.index') }}"
+                                class="btn btn-workspace btn-workspace-secondary">
+                                <i class="bi bi-book me-2"></i>Bookstore
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -406,8 +413,16 @@
                 <div class="col-lg-8 mx-auto">
                     <div class="info-card">
                         <h2 class="info-title">Workspace Information</h2>
+                        @php
+                            $contactEmail = setting('school_email', $school->email ?? '');
+                            $contactPhone = setting('school_phone', $school->phone ?? '');
+                            $contactAddress = setting('school_address', $school->address ?? '');
+                            $contactWebsite = setting('school_website', $school->website ?? '');
+                            $schoolMotto = setting('school_motto', '');
+                            $principalName = setting('principal_name', '');
+                        @endphp
                         <div class="row g-3">
-                            @if ($school->email)
+                            @if ($contactEmail)
                                 <div class="col-md-6">
                                     <div class="info-item">
                                         <div class="info-icon">
@@ -415,13 +430,13 @@
                                         </div>
                                         <div class="info-content">
                                             <h6>Email Address</h6>
-                                            <p>{{ $school->email }}</p>
+                                            <p><a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a></p>
                                         </div>
                                     </div>
                                 </div>
                             @endif
 
-                            @if ($school->phone)
+                            @if ($contactPhone)
                                 <div class="col-md-6">
                                     <div class="info-item">
                                         <div class="info-icon">
@@ -429,13 +444,13 @@
                                         </div>
                                         <div class="info-content">
                                             <h6>Phone Number</h6>
-                                            <p>{{ $school->phone }}</p>
+                                            <p><a href="tel:{{ $contactPhone }}">{{ $contactPhone }}</a></p>
                                         </div>
                                     </div>
                                 </div>
                             @endif
 
-                            @if ($school->address)
+                            @if ($contactAddress)
                                 <div class="col-12">
                                     <div class="info-item">
                                         <div class="info-icon">
@@ -443,22 +458,50 @@
                                         </div>
                                         <div class="info-content">
                                             <h6>Physical Address</h6>
-                                            <p>{{ $school->address }}</p>
+                                            <p>{{ $contactAddress }}</p>
                                         </div>
                                     </div>
                                 </div>
                             @endif
 
-                            @if ($school->website)
-                                <div class="col-12">
+                            @if ($contactWebsite)
+                                <div class="col-md-6">
                                     <div class="info-item">
                                         <div class="info-icon">
                                             <i class="bi bi-globe"></i>
                                         </div>
                                         <div class="info-content">
                                             <h6>Website</h6>
-                                            <p><a href="{{ $school->website }}"
-                                                    target="_blank">{{ $school->website }}</a></p>
+                                            <p><a href="{{ $contactWebsite }}"
+                                                    target="_blank">{{ $contactWebsite }}</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if ($schoolMotto)
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="info-icon">
+                                            <i class="bi bi-quote"></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <h6>School Motto</h6>
+                                            <p><em>"{{ $schoolMotto }}"</em></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if ($principalName)
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="info-icon">
+                                            <i class="bi bi-person-badge-fill"></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <h6>Principal</h6>
+                                            <p>{{ $principalName }}</p>
                                         </div>
                                     </div>
                                 </div>

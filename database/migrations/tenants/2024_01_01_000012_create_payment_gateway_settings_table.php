@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('gateway', 100)->unique();
             $table->boolean('is_enabled')->default(false);
-            $table->json('config')->nullable();
-            $table->json('meta')->nullable();
+            $table->text('config')->nullable();
+            $table->text('meta')->nullable();
             $table->timestamps();
         });
     }

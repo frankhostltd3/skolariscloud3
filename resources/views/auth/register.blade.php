@@ -15,6 +15,48 @@
                             <div class="alert alert-danger">{{ $errors->first('general') }}</div>
                         @endif
 
+                        @if ($success = session('registration_success'))
+                            <div class="alert alert-success">
+                                <h4 class="alert-heading fw-semibold mb-2">{{ __('Your school is ready!') }}</h4>
+                                <p class="mb-2">
+                                    {{ __(':school has been created successfully.', ['school' => $success['school'] ?? __('Your school')]) }}
+                                </p>
+                                @if (!empty($success['domain']))
+                                    <p class="mb-2">
+                                        {{ __('School address:') }}
+                                        <a href="{{ $success['domain'] }}" target="_blank" rel="noopener"
+                                            class="fw-semibold">{{ $success['domain'] }}</a>
+                                    </p>
+                                @endif
+                                <ul class="mb-3 ms-3">
+                                    @if (!empty($success['login_url']))
+                                        <li>
+                                            {{ __('Sign in using your admin email (:email) and password at', ['email' => $success['admin_email'] ?? __('your admin email')]) }}
+                                            <a href="{{ $success['login_url'] }}" target="_blank"
+                                                rel="noopener">{{ $success['login_url'] }}</a>.
+                                        </li>
+                                    @endif
+                                    <li>{{ __('Share the new school address with your staff and families so they can log in.') }}
+                                    </li>
+                                    <li>{{ __('Check your inbox for a welcome email that includes onboarding resources.') }}
+                                    </li>
+                                </ul>
+                                @if (!empty($success['login_url']))
+                                    <a href="{{ $success['login_url'] }}" class="btn btn-success btn-sm" target="_blank"
+                                        rel="noopener">
+                                        {{ __('Go to login page') }}
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($errorMessage = session('registration_error'))
+                            <div class="alert alert-danger">
+                                <strong>{{ __('Registration notice:') }}</strong>
+                                <span class="d-block">{{ $errorMessage }}</span>
+                            </div>
+                        @endif
+
                         <form method="POST" action="{{ route('register.store') }}" novalidate>
                             @csrf
                             <div class="row g-4">

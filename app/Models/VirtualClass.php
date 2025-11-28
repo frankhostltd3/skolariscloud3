@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Academic\ClassRoom;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -54,7 +55,7 @@ class VirtualClass extends Model
 
     public function class()
     {
-        return $this->belongsTo(SchoolClass::class, 'class_id');
+        return $this->belongsTo(ClassRoom::class, 'class_id');
     }
 
     public function subject()

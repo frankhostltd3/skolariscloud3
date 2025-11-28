@@ -36,6 +36,7 @@ class GeneralSettingsController extends Controller
             'time_format' => setting('time_format', 'H:i'),
             'default_language' => setting('default_language', 'en'),
             'records_per_page' => setting('records_per_page', '15'),
+            'bookstore_enabled' => setting('bookstore_enabled', false),
         ];
 
         return view('settings.general', [
@@ -57,7 +58,7 @@ class GeneralSettingsController extends Controller
             return $this->updateApplicationSettings($request);
         }
 
-        return redirect()->route('settings.general.edit')
+        return redirect()->route('tenant.settings.admin.general')
             ->with('error', 'Invalid form type.');
     }
 
@@ -78,7 +79,7 @@ class GeneralSettingsController extends Controller
                 ]);
             }
 
-            return redirect()->route('settings.general.edit')
+            return redirect()->route('tenant.settings.admin.general')
                 ->with('status', 'Application cache cleared successfully!');
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
@@ -88,7 +89,7 @@ class GeneralSettingsController extends Controller
                 ], 500);
             }
 
-            return redirect()->route('settings.general.edit')
+            return redirect()->route('tenant.settings.admin.general')
                 ->with('error', 'Failed to clear cache: ' . $e->getMessage());
         }
     }
@@ -128,7 +129,7 @@ class GeneralSettingsController extends Controller
             setting([$key => $value]);
         }
 
-        return redirect()->route('settings.general.edit')
+        return redirect()->route('tenant.settings.admin.general')
             ->with('status', 'School information updated successfully.');
     }
 
@@ -141,14 +142,18 @@ class GeneralSettingsController extends Controller
             'time_format' => ['required', 'string', 'max:50'],
             'default_language' => ['required', 'string', 'max:10'],
             'records_per_page' => ['required', 'integer', 'min:5', 'max:200'],
+            'bookstore_enabled' => ['nullable', 'boolean'],
         ]);
+
+        // Handle checkbox
+        $validated['bookstore_enabled'] = $request->has('bookstore_enabled');
 
         // Save each setting
         foreach ($validated as $key => $value) {
             setting([$key => $value]);
         }
 
-        return redirect()->route('settings.general.edit')
+        return redirect()->route('tenant.settings.admin.general')
             ->with('status', 'Application settings updated successfully.');
     }
 

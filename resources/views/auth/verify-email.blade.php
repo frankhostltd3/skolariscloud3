@@ -63,7 +63,7 @@
                         <hr class="my-4">
 
                         <div class="text-center">
-                            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('tenant.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>
                                 Go to Dashboard
                             </a>

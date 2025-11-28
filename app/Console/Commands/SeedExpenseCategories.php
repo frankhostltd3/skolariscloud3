@@ -43,8 +43,9 @@ class SeedExpenseCategories extends Command
             ['name' => 'Other Expenses', 'code' => 'OTH', 'description' => 'Miscellaneous expenses'],
         ];
 
-        // Get all tenant databases (using mysql as main connection)
-        $tenants = DB::connection('mysql')->table('schools')->get();
+        // Get all tenant databases using the configured central connection
+        $centralConnection = config('database.central_connection', config('database.default'));
+        $tenants = DB::connection($centralConnection)->table('schools')->get();
 
         foreach ($tenants as $tenant) {
             $this->info("Seeding expense categories for {$tenant->name}...");

@@ -5,9 +5,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+    protected function centralConnection(): string
+    {
+        return config(
+            'tenancy.database.central_connection',
+            config('database.central_connection', config('database.default'))
+        );
+    }
+
     public function up(): void
     {
-        Schema::connection(config('tenancy.database.central_connection'))
+        Schema::connection($this->centralConnection())
             ->create('landlord_notifications', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('created_by')->nullable();
@@ -26,7 +34,7 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::connection(config('tenancy.database.central_connection'))
+        Schema::connection($this->centralConnection())
             ->dropIfExists('landlord_notifications');
     }
 };

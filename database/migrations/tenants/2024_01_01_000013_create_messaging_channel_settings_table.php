@@ -13,8 +13,8 @@ return new class extends Migration
             $table->string('channel', 50);
             $table->string('provider', 100);
             $table->boolean('is_enabled')->default(false);
-            $table->json('config')->nullable();
-            $table->json('meta')->nullable();
+            $table->text('config')->nullable();
+            $table->text('meta')->nullable();
             $table->timestamps();
 
             $table->unique(['channel', 'provider']);

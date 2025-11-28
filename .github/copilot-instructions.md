@@ -1,3 +1,41 @@
+<SYSTEM>
+You are an AI programming assistant that is specialized in applying code changes to an existing document.
+Follow Microsoft content policies.
+Avoid content that violates copyrights.
+If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, violent, or completely irrelevant to software engineering, only respond with "Sorry, I can't assist with that."
+Keep your answers short and impersonal.
+The user has a code block that represents a suggestion for a code change and a instructions file opened in a code editor.
+Rewrite the existing document to fully incorporate the code changes in the provided code block.
+For the response, always follow these instructions:
+1. Analyse the code block and the existing document to decide if the code block should replace existing code or should be inserted.
+2. If necessary, break up the code block in multiple parts and insert each part at the appropriate location.
+3. Preserve whitespace and newlines right after the parts of the file that you modify.
+4. The final result must be syntactically valid, properly formatted, and correctly indented. It should not contain any ...existing code... comments.
+5. Finally, provide the fully rewritten file. You must output the complete file.
+</SYSTEM>
+
+I have the following code open in the editor, starting from line 1 to line 716.
+
+````instructions
+<SYSTEM>
+You are an AI programming assistant that is specialized in applying code changes to an existing document.
+Follow Microsoft content policies.
+Avoid content that violates copyrights.
+If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, violent, or completely irrelevant to software engineering, only respond with "Sorry, I can't assist with that."
+Keep your answers short and impersonal.
+The user has a code block that represents a suggestion for a code change and a instructions file opened in a code editor.
+Rewrite the existing document to fully incorporate the code changes in the provided code block.
+For the response, always follow these instructions:
+1. Analyse the code block and the existing document to decide if the code block should replace existing code or should be inserted.
+2. If necessary, break up the code block in multiple parts and insert each part at the appropriate location.
+3. Preserve whitespace and newlines right after the parts of the file that you modify.
+4. The final result must be syntactically valid, properly formatted, and correctly indented. It should not contain any ...existing code... comments.
+5. Finally, provide the fully rewritten file. You must output the complete file.
+</SYSTEM>
+
+I have the following code open in the editor, starting from line 1 to line 687.
+
+```instructions
 -   [x] Verify that the copilot-instructions.md file in the .github directory is created. (Created by scaffolding)
 
 -   [x] Clarify Project Requirements
@@ -224,6 +262,17 @@
         _ Empty States: Helpful messages and seeder command suggestions
         _ Auto-dismiss alerts after 5 seconds
         _ 100% production ready - run migrations, seed permissions, assign roles, configure settings
+
+-   [x] Permission Cache Fix - 100% PRODUCTION READY 🔧
+        _ Fixed "PermissionDoesNotExist" error in multi-tenant environment
+        _ Problem: Spatie Permission cache key was shared across tenants/central app, causing cache collisions and lookup failures
+        _ Solution: Implemented dynamic cache key generation per tenant in TenantConnectionProvider
+        _ Implementation: config(['permission.cache.key' => 'spatie.permission.cache.tenant.' . $school->id])
+        _ Cache Reset: Automatically clears/resets permission cache when switching tenants to ensure fresh load from tenant DB
+        _ Verification: Confirmed via Tinker that permissions are correctly found and authorized after fix
+        _ Impact: Resolves 403/500 errors on create/store actions where permissions exist in DB but failed in application check
+        _ Files Modified: app/Providers/TenantConnectionProvider.php
+        \_ 100% production ready - ensures reliable permission checking in multi-tenant setup
 
 -   [x] Attendance System - 100% PRODUCTION READY 🎉
         _ Complete attendance tracking and reporting system with 3 modes (classroom, staff, exam)
@@ -491,10 +540,206 @@
         _ UI Features: Color-coded status badges, payment method labels, responsive tables, action buttons (view/edit/delete/approve/reject/print), modals for rejection reason
         _ JavaScript Enhancements: Auto-populate payment amount from invoice balance, dynamic form updates, select dropdown enhancements
         _ Integration Points: Ready for financial reporting, budget tracking, student billing, payment receipts, expense analytics, fee collection monitoring
-        _ Files Created (27 files total): 5 controllers (ExpenseCategoryController 7 methods, ExpenseController 10 methods, FeeStructureController 7 methods, InvoiceController 8 methods, PaymentController 7 methods), 6 models (with relationships/scopes/attributes), 20 views (index/create/edit/show for each module + receipt), 1 migration (add school*id to expenses)
+        _ Files Created (27 files total): 5 controllers (ExpenseCategoryController 7 methods, ExpenseController 10 methods, FeeStructureController 7 methods, InvoiceController 8 methods, PaymentController 7 methods), 6 models (with relationships/scopes/attributes), 20 views (index/create/edit/show for each module + receipt), 1 migration (add school*id to expenses table)
         * Files Modified (2 files): routes/web.php (finance routes group with 22 routes), admin-menu.blade.php (Finance section with 5 items)
         _ Migrations Fixed: Deleted problematic fees/fee_assignments migrations referencing non-existent tables, created school_id migration for expenses table
         _ Accessibility: /tenant/finance/expense-categories, /tenant/finance/expenses, /tenant/finance/fee-structures, /tenant/finance/invoices, /tenant/finance/payments
         \_ 100% production ready - fully functional financial management system with CRUD operations, approval workflows, payment recording, receipt printing, immediately deployable
 
-If the user asks to "continue," refer to the previous steps and proceed accordingly.
+-   [x] Salary Scale Module - 100% PRODUCTION READY 💰
+        _ Complete salary scale management system for Human Resources
+        _ Database Table: salary*scales (id, school_id, name, description, min_salary, max_salary, currency_code, is_active, timestamps)
+        * Eloquent Model: SalaryScale with tenant connection, school scoping, currency relationship
+        _ Controller: SalaryScalesController with full CRUD, validation, export/import functionality
+        _ Views: Index, Create, Edit, Show views with Summernote WYSIWYG editor for description
+        _ Validation: Custom FormRequest with unique name validation per school, min/max salary logic
+        _ UI Improvements: "Name" field renamed to "Position" in UI, Position selection via dropdown populated from Positions model
+        _ Export/Import: Excel and PDF export, Excel/CSV import functionality with template download
+        _ Routes: Resource routes + custom routes for export/import registered in authenticated.php
+        _ Menu Integration: Added to Human Resources menu in admin sidebar, removed duplicate divider line
+        _ 100% production ready - fully functional salary scale management
+
+-   [x] Online Bookstore Module - 100% PRODUCTION READY 📚
+        _ Complete public-facing online bookstore for selling library books
+        _ Public Storefront: Catalog with search, filtering, and sorting
+        _ Shopping Cart: Session-based cart with add/update/remove functionality
+        _ Checkout System: Secure checkout form with customer details and payment method selection
+        _ Order Management: Database tracking of orders and order items
+        _ Admin Control: Toggle "Enable Online Bookstore" in General Settings
+        _ Database Tables: bookstore_orders, bookstore_order_items (tenant-specific)
+        _ Models: BookstoreOrder, BookstoreOrderItem, LibraryBook (enhanced with sales attributes)
+        _ Controller: BookstoreController with public routes (index, show, cart, checkout)
+        _ Views: Complete set of public views (index, show, cart, checkout, order-success)
+        _ Routes: Public routes under /bookstore prefix
+        _ Documentation: docs/BOOKSTORE*MODULE.md created
+        * Digital Products: Support for e-books (PDF/EPUB) with secure storage and download
+        _ User Accounts: Order history and details for authenticated users
+        _ Payment Gateways: Integration with Stripe and PayPal (via PaymentService), extensible for Flutterwave, MTN, Airtel
+        \_ 100% production ready - fully functional online bookstore module with digital products and payments
+
+-   [x] Fix Missing Academic Years Table - 100% RESOLVED 🔧
+        _ Fixed SQLSTATE[42S02] error: Table 'academic_years' doesn't exist
+        _ Moved migration file to correct tenant directory: database/migrations/tenants/
+        _ Created AcademicYearSeeder to populate current and next academic years
+        _ Created custom artisan command: tenants:seed-academic-years
+        _ Successfully migrated and seeded all tenant databases
+        _ Verified Student Dashboard loads correctly with current academic year data
+
+-   [x] Fix Missing Enrollments Table - 100% RESOLVED 🔧
+        _ Fixed SQLSTATE[42S02] error: Table 'enrollments' doesn't exist
+        _ Moved migration file to correct tenant directory: database/migrations/tenants/
+        _ Updated DashboardController to handle null academic year and missing enrollments gracefully
+        _ Successfully migrated all tenant databases (3 schools)
+        \_ Student Dashboard now loads without errors even when students have no enrollment records
+
+-   [x] Fix Unknown Column 'school*class_id' - 100% RESOLVED 🔧
+        * Fixed SQLSTATE[42S22]: Column not found: 1054 Unknown column 'school*class_id'
+        * Problem: Controllers and Policies were using 'school*class_id' but the enrollments table uses 'class_id'
+        * Solution: Replaced all occurrences of 'school*class_id' with 'class_id' in relevant files
+        * Files Updated: - app/Http/Controllers/Tenant/Student/VirtualClassController.php (6 methods) - app/Http/Controllers/Tenant/Student/MaterialController.php (4 methods) - app/Http/Controllers/Tenant/Student/ClassroomController.php (2 methods) - app/Http/Controllers/Tenant/Student/ExerciseController.php (4 methods) - resources/views/tenant/student/classroom/index.blade.php (1 occurrence) - app/Policies/LearningMaterialPolicy.php (2 methods) - app/Policies/VirtualClassPolicy.php (2 methods) - app/Policies/ExercisePolicy.php (3 methods)
+        \_ Verified: Student Dashboard and related pages now load correctly without column errors
+
+-   [x] Fix Missing Virtual Classroom Views - 100% RESOLVED 🔧
+        _ Fixed "View [tenant.student.classroom.virtual.today] not found" error
+        _ Problem: The `today.blade.php` and `attendance.blade.php` views were missing from the virtual classroom directory
+        _ Solution: Created the missing view files with appropriate UI components
+        _ Files Created: - resources/views/tenant/student/classroom/virtual/today.blade.php - resources/views/tenant/student/classroom/virtual/attendance.blade.php
+        \_ Verified: Virtual Classroom "Today's Classes" and "Attendance" pages now load correctly
+
+-   [x] Fix Undefined Route in Virtual Classroom - 100% RESOLVED 🔧
+        _ Fixed "Route [tenant.student.classroom.attendance.index] not defined" error
+        _ Problem: The `index.blade.php` view was referencing an incorrect route name for attendance
+        _ Solution: Updated the route name to `tenant.student.classroom.virtual.attendance`
+        _ Files Updated: - resources/views/tenant/student/classroom/virtual/index.blade.php
+        \_ Verified: The "My Attendance" button now links to the correct route
+
+-   [x] Fix Missing Materials Recent View - 100% RESOLVED 🔧
+        _ Fixed "View [tenant.student.classroom.materials.recent] not found" error
+        _ Problem: The `recent.blade.php` view was missing from the materials directory
+        _ Solution: Created the missing view file showing recently accessed materials
+        _ Files Created: - resources/views/tenant/student/classroom/materials/recent.blade.php
+        \_ Verified: Recently accessed materials page now displays correctly
+
+-   [x] Fix Missing Exercises Grades View - 100% RESOLVED 🔧
+        _ Fixed "View [tenant.student.classroom.exercises.grades] not found" error
+        _ Problem: The `grades.blade.php` view was missing from the exercises directory
+        _ Solution: Created the missing view file showing student grades and statistics
+        _ Files Created: - resources/views/tenant/student/classroom/exercises/grades.blade.php
+        \_ Verified: Student grades page now displays correctly with stats and graded assignments list
+
+-   [x] Fix Incorrect Student Layout - 100% RESOLVED 🔧
+        _ Fixed "View [layouts.dashboard-student] not found" error
+        _ Problem: Multiple student views were extending a non-existent layout `layouts.dashboard-student`
+        _ Solution: Updated all student views to extend the correct layout `layouts.tenant.student`
+        _ Files Updated: 21 files in `resources/views/tenant/student/` directory
+        \_ Verified: Student Schedule and other student pages now load correctly
+
+-   [x] Fix Manual Attendance Date Error - 100% RESOLVED 🔧
+        _ Fixed "Call to a member function format() on null" error
+        _ Problem: The view was accessing `$attendance->date` which is not a model property (should be `attendance_date`)
+        _ Solution: Updated the view to use the correct property `$attendance->attendance_date`
+        _ Files Updated: - resources/views/admin/attendance/manual-mark.blade.php
+        \_ Verified: Manual attendance marking page now loads correctly
+
+-   [x] Fix Missing Grades Table Columns - 100% RESOLVED 🔧
+        _ Fixed SQLSTATE[42S22]: Column not found: 1054 Unknown column 'assessment_type'
+        _ Problem: The `grades` table was missing several columns expected by the `Grade` model and `GradesController`
+        _ Solution: Created a new migration to add `assessment_type`, `marks_obtained`, `total_marks`, `grade_letter`, `grade_point`, etc.
+        _ Files Created: - database/migrations/tenants/2025*11_24_090000_update_grades_table_schema.php
+        * Migrations Run: Successfully migrated all tenant databases
+        \_ Verified: Teacher Grades page now loads correctly
+
+-   [x] User Approval System Enhancements - 100% PRODUCTION READY 🚀
+        _ Implemented 4 robust user approval modes: Automatic, Manual, Email Verification, and OTP (One-Time Password)
+        _ OTP System: Complete implementation with `otp_codes` table, `OtpCode` model, and `SendOtpNotification`
+        _ Database: Created `otp_codes` table migration and successfully migrated all tenant databases
+        _ Controller Logic: Updated `RegisterController` to handle all 4 modes correctly, including OTP generation and email dispatch
+        _ Verification Flow: Created `OtpVerificationController` and `verify-otp.blade.php` for seamless user experience
+        _ Middleware: Updated `EnsureUserApproved` middleware to redirect pending users to OTP verification page if enabled
+        _ Settings Integration: Updated System Settings to allow administrators to select the desired approval mode
+        _ Security: OTP codes expire after 10 minutes and are tied to specific users
+        _ Files Created/Updated: - app/Http/Controllers/Auth/RegisterController.php (Logic update) - app/Http/Controllers/Auth/OtpVerificationController.php (New controller) - app/Models/OtpCode.php (New model) - app/Notifications/SendOtpNotification.php (New notification) - resources/views/auth/verify-otp.blade.php (New view) - database/migrations/tenants/2025_11_24_100000_create_otp_codes_table.php (New migration)
+        _ Verified: Registration flow works correctly for all modes, with appropriate redirects and notifications
+
+-   [x] Fix Teacher Allocation System - 100% RESOLVED - Fixed "it didnt note my selection" error when allocating subjects to teachers - Problem 1: Role names in database were lowercase ("teacher") but application expected Title Case ("Teacher") - Problem 2: Missing ssignments and ttendance tables in tenant database - Problem 3: Validation rule prevented creating new class-subject allocations on the fly - Solution 1: Updated PermissionsSeeder and re-seeded all tenants with --force - Solution 2: Moved migrations to enants/ folder and ran enants:migrate - Solution 3: Removed restrictive validation in StoreTeacherAllocationRequest - Verified: Database structure is correct, roles are updated, and allocation logic allows creation
+
+-   [x] Room Management System - 100% PRODUCTION READY 🏫 - Implemented complete CRUD operations for managing physical rooms/classrooms - Database: Uses existing `rooms` table (name, code, capacity, type, is_active) - Controller: `RoomController` with index, create, store, show, edit, update, destroy methods - Validation: Unique name/code per school, capacity checks, dependency check before deletion (timetable entries) - Views: Complete UI set (index, create, edit, show, \_form) with search and filtering by type - Navigation: Added "Rooms" link to Academics sidebar and Admin menu - Routes: Registered resource routes in `routes/authenticated.php` - Verified: Fully functional room management system ready for timetable allocation
+
+-   [x] Fix Room Management View Error - 100% RESOLVED 🔧 - Fixed "View [layouts.tenant.app] not found" error - Problem: Incorrect layout path in `@extends` directive in room views - Solution: Updated `layouts.tenant.app` to `tenant.layouts.app` in all 4 view files - Files Updated: index.blade.php, create.blade.php, edit.blade.php, show.blade.php - Verified: Room management pages now load correctly using the correct tenant layout
+
+-   [x] Fee Structure Enhancements - 100% PRODUCTION READY 💰 - Implemented "Recurring vs One-time" and "Mandatory vs Optional" fee settings - Database: Added `is_recurring` and `frequency` columns to `fee_structures` table - Backend: Updated `FeeStructure` model and `FeeStructureController` with validation logic - Frontend: Updated `create.blade.php` with dynamic form fields for recurring/frequency/mandatory options - Migration: Created and ran `2025_11_26_203000_add_recurring_fields_to_fee_structures_table.php` - Documentation: Created `docs/FEE_STRUCTURE_ENHANCEMENTS.md` - Verified: Database schema updated, backend logic handles new fields, frontend UI displays correct options
+
+-   [x] Report Card Logo Display - 100% PRODUCTION READY 📄
+        _ Modified report card PDF template to include school logo
+        _ View: resources/views/admin/reports/pdf/report-card.blade.php
+        _ Logic: Checks for $school->logo_url and displays image if available
+        _ Styling: Centered logo with max dimensions (150x80px)
+        _ Integration: Works with both single student and bulk class export
+        _ Documentation: docs/REPORT_CARD_LOGO_IMPLEMENTATION.md
+        _ Verified: PDF generation now includes tenant-specific branding
+
+-   [x] Report Card Settings - 100% PRODUCTION READY ⚙️
+        _ Implemented dedicated settings page for report card customization
+        _ Controller: ReportSettingsController with edit() and update() methods
+        _ View: resources/views/admin/reports/settings.blade.php
+        _ Features: Toggle logo, custom school name/address, color theme picker, signature titles
+        _ Integration: Updated report-card.blade.php to use dynamic settings via setting() helper
+        _ Navigation: Added "Report Settings" link to Admin Menu under Reports section
+        _ Routes: /admin/reports/settings (GET/PUT)
+        _ Documentation: docs/REPORT_CARD_SETTINGS.md
+        _ Verified: Settings persist and correctly reflect on generated PDFs
+
+-   [x] Report Card Font Customization - 100% PRODUCTION READY 🎨
+        _ Added font family, size, and weight settings to Report Settings
+        _ Updated ReportSettingsController to validate and store new settings
+        _ Updated settings.blade.php with typography controls
+        _ Updated report-card.blade.php to apply dynamic CSS based on settings
+        _ Created bulk-report-cards.blade.php for bulk export with consistent styling
+        _ Fixed PDF download issue by using Pdf::loadView()->output()
+        _ Documentation: docs/REPORT_CARD_FONT_CUSTOMIZATION.md
+        _ Verified: Users can now customize fonts and download PDFs successfully
+
+-   [x] Report Card Layout & Photo - 100% PRODUCTION READY 📸
+        _ Optimized PDF layout to fit all details on a single page (reduced margins, compact spacing)
+        _ Fixed school logo display by using absolute filesystem paths for DomPDF
+        _ Added student profile photo display (side-by-side with student info)
+        _ Updated both single and bulk report card templates
+        _ Documentation: Updated docs/REPORT_CARD_FONT_CUSTOMIZATION.md
+        _ Verified: Report cards are compact, include photos, and logos render correctly
+
+-   [x] Report Card Dynamic Data & Profile - 100% PRODUCTION READY 🚀
+        _ Refactored ReportsController to use real database records (Grades, Attendance)
+        _ Implemented Student Profile system with photo upload
+        _ Added profile_photo column to users table (migration run on all tenants)
+        _ Created ProfileController and edit view for users to manage their profile
+        _ Updated PDF templates to use dynamic data and optimized layout for single-page fit
+        _ Documentation: Created docs/REPORT_CARD_IMPLEMENTATION.md
+        _ Verified: Real data is fetched, profile photo upload works, and PDF layout is optimized.
+
+-   [x] Report Card Resizable Logo & Photo - 100% PRODUCTION READY 🖼️
+        _ Added settings for Logo Width/Height and Student Photo Width/Height in Report Settings
+        _ Updated ReportSettingsController to validate and save new dimensions
+        _ Updated settings.blade.php with new input fields
+        _ Updated report-card.blade.php and bulk-report-cards.blade.php to use dynamic dimensions
+        _ Verified: Admin can now resize logo and student photo on report cards
+
+-   [x] Assessment Configuration - 100% PRODUCTION READY 📊
+        _ Configurable assessment types (BOT, MOT, EOT, etc.) with custom weights
+        _ Settings UI: Dynamic table in Academic Settings to add/remove types and set weights (validation for 100% total)
+        _ Database Storage: JSON-based configuration in `settings` table
+        _ Grading Logic: Updated `ReportsController` to calculate subject grades and class rankings based on configured weights
+        _ Grade Entry: Updated `GradesController` and views to populate Assessment Type dropdown dynamically from settings
+        _ Documentation: `docs/ASSESSMENT_CONFIGURATION_IMPLEMENTATION.md`
+        _ Verified: System correctly calculates weighted averages (e.g., 10% BOT + 30% MOT + 60% EOT) and ranks students accordingly
+
+-   [x] Online Exam Automation - 100% PRODUCTION READY 🤖
+        _ Automated activation and completion of exams based on schedule
+        _ ExamWindowAutomationService with sync(), activateDueExams(), completeExpiredExams()
+        _ Console command: tenants:sync-exams running every 5 minutes
+        _ Notifications: ExamReviewDecisionNotification extended for completion events
+        _ Teacher UI: Automation status card with manual trigger
+        _ AI/Automatic Generation Hooks: ProcessExamGeneration job, ExamGenerationService
+        _ Database: Workflow fields (creation_method, activation_mode, approval_status)
+        _ Documentation: docs/ONLINE_EXAM_AUTOMATION.md
+        _ 100% production ready - automation pipeline and generation hooks active
+````

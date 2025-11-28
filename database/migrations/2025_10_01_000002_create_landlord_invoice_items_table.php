@@ -6,9 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected function centralConnection(): string
+    {
+        return config(
+            'tenancy.database.central_connection',
+            config('database.central_connection', config('database.default'))
+        );
+    }
+
     public function up(): void
     {
-        Schema::create('landlord_invoice_items', function (Blueprint $table) {
+        Schema::connection($this->centralConnection())->create('landlord_invoice_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('landlord_invoice_id')->constrained('landlord_invoices')->onDelete('cascade');
             $table->string('line_type', 32)->default('service');
@@ -24,6 +32,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('landlord_invoice_items');
+        Schema::connection($this->centralConnection())->dropIfExists('landlord_invoice_items');
     }
 };

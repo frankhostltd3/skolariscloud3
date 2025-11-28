@@ -59,7 +59,7 @@ class CurrencyController extends Controller
             'auto_update_enabled' => $request->has('auto_update_enabled'),
         ]);
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', 'Currency created successfully.');
     }
 
@@ -103,7 +103,7 @@ class CurrencyController extends Controller
             'auto_update_enabled' => $request->has('auto_update_enabled'),
         ]);
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', 'Currency updated successfully.');
     }
 
@@ -122,7 +122,7 @@ class CurrencyController extends Controller
 
         $currency->delete();
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', 'Currency deleted successfully.');
     }
 
@@ -134,7 +134,7 @@ class CurrencyController extends Controller
         $currency = Currency::findOrFail($id);
         $currency->setAsDefault();
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', $currency->name . ' set as default currency.');
     }
 
@@ -156,7 +156,7 @@ class CurrencyController extends Controller
 
         $status = $currency->is_active ? 'activated' : 'deactivated';
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', $currency->name . ' ' . $status . ' successfully.');
     }
 
@@ -209,10 +209,10 @@ class CurrencyController extends Controller
             }
 
             if ($updated > 0) {
-                return redirect()->route('settings.currencies.index')
+                return redirect()->route('tenant.settings.admin.currencies.index')
                     ->with('success', "Exchange rates updated successfully! Updated: {$updated}, Skipped: {$skipped}");
             } else {
-                return redirect()->route('settings.currencies.index')
+                return redirect()->route('tenant.settings.admin.currencies.index')
                     ->with('info', 'No exchange rates were updated. All rates are current.');
             }
         } catch (\Exception $e) {
@@ -232,7 +232,7 @@ class CurrencyController extends Controller
 
         $status = $currency->auto_update_enabled ? 'enabled' : 'disabled';
 
-        return redirect()->route('settings.currencies.index')
+        return redirect()->route('tenant.settings.admin.currencies.index')
             ->with('success', "Auto-update {$status} for {$currency->name}.");
     }
 }

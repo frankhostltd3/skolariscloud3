@@ -94,7 +94,7 @@ class MessagingSettingsController extends Controller
 
         $this->configurator->apply();
 
-        return redirect()->route('settings.messaging.edit')->with('status', 'Messaging settings updated successfully.');
+        return redirect()->route('tenant.settings.admin.messaging')->with('status', 'Messaging settings updated successfully.');
     }
 
     private function authorizeAdmin(Request $request): void

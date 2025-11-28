@@ -11,12 +11,12 @@
                         <h5 class="mb-0">
                             <i class="bi bi-calendar-check me-2"></i>Create Attendance Session
                         </h5>
-                        <a href="{{ route('admin.attendance.index') }}" class="btn btn-secondary btn-sm">
+                        <a href="{{ route('tenant.modules.attendance.index') }}" class="btn btn-secondary btn-sm">
                             <i class="bi bi-arrow-left me-1"></i>Back to Attendance
                         </a>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('admin.attendance.store') }}" method="POST">
+                        <form action="{{ route('tenant.modules.attendance.store') }}" method="POST">
                             @csrf
 
                             <div class="row">
@@ -91,7 +91,7 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('admin.attendance.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('tenant.modules.attendance.index') }}" class="btn btn-secondary">
                                     <i class="bi bi-x-circle me-1"></i>Cancel
                                 </a>
                                 <button type="submit" class="btn btn-primary">
@@ -120,7 +120,9 @@
                 }
 
                 // Fetch streams for selected class
-                fetch(`/api/classes/${classId}/streams`)
+                const url = "{{ route('tenant.academics.streams.list', ':id') }}".replace(':id', classId);
+
+                fetch(url)
                     .then(response => response.json())
                     .then(streams => {
                         streams.forEach(stream => {

@@ -11,9 +11,12 @@ use App\Models\Academic\AcademicYear;
 use App\Models\Academic\ClassRoom;
 use App\Models\TimetableEntry;
 use App\Models\OnlineExam;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Models\MaterialAccess;
 use App\Models\MessageRecipient;
 use App\Services\OnlineClassroomCacheService;
+use App\Services\RegistrationPipelineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -29,33 +32,7 @@ class DashboardController extends Controller
     public function index()
     {
         $student = Auth::user();
-        $currentAcademicYear = null;
-
-        if (Schema::hasTable('academic_years')) {
-            try {
-                $currentAcademicYearQuery = AcademicYear::query();
-
-                if (Schema::hasColumn('academic_years', 'is_current')) {
-                    $currentAcademicYearQuery->where('is_current', true);
-                } elseif (Schema::hasColumn('academic_years', 'status')) {
-                    $currentAcademicYearQuery->where('status', 'current');
-                }
-
-                if (Schema::hasColumn('academic_years', 'start_date')) {
-                    $currentAcademicYearQuery->orderByDesc('start_date');
-                } elseif (Schema::hasColumn('academic_years', 'starts_at')) {
-                    $currentAcademicYearQuery->orderByDesc('starts_at');
-                }
-
-                $currentAcademicYear = $currentAcademicYearQuery->first();
-
-                if (! $currentAcademicYear) {
-                    $currentAcademicYear = AcademicYear::orderByDesc('id')->first();
-                }
-            } catch (\Throwable $e) {
-                $currentAcademicYear = null;
-            }
-        }
+        $currentAcademicYear = AcademicYear::where('is_current', true)->first();
         $studentProfile = null;
 
         if (Schema::hasTable('students')) {
@@ -68,19 +45,11 @@ class DashboardController extends Controller
 
         // Get student's current enrollment
         $enrollment = null;
-        $currentAcademicYearId = $currentAcademicYear?->id;
-
-        if (Schema::hasTable('enrollments')) {
-            try {
-                $enrollment = Enrollment::where('student_id', $student->id)
-                    ->when($currentAcademicYearId, function ($query) use ($currentAcademicYearId) {
-                        $query->where('academic_year_id', $currentAcademicYearId);
-                    })
-                    ->with(['classroom', 'classroom.subjects', 'classroom.teacher'])
-                    ->first();
-            } catch (\Throwable $e) {
-                $enrollment = null;
-            }
+        if ($currentAcademicYear) {
+            $enrollment = Enrollment::where('student_id', $student->id)
+                ->where('academic_year_id', $currentAcademicYear->id)
+                ->with(['classroom', 'classroom.subjects', 'classroom.teacher'])
+                ->first();
         }
 
         // Calculate statistics
@@ -94,14 +63,7 @@ class DashboardController extends Controller
         $mySubjects = collect();
         $recentGrades = collect();
 
-        $classIds = collect();
-        if (Schema::hasTable('enrollments') && method_exists($student, 'activeEnrollments')) {
-            try {
-                $classIds = $student->activeEnrollments()->pluck('class_id')->filter()->unique()->values();
-            } catch (\Throwable $e) {
-                $classIds = collect();
-            }
-        }
+        $classIds = $student->activeEnrollments()->pluck('class_id')->filter()->unique()->values();
 
         if ($studentProfile && Schema::hasTable('student_subject')) {
             try {
@@ -234,45 +196,65 @@ class DashboardController extends Controller
             // Upcoming assignments (exercises) not yet submitted
             $upcoming['assignments'] = $classroomCache->getStudentPendingAssignments($student->id, $classIdList, 3);
 
-            // Upcoming quizzes (Academic\Quiz) assigned to student's class
+            // Upcoming quizzes assigned to student's class
             $upcoming['quizzes'] = Cache::remember(
                 "student_{$student->id}_upcoming_quizzes",
                 120,
                 function () use ($classId) {
-                    $query = \App\Models\Academic\Quiz::query();
+                    $connection = Schema::connection('tenant');
+                    $hasPivot = $connection->hasTable('quiz_class');
+                    $hasClassColumn = $connection->hasColumn('quizzes', 'class_id');
+                    $availableFromColumn = $connection->hasColumn('quizzes', 'available_from')
+                        ? 'available_from'
+                        : ($connection->hasColumn('quizzes', 'start_at') ? 'start_at' : null);
+                    $availableUntilColumn = $connection->hasColumn('quizzes', 'available_until')
+                        ? 'available_until'
+                        : ($connection->hasColumn('quizzes', 'end_at') ? 'end_at' : null);
 
-                    if (Schema::hasTable('quiz_class')) {
-                        $query->whereHas('classes', function ($q) use ($classId) {
-                            $q->where('classes.id', $classId);
-                        });
-                    } else {
-                        $query->where(function ($q) use ($classId) {
-                            $hasClassId = Schema::hasColumn('quizzes', 'class_id');
-                            $hasClassRoom = Schema::hasColumn('quizzes', 'class_room_id');
+                    $query = Quiz::query()->with(['teacher', 'subject']);
+                    $query->where(function ($q) {
+                        $q->where('is_published', true)
+                            ->orWhere('status', 'published');
+                    });
 
-                            if ($hasClassId) {
-                                $q->where('class_id', $classId);
-                                if ($hasClassRoom) {
-                                    $q->orWhere('class_room_id', $classId);
-                                }
-                            } elseif ($hasClassRoom) {
-                                $q->where('class_room_id', $classId);
-                            } else {
-                                $q->whereRaw('1 = 0');
+                    $query->where(function ($q) use ($classId, $hasPivot, $hasClassColumn) {
+                        if ($hasPivot) {
+                            $q->whereHas('classes', function ($sub) use ($classId) {
+                                $sub->where('classes.id', $classId);
+                            });
+                            if ($hasClassColumn) {
+                                $q->orWhere('class_id', $classId);
                             }
+                        } elseif ($hasClassColumn) {
+                            $q->where('class_id', $classId);
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    });
+
+                    if ($availableFromColumn) {
+                        $query->where(function ($q) use ($availableFromColumn) {
+                            $q->whereNull($availableFromColumn)
+                                ->orWhere($availableFromColumn, '>=', now()->subDay());
                         });
                     }
 
-                    return $query
-                        ->where(function ($q) {
-                            $q->whereNull('available_from')->orWhere('available_from', '>=', now()->subDay());
-                        })
-                        ->where(function ($q) {
-                            $q->whereNull('available_until')->orWhere('available_until', '>=', now());
-                        })
-                        ->orderByRaw('COALESCE(available_from, created_at) asc')
-                        ->limit(3)
-                        ->get();
+                    if ($availableUntilColumn) {
+                        $query->where(function ($q) use ($availableUntilColumn) {
+                            $q->whereNull($availableUntilColumn)
+                                ->orWhere($availableUntilColumn, '>=', now());
+                        });
+                    }
+
+                    if ($availableFromColumn) {
+                        $query->orderBy($availableFromColumn, 'asc');
+                    } elseif ($availableUntilColumn) {
+                        $query->orderBy($availableUntilColumn, 'asc');
+                    } else {
+                        $query->orderBy('created_at', 'asc');
+                    }
+
+                    return $query->limit(3)->get();
                 }
             );
 
@@ -337,15 +319,7 @@ class DashboardController extends Controller
             "student_{$student->id}_unread_counts",
             60,
             function () use ($student) {
-                $unreadMessages = 0;
-                if (Schema::hasTable('message_recipients')) {
-                    try {
-                        $unreadMessages = MessageRecipient::forRecipient($student->id)->unread()->count();
-                    } catch (\Throwable $e) {
-                        $unreadMessages = 0;
-                    }
-                }
-                
+                $unreadMessages = MessageRecipient::forRecipient($student->id)->unread()->count();
                 $unreadNotifications = 0;
                 try {
                     $unreadNotifications = $student->unreadNotifications()->count();
@@ -384,7 +358,7 @@ class DashboardController extends Controller
                 "student_{$student->id}_last_quiz_attempt",
                 120,
                 function () use ($student) {
-                    return \App\Models\Academic\QuizAttempt::with('quiz')
+                    return QuizAttempt::with('quiz')
                         ->where('student_id', $student->id)
                         ->whereNull('submitted_at')
                         ->orderByDesc('started_at')
@@ -394,6 +368,10 @@ class DashboardController extends Controller
         } catch (\Throwable $e) {
             // ignore
         }
+
+        $registrationTimeline = app(RegistrationPipelineService::class)->studentTimeline($student, [
+            'class_name' => $stats['enrolled_class'] ?? null,
+        ]);
 
         return view('tenant.student.dashboard', compact(
             'stats',
@@ -405,7 +383,8 @@ class DashboardController extends Controller
             'currentAcademicYear',
             'upcoming',
             'unreadCounts',
-            'continue'
+            'continue',
+            'registrationTimeline'
         ));
     }
 }

@@ -79,14 +79,15 @@ class SalaryScalesController extends Controller
     public function create(): View
     {
         $this->authorize('create', SalaryScale::class);
-        return view('tenant.modules.human_resource.salary_scales.create');
+        $positions = \App\Models\Position::all();
+        return view('tenant.modules.human_resource.salary_scales.create', compact('positions'));
     }
 
     public function store(SalaryScaleRequest $request): RedirectResponse
     {
         $this->authorize('create', SalaryScale::class);
         $salaryScale = SalaryScale::create($request->validated());
-    return redirect()->route('tenant.modules.human_resources.salary_scales.index')->with('success', 'Salary scale created successfully.');
+        return redirect()->route('tenant.modules.human-resource.salary-scales.index')->with('success', 'Salary scale created successfully.');
     }
 
     public function show(SalaryScale $salaryScale): View
@@ -98,20 +99,21 @@ class SalaryScalesController extends Controller
     public function edit(SalaryScale $salaryScale): View
     {
         $this->authorize('update', $salaryScale);
-        return view('tenant.modules.human_resource.salary_scales.edit', compact('salaryScale'));
+        $positions = \App\Models\Position::all();
+        return view('tenant.modules.human_resource.salary_scales.edit', compact('salaryScale', 'positions'));
     }
 
     public function update(SalaryScaleRequest $request, SalaryScale $salaryScale): RedirectResponse
     {
         $this->authorize('update', $salaryScale);
         $salaryScale->update($request->validated());
-    return redirect()->route('tenant.modules.human_resources.salary_scales.index')->with('success', 'Salary scale updated successfully.');
+        return redirect()->route('tenant.modules.human-resource.salary-scales.index')->with('success', 'Salary scale updated successfully.');
     }
 
     public function destroy(SalaryScale $salaryScale): RedirectResponse
     {
         $this->authorize('delete', $salaryScale);
         $salaryScale->delete();
-    return redirect()->route('tenant.modules.human_resources.salary_scales.index')->with('success', 'Salary scale deleted successfully.');
+        return redirect()->route('tenant.modules.human-resource.salary-scales.index')->with('success', 'Salary scale deleted successfully.');
     }
 }

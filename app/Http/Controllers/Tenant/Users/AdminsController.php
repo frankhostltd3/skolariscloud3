@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 
 class AdminsController extends Controller
 {
-    private string $role = 'Admin';
+    private array $roles = ['admin', 'super-admin'];
+    private string $defaultRole = 'admin';
     private string $title = 'Administrators';
     private string $routePrefix = 'tenant.users.admins';
 
@@ -18,7 +19,7 @@ class AdminsController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $users = User::query()
-            ->role($this->role)
+            ->role($this->roles)
             ->when($q !== '', fn($query) => $query->where(function($w) use ($q){
                 $w->where('name','like',"%$q%");
                 $w->orWhere('email','like',"%$q%");
@@ -52,14 +53,14 @@ class AdminsController extends Controller
         ]);
 
         $user = User::create($data);
-        $user->assignRole($this->role);
+        $user->assignRole($this->defaultRole);
 
         return redirect()->route($this->routePrefix)->with('success', __(':title created.', ['title' => __($this->title)]));
     }
 
     public function show(User $user): View
     {
-        abort_unless($user->hasRole($this->role), 404);
+        abort_unless($user->hasRole($this->roles), 404);
         return view('tenant.users.shared.show', [
             'title' => __($this->title),
             'routePrefix' => $this->routePrefix,
@@ -69,7 +70,7 @@ class AdminsController extends Controller
 
     public function edit(User $user): View
     {
-        abort_unless($user->hasRole($this->role), 404);
+        abort_unless($user->hasRole($this->roles), 404);
         return view('tenant.users.shared.edit', [
             'title' => __($this->title),
             'routePrefix' => $this->routePrefix,
@@ -79,7 +80,7 @@ class AdminsController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        abort_unless($user->hasRole($this->role), 404);
+        abort_unless($user->hasRole($this->roles), 404);
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email,' . $user->id],
@@ -91,8 +92,8 @@ class AdminsController extends Controller
         }
 
         $user->update($data);
-        if (! $user->hasRole($this->role)) {
-            $user->syncRoles([$this->role]);
+        if (! $user->hasRole($this->roles)) {
+            $user->syncRoles([$this->defaultRole]);
         }
 
         return redirect()->route($this->routePrefix . '.show', $user)->with('success', __(':title updated.', ['title' => __($this->title)]));
@@ -100,35 +101,35 @@ class AdminsController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        abort_unless($user->hasRole($this->role), 404);
+        abort_unless($user->hasRole($this->roles), 404);
         $user->delete();
         return redirect()->route($this->routePrefix)->with('success', __(':title deleted.', ['title' => __($this->title)]));
     }
 
     public function activate(User $user): RedirectResponse
     {
-        abort_unless($user->hasRole($this->role), 404);
-        
+        abort_unless($user->hasRole($this->roles), 404);
+
         $user->activate();
-        
+
         return redirect()->back()->with('success', __('User activated successfully.'));
     }
 
     public function deactivate(Request $request, User $user): RedirectResponse
     {
-        abort_unless($user->hasRole($this->role), 404);
-        
+        abort_unless($user->hasRole($this->roles), 404);
+
         // Prevent admin from deactivating themselves
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', __('You cannot deactivate your own account.'));
         }
-        
+
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
-        
+
         $user->deactivate($request->input('reason'));
-        
+
         return redirect()->back()->with('success', __('User deactivated successfully.'));
     }
 }

@@ -11,8 +11,7 @@ class StoreClassRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create', \App\Models\Academic\ClassRoom::class)
-            || $this->user()->user_type === 'admin';
+        return true;
     }
 
     /**

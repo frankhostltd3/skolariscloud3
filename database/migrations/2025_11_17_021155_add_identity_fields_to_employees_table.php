@@ -8,9 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
-            if (!Schema::hasColumn('employees', 'national_id')) {
-                $table->string('national_id')->nullable()->unique()->after('employee_number');
+            $nationalIdPosition = Schema::hasColumn('employees', 'employee_number') ? 'employee_number' : 'employment_status';
+
+            if (! Schema::hasColumn('employees', 'national_id')) {
+                $table->string('national_id')->nullable()->unique()->after($nationalIdPosition);
             }
             if (!Schema::hasColumn('employees', 'gender')) {
                 $table->string('gender', 16)->nullable()->after('national_id'); // enforce via validation (male,female,other)
@@ -26,6 +32,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('employees')) {
+            return;
+        }
+
         Schema::table('employees', function (Blueprint $table) {
             if (Schema::hasColumn('employees', 'user_id')) {
                 $table->dropConstrainedForeignId('user_id');

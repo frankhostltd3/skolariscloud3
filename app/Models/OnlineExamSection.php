@@ -10,6 +10,8 @@ class OnlineExamSection extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'online_exam_id',
         'title',
@@ -27,7 +29,7 @@ class OnlineExamSection extends Model
 
     public function questions()
     {
-        return $this->hasMany(OnlineExamQuestion::class)->orderBy('order');
+        return $this->hasMany(OnlineExamQuestion::class, 'section_id')->orderBy('order');
     }
 
     /**

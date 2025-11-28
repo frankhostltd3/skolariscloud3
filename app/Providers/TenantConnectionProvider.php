@@ -50,7 +50,9 @@ class TenantConnectionProvider extends ServiceProvider
         }
 
         // Find school by subdomain using central connection
-        $school = School::on('mysql')
+        $centralConnection = config('database.central_connection', config('database.default'));
+
+        $school = School::on($centralConnection)
             ->where('subdomain', $subdomain)
             ->first();
 
@@ -64,6 +66,13 @@ class TenantConnectionProvider extends ServiceProvider
 
         // Store school in app container for later use
         $this->app->instance('currentSchool', $school);
+
+        // Set unique cache key for Spatie Permissions per tenant
+        config(['permission.cache.key' => 'spatie.permission.cache.tenant.' . $school->id]);
+
+        // Reset the permission registrar to ensure it uses the new cache key and reloads permissions
+        // This fixes the "PermissionDoesNotExist" error by forcing a fresh load from the tenant DB
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     /**

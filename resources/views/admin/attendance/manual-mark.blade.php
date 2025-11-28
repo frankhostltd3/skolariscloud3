@@ -9,7 +9,8 @@
                         <i class="bi bi-pencil-square"></i> Manual Roll Call
                     </h4>
                     <div class="page-title-right">
-                        <a href="{{ route('admin.attendance.show', $attendance->id) }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('tenant.modules.attendance.show', $attendance->id) }}"
+                            class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> Back
                         </a>
                     </div>
@@ -28,7 +29,7 @@
                         <strong>Subject:</strong> {{ $attendance->subject->name ?? 'General' }}
                     </div>
                     <div class="col-md-3">
-                        <strong>Date:</strong> {{ $attendance->date->format('M d, Y') }}
+                        <strong>Date:</strong> {{ $attendance->attendance_date->format('M d, Y') }}
                     </div>
                     <div class="col-md-3">
                         <strong>Total Students:</strong> {{ $students->count() }}
@@ -68,7 +69,8 @@
         </div>
 
         <!-- Attendance Form -->
-        <form action="{{ route('admin.attendance.save-manual', $attendance->id) }}" method="POST" id="attendanceForm">
+        <form action="{{ route('tenant.modules.attendance.save-records', $attendance->id) }}" method="POST"
+            id="attendanceForm">
             @csrf
 
             <div class="card">

@@ -21,7 +21,7 @@ class MaterialController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $query = LearningMaterial::whereIn('class_id', $classIds)
             ->with(['class', 'subject', 'teacher']);
@@ -82,7 +82,7 @@ class MaterialController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $material = LearningMaterial::whereIn('class_id', $classIds)
             ->with(['class', 'subject', 'teacher'])
@@ -107,7 +107,7 @@ class MaterialController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $material = LearningMaterial::whereIn('class_id', $classIds)
             ->findOrFail($id);
@@ -168,7 +168,7 @@ class MaterialController extends Controller
         
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $materials = LearningMaterial::whereIn('class_id', $classIds)
             ->where('subject_id', $subjectId)

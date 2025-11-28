@@ -6,15 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected function centralConnection(): string
+    {
+        return config(
+            'tenancy.database.central_connection',
+            config('database.central_connection', config('database.default'))
+        );
+    }
+
     public function getConnection()
     {
         // Ensure this migration runs on central connection
-        return config('tenancy.database.central_connection');
+        return $this->centralConnection();
     }
 
     public function up(): void
     {
-        Schema::connection($this->getConnection())->create('landlord_dunning_policies', function (Blueprint $table) {
+        Schema::connection($this->centralConnection())->create('landlord_dunning_policies', function (Blueprint $table) {
             $table->id();
             $table->string('name')->default('Default Policy');
             // Thresholds and grace periods (days)
@@ -53,6 +61,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection($this->getConnection())->dropIfExists('landlord_dunning_policies');
+        Schema::connection($this->centralConnection())->dropIfExists('landlord_dunning_policies');
     }
 };

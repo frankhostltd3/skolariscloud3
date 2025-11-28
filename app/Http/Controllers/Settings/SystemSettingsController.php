@@ -83,7 +83,7 @@ class SystemSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.system.edit')
+        return redirect()->route('tenant.settings.admin.system')
             ->with('status', 'System information updated successfully.');
     }
 
@@ -103,7 +103,7 @@ class SystemSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.system.edit')
+        return redirect()->route('tenant.settings.admin.system')
             ->with('status', 'Performance settings updated successfully.');
     }
 
@@ -127,7 +127,7 @@ class SystemSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.system.edit')
+        return redirect()->route('tenant.settings.admin.system')
             ->with('status', 'Security settings updated successfully.');
     }
 
@@ -145,14 +145,14 @@ class SystemSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.system.edit')
+        return redirect()->route('tenant.settings.admin.system')
             ->with('status', 'Maintenance settings updated successfully.');
     }
 
     private function updateUserApproval(Request $request)
     {
         $validated = $request->validate([
-            'user_approval_mode' => 'required|in:manual,email_verification,automatic',
+            'user_approval_mode' => 'required|in:manual,email_verification,automatic,otp_approval',
             'auto_approve_teachers' => 'nullable|boolean',
             'auto_approve_students' => 'nullable|boolean',
             'auto_approve_parents' => 'nullable|boolean',
@@ -172,7 +172,7 @@ class SystemSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.system.edit')
+        return redirect()->route('tenant.settings.admin.system')
             ->with('status', 'User approval settings updated successfully.');
     }
 

@@ -22,7 +22,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('settings.messaging.update') }}" novalidate>
+                    <form method="POST" action="{{ route('tenant.settings.admin.messaging.update') }}" novalidate>
                         @csrf
                         @method('PUT')
 

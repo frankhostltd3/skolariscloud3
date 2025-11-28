@@ -37,7 +37,7 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('admin.attendance.index') }}">
+                                    <a class="dropdown-item" href="{{ route('tenant.modules.attendance.index') }}">
                                         <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>Classroom Attendance
                                     </a>
                                 </li>
@@ -55,7 +55,7 @@
                                     <hr class="dropdown-divider">
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('admin.attendance.kiosk') }}">
+                                    <a class="dropdown-item" href="{{ route('tenant.modules.attendance.kiosk') }}">
                                         <i class="fas fa-fingerprint me-2 text-info"></i>Fingerprint/Kiosk Mode
                                     </a>
                                 </li>

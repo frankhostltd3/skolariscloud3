@@ -88,7 +88,7 @@ class PositionsController extends Controller
     {
         $this->authorize('create', Position::class);
         $position = Position::create($request->validated());
-        return redirect()->route('tenant.modules.human_resources.positions.index')->with('success', 'Position created successfully.');
+        return redirect()->route('tenant.modules.human-resource.positions.index')->with('success', 'Position created successfully.');
     }
 
     public function show(Position $position): View
@@ -108,14 +108,14 @@ class PositionsController extends Controller
     {
         $this->authorize('update', $position);
         $position->update($request->validated());
-        return redirect()->route('tenant.modules.human_resources.positions.index')->with('success', 'Position updated successfully.');
+        return redirect()->route('tenant.modules.human-resource.positions.index')->with('success', 'Position updated successfully.');
     }
 
     public function destroy(Position $position): RedirectResponse
     {
         $this->authorize('delete', $position);
         $position->delete();
-        return redirect()->route('tenant.modules.human_resources.positions.index')->with('success', 'Position deleted successfully.');
+        return redirect()->route('tenant.modules.human-resource.positions.index')->with('success', 'Position deleted successfully.');
     }
 }
 

@@ -22,7 +22,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('settings.payments.update') }}" novalidate>
+                    <form method="POST" action="{{ route('tenant.settings.admin.finance.update') }}" novalidate>
                         @csrf
                         @method('PUT')
 

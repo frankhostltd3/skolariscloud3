@@ -10,6 +10,8 @@ class OnlineExamAnswer extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'online_exam_attempt_id',
         'online_exam_question_id',

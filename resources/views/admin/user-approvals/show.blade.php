@@ -111,6 +111,25 @@
                                 </tr>
                             @endif
 
+                            @if (isset($user->registration_data['student_profile']))
+                                @php($profile = $user->registration_data['student_profile'])
+                                <tr>
+                                    <th>{{ __('Academic Snapshot') }}</th>
+                                    <td>
+                                        <div class="d-flex flex-column small">
+                                            <span><strong>{{ __('Class:') }}</strong>
+                                                {{ $profile['class_id'] ?? __('n/a') }}</span>
+                                            <span><strong>{{ __('Stream:') }}</strong>
+                                                {{ $profile['class_stream_id'] ?? __('n/a') }}</span>
+                                            <span><strong>{{ __('Academic Year:') }}</strong>
+                                                {{ $profile['academic_year_id'] ?? __('n/a') }}</span>
+                                            <span><strong>{{ __('Admission #:') }}</strong>
+                                                {{ $profile['admission_no'] ?? __('n/a') }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
+
                             @if (empty($user->registration_data))
                                 <tr>
                                     <td colspan="2" class="text-muted">{{ __('No additional data provided') }}</td>
@@ -155,6 +174,12 @@
                             data-bs-target="#employmentModal">
                             <i class="bi bi-briefcase"></i> {{ __('Edit Employment') }}
                         </button>
+                        @if (in_array($user->user_type?->value ?? $user->user_type, ['teaching_staff', 'general_staff', 'admin']))
+                            <button class="btn btn-outline-info w-100 mb-2" data-bs-toggle="modal"
+                                data-bs-target="#changeTypeModal">
+                                <i class="bi bi-arrow-left-right"></i> {{ __('Change Staff Type') }}
+                            </button>
+                        @endif
                         @if ($user->is_active)
                             <form method="POST" action="{{ route('admin.user-approvals.suspend', $user) }}"
                                 class="mb-2">
@@ -184,6 +209,15 @@
                                 <i class="bi bi-slash-circle"></i> {{ __('Expel / Terminate') }}
                             </button>
                         </form>
+                        @if ($user->hasRole('Student') || $user->hasUserType(\App\Enums\UserType::STUDENT))
+                            <form method="POST" action="{{ route('admin.user-approvals.sync-student', $user) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-success w-100"
+                                    onclick="return confirm('{{ __('Rebuild the student profile and enrollment from this approval?') }}')">
+                                    <i class="bi bi-arrow-repeat"></i> {{ __('Sync Student Profile') }}
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
@@ -313,6 +347,66 @@
                                 data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             <button type="submit" class="btn btn-danger">
                                 <i class="bi bi-x-circle"></i> {{ __('Reject Registration') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Change Staff Type Modal -->
+    @if (in_array($user->user_type?->value ?? $user->user_type, ['teaching_staff', 'general_staff', 'admin']))
+        <div class="modal fade" id="changeTypeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.staff.change-type', $user) }}">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ __('Change Staff Type for') }} {{ $user->name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                {{ __('Current Type:') }}
+                                <strong>{{ $user->user_type instanceof \App\Enums\UserType ? $user->user_type->label() : ucwords(str_replace('_', ' ', $user->user_type)) }}</strong>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_user_type" class="form-label">{{ __('New Staff Type') }}</label>
+                                <select name="new_user_type" id="new_user_type" class="form-select" required>
+                                    <option value="">{{ __('-- Select New Type --') }}</option>
+                                    <option value="teaching_staff">
+                                        {{ __('Teaching Staff (Teacher)') }}
+                                    </option>
+                                    <option value="general_staff">
+                                        {{ __('General Staff (Non-Teaching)') }}
+                                    </option>
+                                    <option value="admin">
+                                        {{ __('Administrator') }}
+                                    </option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    {{ __('Switching to Teaching Staff will create a Teacher record. Switching away will deactivate it.') }}
+                                </small>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="sync_role" id="sync_role"
+                                    value="1" checked>
+                                <label class="form-check-label" for="sync_role">
+                                    {{ __('Also update Spatie role (Teacher/Staff/Admin)') }}
+                                </label>
+                            </div>
+                            <div class="alert alert-warning mt-3">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                {{ __('This action will update the user type, role, and related records (Teacher, Employee).') }}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-arrow-left-right"></i> {{ __('Change Type') }}
                             </button>
                         </div>
                     </form>

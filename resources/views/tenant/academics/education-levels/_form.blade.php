@@ -78,8 +78,7 @@
     <button type="submit" class="btn btn-primary">
         <i class="bi bi-check-circle me-1"></i>{{ $buttonText }}
     </button>
-    <a href="{{ url('/tenant/academics/education-levels') }}" class="btn btn-outline-secondary">
+    <a href="{{ route('tenant.academics.education-levels.index') }}" class="btn btn-outline-secondary">
         {{ __('Cancel') }}
     </a>
 </div>
-

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillingPlan;
+use App\Services\RegistrationPipelineService;
 use Illuminate\Contracts\View\View;
 
 class LandingPageController extends Controller
@@ -60,7 +61,8 @@ class LandingPageController extends Controller
         ];
 
         $plans = BillingPlan::query()->active()->ordered()->get();
+        $registrationSummary = app(RegistrationPipelineService::class)->landingSummary();
 
-        return view('welcome', compact('features', 'testimonials', 'plans'));
+        return view('welcome', compact('features', 'testimonials', 'plans', 'registrationSummary'));
     }
 }

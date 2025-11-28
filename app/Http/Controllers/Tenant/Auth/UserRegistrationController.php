@@ -49,6 +49,11 @@ class UserRegistrationController extends Controller
             'role' => ['required', Rule::in($roleOptions)],
         ]);
 
+        $schoolId = config('tenant.school_id');
+        if (!$schoolId && app()->bound('currentSchool')) {
+            $schoolId = app('currentSchool')->id;
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -56,8 +61,9 @@ class UserRegistrationController extends Controller
             'password_changed_at' => now(),
             'email_verified_at' => setting('email_verification_required') ? null : now(),
             'approval_status' => 'pending', // New users require approval
+            'school_id' => $schoolId,
         ]);
-        
+
         // Ensure role exists for this tenant (guards against mis-seeded tenants)
         $roleMap = [
             'Staff' => 'staff',
@@ -66,27 +72,27 @@ class UserRegistrationController extends Controller
         ];
         $requestedRole = $request->role;
         $roleName = $roleMap[$requestedRole] ?? strtolower($requestedRole);
-        
+
         // In a tenancy context, we may be using team_id scoping; replicate seeding logic
         $teamKey = config('permission.column_names.team_foreign_key', 'team_id');
-        $teamId = function_exists('tenant') && tenant() ? tenant()->getTenantKey() : null;
-        
+        $teamId = function_exists('tenant') && tenant() ? tenant()->getKey() : null;
+
         try {
             if ($teamId !== null) {
                 // Set team context so spatie/permission attaches correctly
                 app(PermissionRegistrar::class)->setPermissionsTeamId($teamId);
             }
-            
+
             // Ensure role exists for this tenant
             Role::firstOrCreate([
                 'name' => $roleName,
                 'guard_name' => 'web',
                 $teamKey => $teamId,
             ]);
-            
+
             // Assign role to user
             $user->assignRole($roleName);
-            
+
             // Reset permission team context after successful assignment
             if ($teamId !== null) {
                 app(PermissionRegistrar::class)->setPermissionsTeamId(null);
@@ -96,7 +102,7 @@ class UserRegistrationController extends Controller
             if ($teamId !== null) {
                 app(PermissionRegistrar::class)->setPermissionsTeamId(null);
             }
-            
+
             // Clean up created user if role assignment fails
             $user->delete();
             return back()->withInput()->withErrors([

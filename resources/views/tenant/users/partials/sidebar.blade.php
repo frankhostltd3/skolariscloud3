@@ -25,7 +25,7 @@
       <i class="bi bi-mortarboard-fill me-2"></i>{{ __('Students') }}
       <span class="badge bg-success bg-opacity-10 text-success float-end">{{ __('Enhanced') }}</span>
     </a>
-    <a class="list-group-item list-group-item-action {{ request()->routeIs('tenant.modules.human_resources.employees*') ? 'active' : '' }}" href="{{ route('tenant.modules.human_resources.employees.index') }}">
+    <a class="list-group-item list-group-item-action {{ request()->routeIs('tenant.modules.human-resource.employees*') ? 'active' : '' }}" href="{{ route('tenant.modules.human-resource.employees.index') }}">
       <i class="bi bi-person-badge me-2"></i>{{ __('Employees') }}
       <span class="badge bg-success bg-opacity-10 text-success float-end">{{ __('Enhanced') }}</span>
     </a>

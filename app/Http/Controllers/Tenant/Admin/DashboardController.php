@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Academic\ClassRoom;
 use App\Models\Employee;
+use App\Services\RegistrationPipelineService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -277,6 +278,9 @@ class DashboardController extends Controller
             ];
         }
 
+        $registrationOverview = app(RegistrationPipelineService::class)->adminOverview();
+        $latestApplicants = collect($registrationOverview['latest'] ?? []);
+
         return view('tenant.admin.dashboard', compact(
             'activeStudentsCount',
             'staffCount',
@@ -287,7 +291,9 @@ class DashboardController extends Controller
             'recentEnrollments',
             'studentsByClass',
             'recentActivities',
-            'criticalAlerts'
+            'criticalAlerts',
+            'registrationOverview',
+            'latestApplicants'
         ));
     }
 }

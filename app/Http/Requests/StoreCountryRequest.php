@@ -11,7 +11,7 @@ class StoreCountryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,15 @@ class StoreCountryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'iso_code_2' => 'required|string|size:2|unique:countries,iso_code_2',
+            'iso_code_3' => 'required|string|size:3|unique:countries,iso_code_3',
+            'phone_code' => 'nullable|string|max:20',
+            'currency_code' => 'nullable|string|max:3',
+            'currency_symbol' => 'nullable|string|max:10',
+            'timezone' => 'nullable|string|max:100',
+            'flag_emoji' => 'nullable|string|max:10',
+            'is_active' => 'boolean',
         ];
     }
 }

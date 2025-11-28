@@ -260,7 +260,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="{{ route('home') }}">
+            <a class="navbar-brand" href="{{ url('/') }}">
                 <i class="bi bi-mortarboard-fill"></i> SMATCAMPUS
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -269,23 +269,32 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#features">Features</a>
+                        <a class="nav-link" href="{{ url('/') }}#features">Features</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#pricing">Pricing</a>
+                        <a class="nav-link" href="{{ url('/') }}#pricing">Pricing</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#testimonials">Testimonials</a>
+                        <a class="nav-link" href="{{ url('/') }}#testimonials">Testimonials</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#faq">FAQ</a>
+                        <a class="nav-link" href="{{ url('/') }}#faq">FAQ</a>
                     </li>
+                    @if (function_exists('tenant') &&
+                            tenant() &&
+                            function_exists('setting') &&
+                            setting('bookstore_enabled') &&
+                            Route::has('tenant.bookstore.index'))
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('tenant.bookstore.index') }}">Bookstore</a>
+                        </li>
+                    @endif
                     @guest
                         <li class="nav-item ms-lg-3">
-                            <a class="btn btn-outline-primary" href="{{ route('register') }}">Register Your School</a>
+                            <a class="btn btn-outline-primary" href="{{ url('/register') }}">Register Your School</a>
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="btn btn-outline-primary" href="{{ route('login') }}">Login</a>
+                            <a class="btn btn-outline-primary" href="{{ url('/login') }}">Login</a>
                         </li>
                         <li class="nav-item ms-2">
                             <a class="btn btn-primary" href="#contact">Contact Sales</a>
@@ -293,30 +302,52 @@
                     @else
                         @php($navUser = auth()->user())
                         @if ($navUser && $navUser->hasUserType(\App\Enums\UserType::ADMIN))
-                            <li class="nav-item ms-lg-3">
-                                <a class="btn btn-outline-primary" href="{{ route('settings.index') }}">Settings</a>
-                            </li>
+                            @if (Route::has('settings.index'))
+                                <li class="nav-item ms-lg-3">
+                                    <a class="btn btn-outline-primary" href="{{ route('settings.index') }}">Settings</a>
+                                </li>
+                            @elseif(Route::has('tenant.settings.admin.general'))
+                                <li class="nav-item ms-lg-3">
+                                    <a class="btn btn-outline-primary"
+                                        href="{{ route('tenant.settings.admin.general') }}">Settings</a>
+                                </li>
+                            @endif
+
+                            @if (Route::has('settings.payments.edit'))
+                                <li class="nav-item ms-2">
+                                    <a class="btn btn-outline-primary" href="{{ route('settings.payments.edit') }}">Payment
+                                        Settings</a>
+                                </li>
+                            @elseif(Route::has('tenant.settings.admin.finance'))
+                                <li class="nav-item ms-2">
+                                    <a class="btn btn-outline-primary"
+                                        href="{{ route('tenant.settings.admin.finance') }}">Payment
+                                        Settings</a>
+                                </li>
+                            @endif
+
                             <li class="nav-item ms-2">
-                                <a class="btn btn-outline-primary" href="{{ route('settings.payments.edit') }}">Payment
-                                    Settings</a>
-                            </li>
-                            <li class="nav-item ms-2">
-                                <a class="btn btn-outline-primary" href="{{ route('dashboard') }}">Dashboard</a>
+                                <a class="btn btn-outline-primary"
+                                    href="{{ Route::has('dashboard') ? route('dashboard') : (Route::has('tenant.dashboard') ? route('tenant.dashboard') : url('/dashboard')) }}">Dashboard</a>
                             </li>
                         @else
                             <li class="nav-item ms-lg-3">
-                                <a class="btn btn-outline-primary" href="{{ route('dashboard') }}">Dashboard</a>
+                                <a class="btn btn-outline-primary"
+                                    href="{{ Route::has('dashboard') ? route('dashboard') : (Route::has('tenant.dashboard') ? route('tenant.dashboard') : url('/dashboard')) }}">Dashboard</a>
                             </li>
                         @endif
-                        <li class="nav-item ms-2">
-                            <form method="POST" action="{{ route('tenant.logout') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="dropdown-item">
-                                    <i class="bi bi-box-arrow-right me-2"></i>
-                                    {{ __('Logout') }}
-                                </button>
-                            </form>
-                        </li>
+                        @php($logoutRouteName = Route::has('tenant.logout') ? 'tenant.logout' : (Route::has('logout') ? 'logout' : null))
+                        @if ($logoutRouteName)
+                            <li class="nav-item ms-2">
+                                <form method="POST" action="{{ route($logoutRouteName) }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right me-2"></i>
+                                        {{ __('Logout') }}
+                                    </button>
+                                </form>
+                            </li>
+                        @endif
                     @endguest
                 </ul>
             </div>

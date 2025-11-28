@@ -86,12 +86,15 @@ class FeeStructureController extends Controller
             'class' => 'nullable|string|max:191',
             'due_date' => 'nullable|date',
             'is_mandatory' => 'boolean',
+            'is_recurring' => 'boolean',
+            'frequency' => 'nullable|string|in:once,per_term,per_year',
             'is_active' => 'boolean',
             'description' => 'nullable|string',
         ]);
 
         $validated['school_id'] = $school->id;
         $validated['is_mandatory'] = $request->has('is_mandatory');
+        $validated['is_recurring'] = $request->has('is_recurring');
         $validated['is_active'] = $request->has('is_active');
 
         FeeStructure::create($validated);
@@ -139,11 +142,14 @@ class FeeStructureController extends Controller
             'class' => 'nullable|string|max:191',
             'due_date' => 'nullable|date',
             'is_mandatory' => 'boolean',
+            'is_recurring' => 'boolean',
+            'frequency' => 'nullable|string|in:once,per_term,per_year',
             'is_active' => 'boolean',
             'description' => 'nullable|string',
         ]);
 
         $validated['is_mandatory'] = $request->has('is_mandatory');
+        $validated['is_recurring'] = $request->has('is_recurring');
         $validated['is_active'] = $request->has('is_active');
 
         $feeStructure->update($validated);

@@ -8,7 +8,10 @@ use Illuminate\Http\Request;
 use App\Models\Academic\ClassRoom;
 use App\Models\Subject;
 use App\Models\Grade;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Validation\Rule;
 
 class GradesController extends Controller
 {
@@ -18,6 +21,11 @@ class GradesController extends Controller
     public function index(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $schema = Schema::connection($connection);
+        $hasGradesTable = $schema->hasTable('grades');
 
         // Filters
         $classId = $request->query('class_id');
@@ -55,59 +63,84 @@ class GradesController extends Controller
             $query->whereDate('assessment_date', '<=', \Carbon\Carbon::parse($endDate)->toDateString());
         }
 
-        $grades = $query->paginate(20)->appends($request->query());
+        if ($hasGradesTable) {
+            $grades = $query->paginate(20)->appends($request->query());
+        } else {
+            $grades = new LengthAwarePaginator([], 0, 20, 1, [
+                'path' => $request->url(),
+                'pageName' => 'page',
+            ]);
+        }
 
         // For filter dropdowns: only classes/subjects the teacher is associated with
-        $classes = ClassRoom::where('class_teacher_id', $teacher->id)
-            ->orWhereHas('subjects', function ($q) use ($teacher) {
-                $q->where('class_subjects.teacher_id', $teacher->id);
-            })
+        $classes = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn)
             ->orderBy('name')
             ->get();
 
-        $subjects = Subject::whereHas('classes', function ($q) use ($teacher) {
-                $q->where('class_subjects.teacher_id', $teacher->id);
-            })
-            ->orderBy('name')
-            ->get();
+        $subjects = $classSubjectTable
+            ? $this->teacherSubjectsQuery($teacher->id, $classSubjectTable)->orderBy('subjects.name')->get()
+            : collect();
 
         // Subject distribution (counts by subject for this teacher and current filters except student name)
-        $distQuery = Grade::query()->where('teacher_id', $teacher->id);
-        if ($classId) $distQuery->where('class_id', $classId);
-        if ($subjectId) $distQuery->where('subject_id', $subjectId);
-        if ($assessmentType) $distQuery->where('assessment_type', $assessmentType);
-        if ($startDate && $endDate) {
-            $distQuery->whereBetween('assessment_date', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()]);
-        } elseif ($startDate) {
-            $distQuery->whereDate('assessment_date', '>=', \Carbon\Carbon::parse($startDate)->toDateString());
-        } elseif ($endDate) {
-            $distQuery->whereDate('assessment_date', '<=', \Carbon\Carbon::parse($endDate)->toDateString());
-        }
-        $subjectCounts = $distQuery->selectRaw('subject_id, COUNT(*) as cnt')->groupBy('subject_id')->pluck('cnt', 'subject_id');
-        $labelsById = $subjects->keyBy('id')->map->name->toArray();
-        $ids = array_keys($subjectCounts->toArray());
-        $chartLabels = array_map(function ($id) use ($labelsById) {
-            return $labelsById[$id] ?? ('Subject ' . $id);
-        }, $ids);
-        $chartCounts = array_values($subjectCounts->toArray());
+        if ($hasGradesTable) {
+            $distQuery = Grade::query()->where('teacher_id', $teacher->id);
+            if ($classId) $distQuery->where('class_id', $classId);
+            if ($subjectId) $distQuery->where('subject_id', $subjectId);
+            if ($assessmentType) $distQuery->where('assessment_type', $assessmentType);
+            if ($startDate && $endDate) {
+                $distQuery->whereBetween('assessment_date', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()]);
+            } elseif ($startDate) {
+                $distQuery->whereDate('assessment_date', '>=', \Carbon\Carbon::parse($startDate)->toDateString());
+            } elseif ($endDate) {
+                $distQuery->whereDate('assessment_date', '<=', \Carbon\Carbon::parse($endDate)->toDateString());
+            }
+            $subjectCounts = $distQuery->selectRaw('subject_id, COUNT(*) as cnt')->groupBy('subject_id')->pluck('cnt', 'subject_id');
+            $labelsById = $subjects->keyBy('id')->map->name->toArray();
+            $ids = array_keys($subjectCounts->toArray());
+            $chartLabels = array_map(function ($id) use ($labelsById) {
+                return $labelsById[$id] ?? ('Subject ' . $id);
+            }, $ids);
+            $chartCounts = array_values($subjectCounts->toArray());
 
-        // Assessment type distribution
-        $typeQuery = Grade::query()->where('teacher_id', $teacher->id);
-        if ($classId) $typeQuery->where('class_id', $classId);
-        if ($subjectId) $typeQuery->where('subject_id', $subjectId);
-        if ($assessmentType) $typeQuery->where('assessment_type', $assessmentType);
-        if ($startDate && $endDate) {
-            $typeQuery->whereBetween('assessment_date', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()]);
-        } elseif ($startDate) {
-            $typeQuery->whereDate('assessment_date', '>=', \Carbon\Carbon::parse($startDate)->toDateString());
-        } elseif ($endDate) {
-            $typeQuery->whereDate('assessment_date', '<=', \Carbon\Carbon::parse($endDate)->toDateString());
+            // Assessment type distribution
+            $typeQuery = Grade::query()->where('teacher_id', $teacher->id);
+            if ($classId) $typeQuery->where('class_id', $classId);
+            if ($subjectId) $typeQuery->where('subject_id', $subjectId);
+            if ($assessmentType) $typeQuery->where('assessment_type', $assessmentType);
+            if ($startDate && $endDate) {
+                $typeQuery->whereBetween('assessment_date', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()]);
+            } elseif ($startDate) {
+                $typeQuery->whereDate('assessment_date', '>=', \Carbon\Carbon::parse($startDate)->toDateString());
+            } elseif ($endDate) {
+                $typeQuery->whereDate('assessment_date', '<=', \Carbon\Carbon::parse($endDate)->toDateString());
+            }
+            $typeCounts = $typeQuery->selectRaw('assessment_type, COUNT(*) as cnt')->groupBy('assessment_type')->pluck('cnt', 'assessment_type')->toArray();
+            $typeLabels = array_map('ucfirst', array_keys($typeCounts));
+            $typeValues = array_values($typeCounts);
+        } else {
+            $chartLabels = [];
+            $chartCounts = [];
+            $typeLabels = [];
+            $typeValues = [];
         }
-        $typeCounts = $typeQuery->selectRaw('assessment_type, COUNT(*) as cnt')->groupBy('assessment_type')->pluck('cnt', 'assessment_type')->toArray();
-        $typeLabels = array_map('ucfirst', array_keys($typeCounts));
-        $typeValues = array_values($typeCounts);
 
-        return view('tenant.teacher.grades.index', compact('grades', 'classes', 'subjects', 'classId', 'subjectId', 'studentQ', 'assessmentType', 'startDate', 'endDate', 'chartLabels', 'chartCounts', 'typeLabels', 'typeValues'));
+        $gradesTableMissing = ! $hasGradesTable;
+        return view('tenant.teacher.grades.index', compact(
+            'grades',
+            'classes',
+            'subjects',
+            'classId',
+            'subjectId',
+            'studentQ',
+            'assessmentType',
+            'startDate',
+            'endDate',
+            'chartLabels',
+            'chartCounts',
+            'typeLabels',
+            'typeValues',
+            'gradesTableMissing'
+        ));
     }
 
     /**
@@ -116,6 +149,12 @@ class GradesController extends Controller
     public function exportCsv(Request $request): StreamedResponse
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+
+        if (! Schema::connection($connection)->hasTable('grades')) {
+            return redirect()->route('tenant.teacher.grades.index')
+                ->with('error', 'Grades cannot be exported because grading is not enabled for this school.');
+        }
 
         $classId = $request->query('class_id');
         $subjectId = $request->query('subject_id');
@@ -179,6 +218,14 @@ class GradesController extends Controller
     public function create(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $schema = Schema::connection($connection);
+        if (! $schema->hasTable('grades')) {
+            return redirect()->route('tenant.teacher.grades.index')
+                ->with('error', 'Grades cannot be entered because grading is not enabled for this school.');
+        }
         $classId = $request->query('class_id');
         $subjectId = $request->query('subject_id');
         $studentId = $request->query('student_id');
@@ -196,8 +243,7 @@ class GradesController extends Controller
             }
 
             // Verify teacher has access to this class/subject combination
-            $hasAccess = $class->class_teacher_id === $teacher->id ||
-                        $class->subjects()->wherePivot('teacher_id', $teacher->id)->where('subjects.id', $subjectId)->exists();
+            $hasAccess = $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn, (int) $subjectId);
 
             if (!$hasAccess) {
                 return redirect()->route('tenant.teacher.grades.create')
@@ -207,10 +253,7 @@ class GradesController extends Controller
             return view('tenant.teacher.grades.create', compact('class', 'subject', 'student'));
         }
 
-        $classes = ClassRoom::where('class_teacher_id', $teacher->id)
-            ->orWhereHas('subjects', function ($q) use ($teacher) {
-                $q->where('class_subjects.teacher_id', $teacher->id);
-            })
+        $classes = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn)
             ->orderBy('name')
             ->get();
 
@@ -218,13 +261,14 @@ class GradesController extends Controller
         if ($classId) {
             $class = ClassRoom::find($classId);
             if ($class) {
-                $subjects = $class->subjects()->wherePivot('teacher_id', $teacher->id)->orderBy('name')->get();
+                $subjects = $classSubjectTable
+                    ? $class->subjects()->where($classSubjectTable . '.teacher_id', $teacher->id)->orderBy('name')->get()
+                    : collect();
             }
         } else {
-            $subjects = Subject::whereHas('classes', function ($q) use ($teacher) {
-                $q->where('class_subjects.teacher_id', $teacher->id);
-            })
-                ->orderBy('name')->get();
+            $subjects = $classSubjectTable
+                ? $this->teacherSubjectsQuery($teacher->id, $classSubjectTable)->orderBy('subjects.name')->get()
+                : collect();
         }
 
         $students = collect();
@@ -245,13 +289,36 @@ class GradesController extends Controller
     public function store(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        if (! Schema::connection($connection)->hasTable('grades')) {
+            return redirect()->route('tenant.teacher.grades.index')
+                ->with('error', 'Grades cannot be saved because grading is not enabled for this school.');
+        }
+
+        // Get configured assessment types
+        $assessmentConfig = setting('assessment_configuration');
+        $allowedTypes = ['quiz', 'test', 'exam', 'assignment', 'project', 'homework', 'participation', 'other'];
+
+        if ($assessmentConfig && is_array($assessmentConfig)) {
+            foreach ($assessmentConfig as $config) {
+                $code = $config['code'] ?? $config['name'];
+                if ($code) {
+                    $allowedTypes[] = $code;
+                    // Also allow lowercase version just in case
+                    $allowedTypes[] = strtolower($code);
+                }
+            }
+        }
+        $allowedTypes = array_unique($allowedTypes);
 
         $validated = $request->validate([
             'student_id' => 'required|exists:users,id',
             'class_id' => 'required|exists:classes,id',
             'subject_id' => 'required|exists:subjects,id',
             'assessment_name' => 'required|string|max:255',
-            'assessment_type' => 'required|in:quiz,test,exam,assignment,project,homework,participation,other',
+            'assessment_type' => ['required', Rule::in($allowedTypes)],
             'marks_obtained' => 'required|numeric|min:0',
             'total_marks' => 'required|numeric|min:0.01',
             'assessment_date' => 'required|date',
@@ -261,8 +328,9 @@ class GradesController extends Controller
 
         // Verify teacher has access to this class/subject combination
         $class = ClassRoom::find($validated['class_id']);
-        $hasAccess = $class->class_teacher_id === $teacher->id ||
-                    $class->subjects()->wherePivot('teacher_id', $teacher->id)->where('subjects.id', $validated['subject_id'])->exists();
+        $hasAccess = $class
+            ? $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn, (int) $validated['subject_id'])
+            : false;
 
         if (!$hasAccess) {
             return redirect()->route('tenant.teacher.grades.create')
@@ -304,5 +372,84 @@ class GradesController extends Controller
 
         return redirect()->route('tenant.teacher.grades.index')
             ->with('success', 'Grade saved successfully!');
+    }
+
+    private function resolveClassSubjectTable(string $connection): ?string
+    {
+        foreach (['class_subjects', 'class_subject'] as $candidate) {
+            if (tenant_table_exists($candidate, $connection)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function teacherClassesQuery(int $teacherId, ?string $classSubjectTable, bool $hasClassTeacherColumn)
+    {
+        $query = ClassRoom::query();
+
+        $query->where(function ($builder) use ($teacherId, $classSubjectTable, $hasClassTeacherColumn) {
+            $applied = false;
+
+            if ($hasClassTeacherColumn) {
+                $builder->where('class_teacher_id', $teacherId);
+                $applied = true;
+            }
+
+            if ($classSubjectTable) {
+                $constraint = function ($subjectQuery) use ($teacherId, $classSubjectTable) {
+                    $subjectQuery->where($classSubjectTable . '.teacher_id', $teacherId);
+                };
+
+                if ($applied) {
+                    $builder->orWhereHas('subjects', $constraint);
+                } else {
+                    $builder->whereHas('subjects', $constraint);
+                }
+
+                $applied = true;
+            }
+
+            if (! $applied) {
+                $builder->whereRaw('0 = 1');
+            }
+        });
+
+        return $query;
+    }
+
+    private function teacherHasClassSubjectAccess(ClassRoom $class, int $teacherId, ?string $classSubjectTable, bool $hasClassTeacherColumn, ?int $subjectId = null): bool
+    {
+        $isClassTeacher = $hasClassTeacherColumn && $class->class_teacher_id === $teacherId;
+
+        if ($isClassTeacher) {
+            return true;
+        }
+
+        if (! $classSubjectTable) {
+            return false;
+        }
+
+        $subjectQuery = $class->subjects()->where($classSubjectTable . '.teacher_id', $teacherId);
+
+        if ($subjectId) {
+            $subjectQuery->where('subjects.id', $subjectId);
+        }
+
+        return $subjectQuery->exists();
+    }
+
+    private function teacherSubjectsQuery(int $teacherId, ?string $classSubjectTable)
+    {
+        if (! $classSubjectTable) {
+            return Subject::query()->whereRaw('0 = 1');
+        }
+
+        return Subject::query()
+            ->select('subjects.*')
+            ->join($classSubjectTable, $classSubjectTable . '.subject_id', '=', 'subjects.id')
+            ->where($classSubjectTable . '.teacher_id', $teacherId)
+            ->distinct();
     }
 }

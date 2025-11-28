@@ -7,7 +7,7 @@
 @section('content')
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 fw-semibold mb-0">{{ __('Edit Class') }}: {{ $class->name }}</h1>
-        <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
+        <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
             <i class="bi bi-arrow-left me-1"></i>{{ __('Back to Classes') }}
         </a>
     </div>
@@ -50,4 +50,3 @@
         </div>
     </div>
 @endsection
-

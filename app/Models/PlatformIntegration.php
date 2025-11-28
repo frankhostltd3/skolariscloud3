@@ -22,11 +22,17 @@ class PlatformIntegration extends Model
         'refresh_token',
         'token_expires_at',
         'additional_settings',
+        'managed_by_admin',
+        'status',
+        'status_message',
+        'last_tested_at',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
         'token_expires_at' => 'datetime',
+        'managed_by_admin' => 'boolean',
+        'last_tested_at' => 'datetime',
         'additional_settings' => 'array',
     ];
 
@@ -103,6 +109,11 @@ class PlatformIntegration extends Model
                ($this->api_key !== null || $this->client_id !== null);
     }
 
+    public function managedByAdmin(): bool
+    {
+        return (bool) $this->managed_by_admin;
+    }
+
     /**
      * Check if token is expired
      */
@@ -116,10 +127,30 @@ class PlatformIntegration extends Model
     }
 
     /**
+     * Determine if the integrations table exists for the current tenant connection.
+     */
+    public static function tableExists(): bool
+    {
+        $instance = new static();
+
+        try {
+            $connection = $instance->getConnectionName() ?? $instance->getConnection()->getName();
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return tenant_table_exists($instance->getTable(), $connection);
+    }
+
+    /**
      * Get platform configuration by name
      */
     public static function getByPlatform(string $platform): ?self
     {
+        if (! static::tableExists()) {
+            return null;
+        }
+
         return static::where('platform', $platform)->first();
     }
 }

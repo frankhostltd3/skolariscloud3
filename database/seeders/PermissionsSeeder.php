@@ -197,11 +197,11 @@ class PermissionsSeeder extends Seeder
         // Create roles and assign permissions
 
         // Super Admin - All permissions
-        $superAdmin = Role::create(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = Role::create(['name' => 'Super-Admin', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo(Permission::all());
 
         // Admin - Most permissions except super admin privileges
-        $admin = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
         $admin->givePermissionTo(Permission::whereNotIn('name', [
             'settings.system',
             'roles.delete',
@@ -209,7 +209,7 @@ class PermissionsSeeder extends Seeder
         ])->get());
 
         // Teacher - Teaching and student management
-        $teacher = Role::create(['name' => 'teacher', 'guard_name' => 'web']);
+        $teacher = Role::create(['name' => 'Teacher', 'guard_name' => 'web']);
         $teacher->givePermissionTo([
             'students.view', 'students.edit',
             'classes.view', 'classes.assign',
@@ -226,7 +226,7 @@ class PermissionsSeeder extends Seeder
         ]);
 
         // Student - View only permissions
-        $student = Role::create(['name' => 'student', 'guard_name' => 'web']);
+        $student = Role::create(['name' => 'Student', 'guard_name' => 'web']);
         $student->givePermissionTo([
             'classes.view',
             'subjects.view',
@@ -242,7 +242,7 @@ class PermissionsSeeder extends Seeder
         ]);
 
         // Parent - View student progress
-        $parent = Role::create(['name' => 'parent', 'guard_name' => 'web']);
+        $parent = Role::create(['name' => 'Parent', 'guard_name' => 'web']);
         $parent->givePermissionTo([
             'students.view',
             'attendance.view',
@@ -254,7 +254,7 @@ class PermissionsSeeder extends Seeder
         ]);
 
         // Accountant - Financial management
-        $accountant = Role::create(['name' => 'accountant', 'guard_name' => 'web']);
+        $accountant = Role::create(['name' => 'Accountant', 'guard_name' => 'web']);
         $accountant->givePermissionTo([
             'finance.view', 'finance.create', 'finance.edit',
             'fees.manage',
@@ -264,7 +264,7 @@ class PermissionsSeeder extends Seeder
         ]);
 
         // Librarian - Library management
-        $librarian = Role::create(['name' => 'librarian', 'guard_name' => 'web']);
+        $librarian = Role::create(['name' => 'Librarian', 'guard_name' => 'web']);
         $librarian->givePermissionTo([
             'library.view',
             'books.view', 'bookstore.view', 'bookstore.purchase', 'library.manage', 'library.issue', 'library.return',
@@ -274,7 +274,7 @@ class PermissionsSeeder extends Seeder
         ]);
 
         // Head of Department
-        $hod = Role::create(['name' => 'head-of-department', 'guard_name' => 'web']);
+        $hod = Role::create(['name' => 'Head-of-Department', 'guard_name' => 'web']);
         $hod->givePermissionTo([
             'students.view', 'students.edit',
             'teachers.view', 'teachers.assign',
@@ -287,9 +287,25 @@ class PermissionsSeeder extends Seeder
             'departments.view', 'departments.edit',
         ]);
 
-        $this->command->info('Permissions and roles created successfully!');
-        $this->command->info('Created roles: super-admin, admin, teacher, student, parent, accountant, librarian, head-of-department');
-        $this->command->info('Created ' . Permission::count() . ' permissions');
+        // Staff Roles
+        $staff = Role::create(['name' => 'Staff', 'guard_name' => 'web']);
+        $bursar = Role::create(['name' => 'Bursar', 'guard_name' => 'web']);
+        $nurse = Role::create(['name' => 'Nurse', 'guard_name' => 'web']);
+
+        // Assign basic permissions to staff roles
+        $staffPermissions = [
+            'messages.view',
+            'documents.view',
+            'reports.view',
+        ];
+
+        $staff->givePermissionTo($staffPermissions);
+        $bursar->givePermissionTo($accountant->permissions); // Bursar gets accountant permissions
+        $nurse->givePermissionTo($staffPermissions);
+
+        $this->command?->info('Permissions and roles created successfully!');
+        $this->command?->info('Created roles: Super-Admin, Admin, Teacher, Student, Parent, Accountant, Librarian, Head-of-Department, Staff, Bursar, Nurse');
+        $this->command?->info('Created ' . Permission::count() . ' permissions');
     }
 }
 

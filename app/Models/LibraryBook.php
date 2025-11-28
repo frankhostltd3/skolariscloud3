@@ -36,6 +36,9 @@ class LibraryBook extends Model
         'is_featured',
         'sold_count',
         'discount_percentage',
+        // Digital Product fields
+        'is_digital',
+        'digital_file_path',
     ];
 
     protected $casts = [
@@ -51,6 +54,7 @@ class LibraryBook extends Model
         'is_featured' => 'boolean',
         'sold_count' => 'integer',
         'discount_percentage' => 'decimal:2',
+        'is_digital' => 'boolean',
     ];
 
     /**
@@ -85,7 +89,7 @@ class LibraryBook extends Model
         if ($this->quantity == 0) {
             return 0;
         }
-        
+
         return (($this->quantity - $this->available_quantity) / $this->quantity) * 100;
     }
 

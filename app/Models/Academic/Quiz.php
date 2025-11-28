@@ -56,7 +56,8 @@ class Quiz extends Model
 
     public function classes(): BelongsToMany
     {
-        return $this->belongsToMany(ClassRoom::class, 'quiz_class');
+        // Older tenants created pivot column `class_id`, so define explicit keys
+        return $this->belongsToMany(ClassRoom::class, 'quiz_class', 'quiz_id', 'class_id');
     }
 
     public function attempts(): HasMany

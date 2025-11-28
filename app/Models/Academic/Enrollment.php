@@ -6,12 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
 use App\Models\Academic\ClassRoom;
+use App\Models\Academic\ClassStream;
 
 class Enrollment extends Model
 {
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'student_id',
         'class_id',
+        'class_stream_id',
         'academic_year_id',
         'semester_id',
         'enrollment_date',
@@ -37,6 +41,11 @@ class Enrollment extends Model
     public function class(): BelongsTo
     {
         return $this->belongsTo(ClassRoom::class, 'class_id');
+    }
+
+    public function stream(): BelongsTo
+    {
+        return $this->belongsTo(ClassStream::class, 'class_stream_id');
     }
 
     // Alias to match usage in dashboards (classroom instead of class)

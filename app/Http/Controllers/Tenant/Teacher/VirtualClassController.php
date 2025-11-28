@@ -7,6 +7,7 @@ use App\Models\VirtualClass;
 use App\Models\SchoolClass;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,37 @@ class VirtualClassController extends Controller
 {
     public function index(Request $request)
     {
+        $teacher = Auth::user();
+        $connection = $teacher?->getConnectionName() ?? config('database.default', 'tenant');
+        $tableExists = tenant_table_exists('virtual_classes', $connection);
+
+        if (! $tableExists) {
+            $virtualClasses = new LengthAwarePaginator(
+                collect(),
+                0,
+                perPage(),
+                (int) $request->input('page', 1),
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]
+            );
+
+            $stats = [
+                'total' => 0,
+                'scheduled' => 0,
+                'completed' => 0,
+                'total_participants' => 0,
+                'total_hours' => 0,
+            ];
+
+            return view('tenant.teacher.classroom.virtual.index', [
+                'virtualClasses' => $virtualClasses,
+                'stats' => $stats,
+                'tableMissing' => true,
+            ]);
+        }
+
         // Eager load relationships to prevent N+1 queries
         $query = VirtualClass::with(['class', 'subject', 'teacher:id,name'])
             ->withCount('attendances')
@@ -51,30 +83,65 @@ class VirtualClassController extends Controller
             'total_hours' => round((clone $teacherClassesQuery)->sum('duration_minutes') / 60, 1),
         ];
 
-        return view('tenant.teacher.classroom.virtual.index', compact('virtualClasses', 'stats'));
+        return view('tenant.teacher.classroom.virtual.index', [
+            'virtualClasses' => $virtualClasses,
+            'stats' => $stats,
+            'tableMissing' => false,
+        ]);
     }
 
     public function create()
     {
         $teacher = Auth::user();
-        
-        // Get classes assigned to this teacher
-        $classes = SchoolClass::orderBy('grade_level')
-            ->orderBy('section')
-            ->get();
+        $connection = $teacher?->getConnectionName() ?? config('database.default', 'tenant');
 
-        // Get subjects taught by this teacher
-        $subjects = Subject::orderBy('name')->get();
+        $classesAvailable = tenant_table_exists('classes', $connection);
+        $subjectsAvailable = tenant_table_exists('subjects', $connection);
 
-        return view('tenant.teacher.classroom.virtual.create', compact('classes', 'subjects'));
+        $classes = collect();
+        if ($classesAvailable) {
+            $classesQuery = SchoolClass::query();
+            $this->applyClassOrdering($classesQuery, $connection);
+            $classes = $classesQuery->get();
+        }
+
+        $subjects = $subjectsAvailable
+            ? Subject::orderBy('name')->get()
+            : collect();
+
+        if (! $classesAvailable || ! $subjectsAvailable) {
+            session()->flash('warning', 'Virtual classes require both classes and subjects to be configured before scheduling.');
+        }
+
+        return view('tenant.teacher.classroom.virtual.create', [
+            'classes' => $classes,
+            'subjects' => $subjects,
+            'classesAvailable' => $classesAvailable,
+            'subjectsAvailable' => $subjectsAvailable,
+        ]);
     }
 
     public function store(Request $request)
     {
+        $teacher = Auth::user();
+        $connection = $teacher?->getConnectionName() ?? config('database.default', 'tenant');
+
+        if (! tenant_table_exists('virtual_classes', $connection)) {
+            return redirect()
+                ->route('tenant.teacher.classroom.virtual.index')
+                ->with('error', 'Virtual classes cannot be scheduled because the required table is missing.');
+        }
+
+        if (! tenant_table_exists('classes', $connection) || ! tenant_table_exists('subjects', $connection)) {
+            return redirect()
+                ->route('tenant.teacher.classroom.virtual.index')
+                ->with('error', 'Virtual classes cannot be scheduled until classes and subjects are configured.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'class_id' => 'required|exists:school_classes,id',
+            'class_id' => 'required|exists:classes,id',
             'subject_id' => 'required|exists:subjects,id',
             'platform' => 'required|in:zoom,google_meet,microsoft_teams,youtube,other',
             'meeting_id' => 'nullable|string|max:255',
@@ -95,7 +162,7 @@ class VirtualClassController extends Controller
             $scheduledAt = \Carbon\Carbon::parse($request->scheduled_date . ' ' . $request->scheduled_time);
 
             $virtualClass = VirtualClass::create([
-                'teacher_id' => Auth::id(),
+                'teacher_id' => $teacher->id,
                 'class_id' => $validated['class_id'],
                 'subject_id' => $validated['subject_id'],
                 'title' => $validated['title'],
@@ -146,46 +213,84 @@ class VirtualClassController extends Controller
 
         // Calculate attendance statistics
         $totalAttendances = $virtual->attendances()->count();
-        $presentCount = $virtual->attendances()->where('was_present', true)->count();
+        $presentCount = $virtual->attendances()->where('status', 'present')->count();
+        $lateCount = $virtual->attendances()->where('status', 'late')->count();
+        $absentCount = $virtual->attendances()->where('status', 'absent')->count();
         
         $attendanceStats = [
             'total' => $totalAttendances,
             'present' => $presentCount,
-            'absent' => $totalAttendances - $presentCount,
+            'late' => $lateCount,
+            'absent' => $absentCount,
         ];
 
         // Calculate attendance rate
-        $attendanceRate = $totalAttendances > 0 ? round(($presentCount / $totalAttendances) * 100, 1) : 0;
+        $attendanceRate = $totalAttendances > 0 ? round((($presentCount + $lateCount) / $totalAttendances) * 100, 1) : 0;
 
-        return view('tenant.teacher.classroom.virtual.show', compact(
-            'virtual',
-            'attendanceRecords',
-            'attendanceStats',
-            'attendanceRate'
-        ));
+        return view('tenant.teacher.classroom.virtual.show', [
+            'class' => $virtual,
+            'attendanceRecords' => $attendanceRecords,
+            'attendanceStats' => $attendanceStats,
+            'attendanceRate' => $attendanceRate,
+        ]);
     }
 
     public function edit(VirtualClass $virtual)
     {
         $this->authorize('update', $virtual);
+        $teacher = Auth::user();
+        $connection = $teacher?->getConnectionName() ?? config('database.default', 'tenant');
 
-        $classes = SchoolClass::orderBy('grade_level')
-            ->orderBy('section')
-            ->get();
+        $classesAvailable = tenant_table_exists('classes', $connection);
+        $subjectsAvailable = tenant_table_exists('subjects', $connection);
 
-        $subjects = Subject::orderBy('name')->get();
+        $classes = collect();
+        if ($classesAvailable) {
+            $classesQuery = SchoolClass::query();
+            $this->applyClassOrdering($classesQuery, $connection);
+            $classes = $classesQuery->get();
+        }
 
-        return view('tenant.teacher.classroom.virtual.edit', compact('virtual', 'classes', 'subjects'));
+        $subjects = $subjectsAvailable
+            ? Subject::orderBy('name')->get()
+            : collect();
+
+        if (! $classesAvailable || ! $subjectsAvailable) {
+            session()->flash('warning', 'Virtual classes require both classes and subjects to be configured before editing.');
+        }
+
+        return view('tenant.teacher.classroom.virtual.edit', [
+            'class' => $virtual,
+            'classes' => $classes,
+            'subjects' => $subjects,
+            'classesAvailable' => $classesAvailable,
+            'subjectsAvailable' => $subjectsAvailable,
+        ]);
     }
 
     public function update(Request $request, VirtualClass $virtual)
     {
         $this->authorize('update', $virtual);
 
+        $teacher = Auth::user();
+        $connection = $teacher?->getConnectionName() ?? config('database.default', 'tenant');
+
+        if (! tenant_table_exists('virtual_classes', $connection)) {
+            return redirect()
+                ->route('tenant.teacher.classroom.virtual.index')
+                ->with('error', 'Virtual classes cannot be updated because the required table is missing.');
+        }
+
+        if (! tenant_table_exists('classes', $connection) || ! tenant_table_exists('subjects', $connection)) {
+            return redirect()
+                ->route('tenant.teacher.classroom.virtual.index')
+                ->with('error', 'Virtual classes cannot be updated until classes and subjects are configured.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'class_id' => 'required|exists:school_classes,id',
+            'class_id' => 'required|exists:classes,id',
             'subject_id' => 'required|exists:subjects,id',
             'platform' => 'required|in:zoom,google_meet,microsoft_teams,youtube,other',
             'meeting_id' => 'nullable|string|max:255',
@@ -307,5 +412,22 @@ class VirtualClassController extends Controller
         });
 
         return view('tenant.teacher.classroom.virtual.attendance', compact('virtual', 'students'));
+    }
+
+    private function applyClassOrdering($query, string $connection): void
+    {
+        if (tenant_column_exists('classes', 'grade_level', $connection)) {
+            $query->orderBy('grade_level');
+        }
+
+        if (tenant_column_exists('classes', 'section', $connection)) {
+            $query->orderBy('section');
+        }
+
+        if (tenant_column_exists('classes', 'stream', $connection)) {
+            $query->orderBy('stream');
+        }
+
+        $query->orderBy('name');
     }
 }

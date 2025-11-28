@@ -80,7 +80,7 @@ class ManualAttendanceController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('admin.attendance.show', $attendanceId)
+                ->route('tenant.modules.attendance.show', $attendanceId)
                 ->with('success', "Attendance saved! {$successCount} records processed.");
         } catch (\Exception $e) {
             DB::rollBack();

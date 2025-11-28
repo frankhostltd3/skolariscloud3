@@ -30,7 +30,7 @@ class LandlordInvoiceItem extends Model
 
     public function getConnectionName(): ?string
     {
-        return config('tenancy.database.central_connection');
+        return central_connection();
     }
 
     public function invoice(): BelongsTo

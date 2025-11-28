@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('leave_requests')) {
+            return;
+        }
+
         Schema::table('leave_requests', function (Blueprint $table) {
-            $table->integer('days_requested')->after('end_date')->default(0);
+            if (! Schema::hasColumn('leave_requests', 'days_requested')) {
+                $table->integer('days_requested')->after('end_date')->default(0);
+            }
         });
     }
 
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('leave_requests')) {
+            return;
+        }
+
         Schema::table('leave_requests', function (Blueprint $table) {
-            $table->dropColumn('days_requested');
+            if (Schema::hasColumn('leave_requests', 'days_requested')) {
+                $table->dropColumn('days_requested');
+            }
         });
     }
 };

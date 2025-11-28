@@ -39,9 +39,13 @@
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
-                @yield('content')
-            </div>
+            @hasSection('content-container')
+                @yield('content-container')
+            @else
+                <div class="col-md-8 col-lg-6">
+                    @yield('content')
+                </div>
+            @endif
         </div>
     </div>
 

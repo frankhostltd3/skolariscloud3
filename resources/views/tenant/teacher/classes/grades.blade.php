@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.teacher._sidebar')
-@endsection
+@extends('layouts.dashboard-teacher')
 
 @section('title', __('Class Grades') . ' - ' . $class->name)
 
@@ -112,4 +108,3 @@
     </div>
 </div>
 @endsection
-

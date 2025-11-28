@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -15,37 +16,39 @@ class Quiz extends Model
     protected $connection = 'tenant';
 
     protected $fillable = [
-        'school_id',
         'teacher_id',
         'class_id',
+        'subject_id',
         'title',
         'description',
+        'instructions',
+        'available_from',
+        'available_until',
         'duration_minutes',
         'total_marks',
-        'start_at',
-        'end_at',
-        'is_active',
-        'allow_late_submission',
-        'late_penalty_percent',
+        'pass_marks',
+        'max_attempts',
+        'shuffle_questions',
+        'shuffle_answers',
+        'show_results_immediately',
+        'show_correct_answers',
+        'allow_review',
+        'status',
     ];
 
     protected $casts = [
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
-        'is_active' => 'boolean',
-        'allow_late_submission' => 'boolean',
+        'available_from' => 'datetime',
+        'available_until' => 'datetime',
+        'shuffle_questions' => 'boolean',
+        'shuffle_answers' => 'boolean',
+        'show_results_immediately' => 'boolean',
+        'show_correct_answers' => 'boolean',
+        'allow_review' => 'boolean',
         'duration_minutes' => 'integer',
         'total_marks' => 'integer',
-        'late_penalty_percent' => 'integer',
+        'pass_marks' => 'integer',
+        'max_attempts' => 'integer',
     ];
-
-    /**
-     * Get the school that owns the quiz.
-     */
-    public function school(): BelongsTo
-    {
-        return $this->belongsTo(School::class);
-    }
 
     /**
      * Get the teacher who created the quiz.
@@ -58,9 +61,33 @@ class Quiz extends Model
     /**
      * Get the class this quiz is assigned to.
      */
-    public function schoolClass(): BelongsTo
+    public function class(): BelongsTo
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+
+    /**
+     * Get the subject this quiz belongs to.
+     */
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class, 'subject_id');
+    }
+
+    /**
+     * Legacy relation for quizzes assigned to multiple classes via pivot.
+     */
+    public function classes(): BelongsToMany
+    {
+        return $this->belongsToMany(SchoolClass::class, 'quiz_class', 'quiz_id', 'class_id');
+    }
+
+    /**
+     * Get all questions for this quiz.
+     */
+    public function questions(): HasMany
+    {
+        return $this->hasMany(QuizQuestion::class)->orderBy('order');
     }
 
     /**
@@ -72,26 +99,77 @@ class Quiz extends Model
     }
 
     /**
-     * Scope a query to only include quizzes for a specific school.
-     */
-    public function scopeForSchool($query, $schoolId)
-    {
-        return $query->where('school_id', $schoolId);
-    }
-
-    /**
      * Scope a query to only include active quizzes.
      */
-    public function scopeActive($query)
+    public function scopePublished($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'published');
     }
 
     /**
      * Scope a query to only include quizzes within date range.
      */
-    public function scopeDateRange($query, $from, $to)
+    public function scopeAvailable($query)
     {
-        return $query->whereBetween('end_at', [$from, $to]);
+        $now = now();
+        return $query->where('status', 'published')
+                     ->where(function($q) use ($now) {
+                         $q->whereNull('available_from')->orWhere('available_from', '<=', $now);
+                     })
+                     ->where(function($q) use ($now) {
+                         $q->whereNull('available_until')->orWhere('available_until', '>=', $now);
+                     });
+    }
+
+    /**
+     * Backward-compatible accessor for start_at column used in student portal.
+     */
+    public function getStartAtAttribute()
+    {
+        if (!empty($this->attributes['available_from'])) {
+            return $this->asDateTime($this->attributes['available_from']);
+        }
+
+        if (array_key_exists('start_at', $this->attributes) && !empty($this->attributes['start_at'])) {
+            return $this->asDateTime($this->attributes['start_at']);
+        }
+
+        return null;
+    }
+
+    public function setStartAtAttribute($value): void
+    {
+        $this->attributes['available_from'] = $value;
+    }
+
+    public function getEndAtAttribute()
+    {
+        if (!empty($this->attributes['available_until'])) {
+            return $this->asDateTime($this->attributes['available_until']);
+        }
+
+        if (array_key_exists('end_at', $this->attributes) && !empty($this->attributes['end_at'])) {
+            return $this->asDateTime($this->attributes['end_at']);
+        }
+
+        return null;
+    }
+
+    public function setEndAtAttribute($value): void
+    {
+        $this->attributes['available_until'] = $value;
+    }
+
+    public function getTotalPointsAttribute()
+    {
+        if (!empty($this->attributes['total_points'])) {
+            return $this->attributes['total_points'];
+        }
+
+        if (!empty($this->attributes['total_marks'])) {
+            return $this->attributes['total_marks'];
+        }
+
+        return $this->questions->sum('marks');
     }
 }

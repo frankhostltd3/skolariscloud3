@@ -17,8 +17,9 @@ class SeedQuizData extends Command
 
     public function handle()
     {
-        // Get all tenants from main database
-        $tenants = \DB::connection('mysql')->table('schools')->get();
+        // Get all tenants from the central database
+        $centralConnection = config('database.central_connection', config('database.default'));
+        $tenants = \DB::connection($centralConnection)->table('schools')->get();
 
         foreach ($tenants as $tenant) {
             $this->info("Seeding quiz data for {$tenant->name}...");

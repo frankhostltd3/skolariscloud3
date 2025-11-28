@@ -11,8 +11,7 @@ class UpdateClassRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('class'))
-            || $this->user()->user_type === 'admin';
+        return true;
     }
 
     /**

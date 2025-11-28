@@ -21,7 +21,7 @@
             <a class="btn btn-primary" href="{{ route('tenant.academics.education-levels.edit', $educationLevel) }}">
                 <i class="bi bi-pencil me-1"></i>{{ __('Edit') }}
             </a>
-            <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/education-levels') }}">
+            <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.education-levels.index') }}">
                 <i class="bi bi-arrow-left me-1"></i>{{ __('Back') }}
             </a>
         </div>
@@ -80,4 +80,3 @@
         </div>
     </div>
 @endsection
-

@@ -12,7 +12,7 @@
                     <p class="text-muted mb-4">Choose how the platform sends email notifications. Update the sender
                         details and credentials for your preferred provider.</p>
 
-                    <form method="POST" action="{{ route('settings.mail.update') }}" novalidate>
+                    <form method="POST" action="{{ route('tenant.settings.admin.mail.update') }}" novalidate>
                         @csrf
                         @method('PUT')
 

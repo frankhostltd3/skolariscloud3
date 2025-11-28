@@ -3,17 +3,15 @@
 namespace Tests\Feature\Landlord;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
-use Tests\TestCase;
+use Tests\CentralTestCase;
 
-class LandlordAuthenticationTest extends TestCase
+class LandlordAuthenticationTest extends CentralTestCase
 {
-	use RefreshDatabase;
 
 	public function test_landlord_login_page_is_accessible(): void
 	{

@@ -23,6 +23,8 @@ class FeeStructure extends Model
         'class',
         'due_date',
         'is_mandatory',
+        'is_recurring',
+        'frequency',
         'is_active',
         'description',
     ];
@@ -31,6 +33,7 @@ class FeeStructure extends Model
         'amount' => 'decimal:2',
         'due_date' => 'date',
         'is_mandatory' => 'boolean',
+        'is_recurring' => 'boolean',
         'is_active' => 'boolean',
     ];
 

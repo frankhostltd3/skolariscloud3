@@ -9,6 +9,8 @@ class AcademicYear extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'name',
         'start_date',

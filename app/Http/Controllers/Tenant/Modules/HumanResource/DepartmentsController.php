@@ -26,7 +26,7 @@ class DepartmentsController extends Controller
     {
         $this->authorize('create', Department::class);
         $department = Department::create($request->validated());
-    return redirect()->route('tenant.modules.human_resources.departments.index')->with('success', 'Department created successfully.');
+        return redirect()->route('tenant.modules.human-resource.departments.index')->with('success', 'Department created successfully.');
     }
 
     public function show(Department $department): View
@@ -45,13 +45,13 @@ class DepartmentsController extends Controller
     {
         $this->authorize('update', $department);
         $department->update($request->validated());
-    return redirect()->route('tenant.modules.human_resources.departments.index')->with('success', 'Department updated successfully.');
+        return redirect()->route('tenant.modules.human-resource.departments.index')->with('success', 'Department updated successfully.');
     }
 
     public function destroy(Department $department): RedirectResponse
     {
         $this->authorize('delete', $department);
         $department->delete();
-    return redirect()->route('tenant.modules.human_resources.departments.index')->with('success', 'Department deleted successfully.');
+        return redirect()->route('tenant.modules.human-resource.departments.index')->with('success', 'Department deleted successfully.');
     }
 }

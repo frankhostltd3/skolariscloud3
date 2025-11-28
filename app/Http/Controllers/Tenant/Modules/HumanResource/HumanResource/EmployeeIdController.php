@@ -5,15 +5,19 @@ namespace App\Http\Controllers\Tenant\Modules\HumanResource;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\EmployeeIdSetting;
+use App\Services\QrCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeIdController extends Controller
 {
+    public function __construct(private QrCodeGenerator $qrCodes)
+    {
+    }
+
     public function index(): View
     {
         $employees = Employee::with(['department', 'position'])
@@ -146,7 +150,7 @@ class EmployeeIdController extends Controller
         $height = $template->card_height * 3.779527559;
 
         $qrData = $this->generateQrData($employee);
-        $qrCodeSvg = QrCode::format('svg')->size($template->qr_code_size)->generate($qrData);
+        $qrCodeSvg = $this->qrCodes->svg($qrData, (int) $template->qr_code_size);
 
         $svg = '<?xml version="1.0" encoding="UTF-8"?>';
         $svg .= '<svg width="' . $width . '" height="' . $height . '" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">';
@@ -158,11 +162,11 @@ class EmployeeIdController extends Controller
         
         // School Logo as watermark (centered, semi-transparent, behind everything)
         $logoSize = 80;
-        $logoUrl = school_logo();
+        $logoUrl = function_exists('school_logo') ? \school_logo() : null;
         
         if ($logoUrl) {
             try {
-                $logoPath = school_logo_path();
+                $logoPath = function_exists('school_logo_path') ? \school_logo_path() : null;
                 if ($logoPath && file_exists($logoPath)) {
                     $extension = strtolower(pathinfo($logoPath, PATHINFO_EXTENSION));
                     $logoX = ($width - $logoSize) / 2;
@@ -282,7 +286,7 @@ class EmployeeIdController extends Controller
         // Center: QR Code
         $qrSize = $template->qr_code_size * 0.7; // Reduced by 30%
         if ($template->include_qr_code) {
-            $qrCodeSvgSmall = QrCode::format('svg')->size($qrSize)->generate($qrData);
+            $qrCodeSvgSmall = $this->qrCodes->svg($qrData, (int) $qrSize);
             $qrX = ($width - $qrSize) / 2;
             $qrY = $bottomY - 8;
 

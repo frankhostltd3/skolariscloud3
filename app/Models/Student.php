@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
@@ -75,6 +77,14 @@ class Student extends Model
     }
 
     /**
+     * Linked tenant user account (matched by email).
+     */
+    public function account(): HasOne
+    {
+        return $this->hasOne(User::class, 'email', 'email');
+    }
+
+    /**
      * Get the student's full name
      */
     public function getFullNameAttribute(): string
@@ -109,14 +119,6 @@ class Student extends Model
     public function stream(): BelongsTo
     {
         return $this->belongsTo(ClassStream::class, 'class_stream_id');
-    }
-
-    /**
-     * Get the biometric templates for this student
-     */
-    public function biometricTemplates()
-    {
-        return $this->morphMany(BiometricTemplate::class, 'user');
     }
 
     /**

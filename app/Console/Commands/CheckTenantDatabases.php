@@ -13,7 +13,15 @@ class CheckTenantDatabases extends Command
 
     public function handle()
     {
-        $databases = DB::connection('mysql')->select('SHOW DATABASES');
+        $centralConnection = config('database.central_connection', config('database.default'));
+        $connection = DB::connection($centralConnection);
+
+        if (! in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)) {
+            $this->warn('Central connection does not support listing databases.');
+            $databases = [];
+        } else {
+            $databases = $connection->select('SHOW DATABASES');
+        }
 
         $this->info('All databases:');
         foreach ($databases as $db) {

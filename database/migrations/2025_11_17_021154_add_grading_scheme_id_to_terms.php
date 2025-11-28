@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (! Schema::hasTable('terms')) {
+            return;
+        }
+
         Schema::table('terms', function (Blueprint $table) {
             if (!Schema::hasColumn('terms', 'grading_scheme_id')) {
                 $table->foreignId('grading_scheme_id')->nullable()->after('is_current')
@@ -17,6 +21,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (! Schema::hasTable('terms')) {
+            return;
+        }
+
         Schema::table('terms', function (Blueprint $table) {
             if (Schema::hasColumn('terms', 'grading_scheme_id')) {
                 $table->dropForeign(['grading_scheme_id']);

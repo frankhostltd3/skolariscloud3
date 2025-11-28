@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ReportsController extends Controller
 {
@@ -606,7 +607,7 @@ class ReportsController extends Controller
             $paymentsQuery->byMethod($paymentMethod);
         }
         if ($category) {
-            $expensesQuery->where('category_id', $category);
+            $expensesQuery->where('expense_category_id', $category);
         }
 
         // Calculate KPIs
@@ -706,9 +707,9 @@ class ReportsController extends Controller
         $expensesByCategory = Expense::forSchool($school->id)
             ->dateRange($startDate, $endDate)
             ->approved()
-            ->selectRaw('category_id, SUM(amount) as total')
-            ->groupBy('category_id')
-            ->pluck('total', 'category_id')
+            ->selectRaw('expense_category_id, SUM(amount) as total')
+            ->groupBy('expense_category_id')
+            ->pluck('total', 'expense_category_id')
             ->toArray();
 
         $expenseLabels = [];
@@ -1320,39 +1321,89 @@ class ReportsController extends Controller
      */
     private function generateReportCardData($student, $school, $academicYear, $term)
     {
-        // In production, this would query actual grades, attendance, and performance data
-        // For now, we'll generate realistic sample data
+        // Fetch real grades for the student
+        $gradesQuery = \App\Models\Grade::where('student_id', $student->id)
+            ->where('is_published', true)
+            ->with('subject');
 
-        $subjects = [
-            'Mathematics', 'English Language', 'Science', 'Social Studies',
-            'Religious Education', 'Physical Education', 'Art & Design', 'Computer Studies'
-        ];
+        $studentGrades = $gradesQuery->get();
+
+        // Get assessment configuration
+        $assessmentConfig = setting('assessment_configuration');
+        $assessmentColumns = $this->getSelectedAssessmentColumns();
+        $assessmentLabels = $this->getAssessmentOptionsForReports();
 
         $grades = [];
         $totalMarks = 0;
         $totalPossible = 0;
+        $subjectCount = 0;
 
-        foreach ($subjects as $subject) {
-            $mark = rand(45, 98);
-            $outOf = 100;
-            $grade = $this->getLetterGrade($mark);
+        // Group grades by subject
+        $groupedGrades = $studentGrades->groupBy('subject_id');
+
+        foreach ($groupedGrades as $subjectId => $subjectGrades) {
+            $subject = $subjectGrades->first()->subject;
+            if (!$subject) continue;
+
+            // Calculate subject grade using weighted logic
+            $percentage = $this->calculateSubjectGrade($subjectGrades, $assessmentConfig);
+
+            $gradeLetter = $this->getLetterGrade($percentage);
 
             $grades[] = [
-                'subject' => $subject,
-                'mark' => $mark,
-                'out_of' => $outOf,
-                'grade' => $grade,
-                'comment' => $this->getGradeComment($mark),
+                'subject' => $subject->name,
+                'mark' => round($percentage, 1),
+                'out_of' => 100,
+                'grade' => $gradeLetter,
+                'comment' => $this->getGradeComment($percentage),
+                'assessments' => $this->buildSubjectAssessmentBreakdown($subjectGrades, $assessmentColumns),
             ];
 
-            $totalMarks += $mark;
-            $totalPossible += $outOf;
+            $totalMarks += $percentage;
+            $subjectCount++;
+            $totalPossible += 100;
         }
 
-        $percentage = round(($totalMarks / $totalPossible) * 100, 1);
+        $percentage = $subjectCount > 0 ? round($totalMarks / $subjectCount, 1) : 0;
         $gpa = $this->calculateGPA($percentage);
-        $classRank = rand(1, 50);
-        $totalStudents = rand(40, 60);
+
+        // Calculate Class Rank
+        $classRank = 1;
+        $totalStudents = 0;
+
+        if ($student->class_id) {
+             // Get all students in class
+             $classStudents = User::where('school_id', $school->id)
+                ->where('class_id', $student->class_id)
+                ->whereHas('roles', fn($q) => $q->where('name', 'student'))
+                ->get();
+
+             $totalStudents = $classStudents->count();
+
+             // Calculate percentages for all students
+             $studentPercentages = [];
+             foreach ($classStudents as $s) {
+                 $studentPercentages[$s->id] = $this->calculateOverallPercentage($s, $assessmentConfig);
+             }
+
+             // Sort descending
+             arsort($studentPercentages);
+             $rank = 1;
+             foreach ($studentPercentages as $id => $pct) {
+                 if ($id == $student->id) {
+                     $classRank = $rank;
+                     break;
+                 }
+                 $rank++;
+             }
+        }
+
+        // Fetch Attendance
+        $attendanceQuery = \App\Models\AttendanceRecord::where('student_id', $student->id);
+
+        $present = $attendanceQuery->clone()->where('status', 'present')->count();
+        $absent = $attendanceQuery->clone()->where('status', 'absent')->count();
+        $late = $attendanceQuery->clone()->where('status', 'late')->count();
 
         return [
             'student' => $student,
@@ -1367,122 +1418,265 @@ class ReportsController extends Controller
             'class_rank' => $classRank,
             'total_students' => $totalStudents,
             'attendance' => [
-                'present' => rand(150, 180),
-                'absent' => rand(0, 10),
-                'late' => rand(0, 5),
+                'present' => $present,
+                'absent' => $absent,
+                'late' => $late,
             ],
             'teacher_comment' => $this->getTeacherComment($percentage),
             'principal_comment' => $this->getPrincipalComment($percentage),
             'generated_at' => now()->format('F d, Y'),
+            'assessment_columns' => $assessmentColumns,
+            'assessment_labels' => $assessmentLabels,
         ];
+    }
+
+    /**
+     * Calculate subject grade based on assessment configuration.
+     */
+    private function calculateSubjectGrade($subjectGrades, $assessmentConfig)
+    {
+        $subjectFinalMark = 0;
+        $totalWeightApplied = 0;
+
+        if ($assessmentConfig && is_array($assessmentConfig) && count($assessmentConfig) > 0) {
+            foreach ($assessmentConfig as $config) {
+                $type = $config['code'] ?? $config['name'];
+                $weight = floatval($config['weight'] ?? 0);
+
+                // Find grades for this type (case-insensitive check)
+                $typeGrades = $subjectGrades->filter(function($grade) use ($type) {
+                    return (strtoupper($grade->assessment_type ?? '') === strtoupper($type)) ||
+                           (strtoupper($grade->assessment_name ?? '') === strtoupper($type));
+                });
+
+                if ($typeGrades->isNotEmpty()) {
+                    $typeObtained = $typeGrades->sum('marks_obtained');
+                    $typeTotal = $typeGrades->sum('total_marks');
+
+                    if ($typeTotal > 0) {
+                        $typePercentage = ($typeObtained / $typeTotal) * 100;
+                        $subjectFinalMark += $typePercentage * ($weight / 100);
+                        $totalWeightApplied += $weight;
+                    }
+                }
+            }
+
+            // If no weights matched (e.g. grades entered before config), fallback to simple average
+            if ($totalWeightApplied == 0) {
+                 $subjectObtained = $subjectGrades->sum('marks_obtained');
+                 $subjectTotal = $subjectGrades->sum('total_marks');
+                 $subjectFinalMark = $subjectTotal > 0 ? ($subjectObtained / $subjectTotal) * 100 : 0;
+            }
+        } else {
+            // Simple Average (Fallback)
+            $subjectObtained = $subjectGrades->sum('marks_obtained');
+            $subjectTotal = $subjectGrades->sum('total_marks');
+            $subjectFinalMark = $subjectTotal > 0 ? ($subjectObtained / $subjectTotal) * 100 : 0;
+        }
+
+        return $subjectFinalMark;
+    }
+
+    /**
+     * Calculate overall percentage for a student.
+     */
+    private function calculateOverallPercentage($student, $assessmentConfig)
+    {
+        $grades = \App\Models\Grade::where('student_id', $student->id)
+            ->where('is_published', true)
+            ->get()
+            ->groupBy('subject_id');
+
+        $totalMarks = 0;
+        $count = 0;
+
+        foreach ($grades as $subjectGrades) {
+            $totalMarks += $this->calculateSubjectGrade($subjectGrades, $assessmentConfig);
+            $count++;
+        }
+
+        return $count > 0 ? $totalMarks / $count : 0;
+    }
+
+    private function buildSubjectAssessmentBreakdown($subjectGrades, $assessmentColumns)
+    {
+        $aggregates = [];
+
+        foreach ($subjectGrades as $grade) {
+            $code = strtoupper($grade->assessment_type ?? $grade->assessment_name ?? '');
+            if (! $code) {
+                continue;
+            }
+
+            if (! isset($aggregates[$code])) {
+                $aggregates[$code] = ['obtained' => 0, 'total' => 0];
+            }
+
+            $aggregates[$code]['obtained'] += $grade->marks_obtained;
+            $aggregates[$code]['total'] += $grade->total_marks;
+        }
+
+        $breakdown = [];
+
+        foreach ($assessmentColumns as $code) {
+            $data = $aggregates[$code] ?? null;
+
+            if (! $data || $data['total'] <= 0) {
+                $breakdown[$code] = null;
+                continue;
+            }
+
+            $breakdown[$code] = round(($data['obtained'] / $data['total']) * 100, 1);
+        }
+
+        return $breakdown;
+    }
+
+    private $cachedGradingScheme = null;
+
+    private function getGradingScheme()
+    {
+        if ($this->cachedGradingScheme) {
+            return $this->cachedGradingScheme;
+        }
+
+        $school = request()->attributes->get('currentSchool') ?? auth()->user()->school;
+        if (!$school) return null;
+
+        $this->cachedGradingScheme = \App\Models\Academic\GradingScheme::forSchool($school->id)
+            ->current()
+            ->with('bands')
+            ->first();
+
+        return $this->cachedGradingScheme;
+    }
+
+    private function calculateGPA($percentage)
+    {
+        $scheme = $this->getGradingScheme();
+        if (!$scheme) return 0;
+
+        $band = $scheme->getGradeForScore($percentage);
+        return $band ? $band->grade_point : 0;
+    }
+
+    private function getLetterGrade($percentage)
+    {
+        $scheme = $this->getGradingScheme();
+        if (!$scheme) return '-';
+
+        $band = $scheme->getGradeForScore($percentage);
+        return $band ? $band->grade : '-';
+    }
+
+    private function getGradeComment($percentage)
+    {
+        $scheme = $this->getGradingScheme();
+        if (!$scheme) return '';
+
+        $band = $scheme->getGradeForScore($percentage);
+        return $band ? $band->remarks : '';
+    }
+
+    private function getTeacherComment($percentage)
+    {
+        if ($percentage >= 80) return "Excellent performance. Keep it up!";
+        if ($percentage >= 70) return "Very good work. Consistent effort shown.";
+        if ($percentage >= 60) return "Good attempt. Can do better with more focus.";
+        if ($percentage >= 50) return "Average performance. Needs improvement.";
+        return "Below average. Requires immediate attention and extra help.";
+    }
+
+    private function getPrincipalComment($percentage)
+    {
+        if ($percentage >= 80) return "Promoted to next class with distinction.";
+        if ($percentage >= 50) return "Promoted to next class.";
+        return "Advised to repeat the class.";
+    }
+
+    private function getAssessmentOptionsForReports(): array
+    {
+        $configuredAssessments = setting('assessment_configuration', []);
+
+        $options = collect($configuredAssessments)
+            ->mapWithKeys(function ($config) {
+                $name = $config['name'] ?? ($config['label'] ?? null);
+                $code = strtoupper($config['code'] ?? ($name ? Str::slug($name, '_') : ''));
+
+                if (! $code) {
+                    return [];
+                }
+
+                $label = $name ?: $code;
+
+                return [$code => $label];
+            })
+            ->filter()
+            ->toArray();
+
+        if (empty($options)) {
+            $options = [
+                'BOT' => 'Beginning of Term (BOT)',
+                'MOT' => 'Mid of Term (MOT)',
+                'EOT' => 'End of Term (EOT)',
+            ];
+        }
+
+        return $options;
+    }
+
+    private function getSelectedAssessmentColumns(): array
+    {
+        $options = $this->getAssessmentOptionsForReports();
+
+        $stored = setting('report_card_assessments');
+        $selection = is_string($stored) ? json_decode($stored, true) : $stored;
+
+        if (!is_array($selection) || empty($selection)) {
+            $selection = array_keys($options);
+        }
+
+        $selected = collect($selection)
+            ->map(fn ($code) => strtoupper($code))
+            ->filter(fn ($code) => array_key_exists($code, $options))
+            ->values()
+            ->all();
+
+        if (empty($selected)) {
+            $selected = array_keys($options);
+        }
+
+        return $selected;
     }
 
     /**
      * Generate PDF for a single report card.
      */
-    private function generateReportCardPDF($data)
+    public function generateReportCardPDF($reportData)
     {
-        // Simple HTML-based PDF generation
-        // In production, use a proper PDF library like dompdf or TCPDF
-
-        $html = view('admin.reports.pdf.report-card', $data)->render();
-
-        // For now, return HTML wrapped as PDF content
-        // In production, use: $pdf = \PDF::loadHTML($html)->output();
-        return $html;
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports.pdf.report-card', $reportData);
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->output();
     }
 
     /**
-     * Generate merged PDF for multiple report cards.
+     * Generate PDF for bulk report cards.
      */
-    private function generateBulkReportCardsPDF($students, $school, $academicYear, $term)
+    public function generateBulkReportCardsPDF($students, $school, $academicYear, $term)
     {
-        $allHTML = '';
-
+        $reports = [];
         foreach ($students as $student) {
-            $reportData = $this->generateReportCardData($student, $school, $academicYear, $term);
-            $allHTML .= view('admin.reports.pdf.report-card', $reportData)->render();
-            $allHTML .= '<div style="page-break-after: always;"></div>';
+            $reports[] = $this->generateReportCardData($student, $school, $academicYear, $term);
         }
 
-        // In production, use proper PDF library
-        return $allHTML;
-    }
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports.pdf.bulk-report-cards', [
+            'reports' => $reports,
+            'school' => $school,
+            'academic_year' => $academicYear,
+            'term' => $term,
+        ]);
 
-    /**
-     * Get letter grade from percentage.
-     */
-    private function getLetterGrade($mark)
-    {
-        if ($mark >= 90) return 'A+';
-        if ($mark >= 80) return 'A';
-        if ($mark >= 75) return 'B+';
-        if ($mark >= 70) return 'B';
-        if ($mark >= 65) return 'C+';
-        if ($mark >= 60) return 'C';
-        if ($mark >= 55) return 'D+';
-        if ($mark >= 50) return 'D';
-        return 'F';
-    }
-
-    /**
-     * Calculate GPA from percentage.
-     */
-    private function calculateGPA($percentage)
-    {
-        if ($percentage >= 90) return 4.0;
-        if ($percentage >= 80) return 3.7;
-        if ($percentage >= 75) return 3.3;
-        if ($percentage >= 70) return 3.0;
-        if ($percentage >= 65) return 2.7;
-        if ($percentage >= 60) return 2.3;
-        if ($percentage >= 55) return 2.0;
-        if ($percentage >= 50) return 1.7;
-        return 1.0;
-    }
-
-    /**
-     * Get comment based on grade.
-     */
-    private function getGradeComment($mark)
-    {
-        if ($mark >= 90) return 'Excellent performance';
-        if ($mark >= 80) return 'Very good work';
-        if ($mark >= 70) return 'Good effort';
-        if ($mark >= 60) return 'Satisfactory';
-        if ($mark >= 50) return 'Needs improvement';
-        return 'Requires attention';
-    }
-
-    /**
-     * Get teacher comment based on overall performance.
-     */
-    private function getTeacherComment($percentage)
-    {
-        if ($percentage >= 85) {
-            return 'Outstanding performance throughout the term. Shows excellent understanding and consistent effort. Keep up the excellent work!';
-        } elseif ($percentage >= 70) {
-            return 'Good academic progress. Shows dedication and consistent improvement. Continue working hard to achieve even better results.';
-        } elseif ($percentage >= 60) {
-            return 'Satisfactory performance. There is room for improvement with more focused study and attention to detail.';
-        } else {
-            return 'Additional support needed. Please schedule a meeting with the teacher to discuss strategies for improvement.';
-        }
-    }
-
-    /**
-     * Get principal comment based on overall performance.
-     */
-    private function getPrincipalComment($percentage)
-    {
-        if ($percentage >= 85) {
-            return 'Congratulations on your excellent academic achievement. You are a role model for other students.';
-        } elseif ($percentage >= 70) {
-            return 'Well done on your good performance. Continue striving for excellence in all your endeavors.';
-        } elseif ($percentage >= 60) {
-            return 'Satisfactory progress noted. With more dedication and focus, you can achieve better results.';
-        } else {
-            return 'We encourage you to work closely with your teachers and seek additional support where needed.';
-        }
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->output();
     }
 }

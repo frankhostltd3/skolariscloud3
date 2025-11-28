@@ -1,166 +1,285 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Report Card - {{ $student->name }}</title>
+    @php
+        $fontFamily = setting('report_card_font_family', 'Arial');
+        $isGoogleFont = in_array($fontFamily, [
+            'Montserrat',
+            'Quicksand',
+            'Poppins',
+            'Raleway',
+            'Open Sans',
+            'Lato',
+            'Roboto',
+            'Merriweather',
+            'Playfair Display',
+        ]);
+    @endphp
+    @if ($isGoogleFont)
+        <link
+            href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontFamily) }}:wght@400;700&display=swap"
+            rel="stylesheet">
+    @endif
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: '{{ setting('report_card_font_family', 'Arial') }}', sans-serif;
+            font-size: {{ setting('report_card_font_size', 11) }}px;
+            line-height: 1.2;
+            margin: 10px;
             color: #333;
         }
+
         .header {
             text-align: center;
-            border-bottom: 3px solid #0066cc;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
+            border-bottom: 2px solid {{ setting('report_card_color_theme', '#0066cc') }};
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
+
         .school-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #0066cc;
-            margin-bottom: 5px;
+            font-size: {{ setting('report_card_font_size', 11) + 8 }}px;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
+            color: {{ setting('report_card_color_theme', '#0066cc') }};
+            margin-bottom: 2px;
         }
+
         .report-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 10px;
+            font-size: {{ setting('report_card_font_size', 11) + 4 }}px;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
+            margin-top: 2px;
         }
+
         .student-info {
-            margin: 20px 0;
+            margin: 10px 0;
             background-color: #f5f5f5;
-            padding: 15px;
+            padding: 8px;
             border-radius: 5px;
         }
+
         .info-row {
-            display: flex;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
         }
+
         .info-label {
-            font-weight: bold;
-            width: 150px;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
+            display: inline-block;
+            width: 120px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 4px;
             text-align: left;
         }
+
         th {
-            background-color: #0066cc;
+            background-color: {{ setting('report_card_color_theme', '#0066cc') }};
             color: white;
-            font-weight: bold;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
         }
-        .grade-A, .grade-A-plus { background-color: #d4edda; }
-        .grade-B, .grade-B-plus { background-color: #d1ecf1; }
-        .grade-C, .grade-C-plus { background-color: #fff3cd; }
-        .grade-D, .grade-D-plus { background-color: #f8d7da; }
-        .grade-F { background-color: #f5c6cb; }
+
+        .grade-A,
+        .grade-A-plus {
+            background-color: #d4edda;
+        }
+
+        .grade-B,
+        .grade-B-plus {
+            background-color: #d1ecf1;
+        }
+
+        .grade-C,
+        .grade-C-plus {
+            background-color: #fff3cd;
+        }
+
+        .grade-D,
+        .grade-D-plus {
+            background-color: #f8d7da;
+        }
+
+        .grade-F {
+            background-color: #f5c6cb;
+        }
+
         .summary {
-            margin: 20px 0;
-            padding: 15px;
+            margin: 10px 0;
+            padding: 8px;
             background-color: #e7f3ff;
-            border-left: 4px solid #0066cc;
+            border-left: 4px solid {{ setting('report_card_color_theme', '#0066cc') }};
         }
+
         .summary-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
+            display: inline-block;
+            width: 48%;
+            margin-bottom: 3px;
+            font-size: {{ setting('report_card_font_size', 11) + 1 }}px;
         }
+
         .summary-item strong {
-            font-weight: bold;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
         }
+
         .comments {
-            margin: 20px 0;
+            margin: 10px 0;
         }
+
         .comment-box {
             border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 15px;
+            padding: 8px;
+            margin-bottom: 8px;
             border-radius: 5px;
             background-color: #fafafa;
         }
+
         .comment-title {
-            font-weight: bold;
-            color: #0066cc;
-            margin-bottom: 8px;
+            font-weight: {{ setting('report_card_heading_font_weight', 'bold') }};
+            color: {{ setting('report_card_color_theme', '#0066cc') }};
+            margin-bottom: 3px;
         }
+
         .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #ddd;
+            margin-top: 15px;
+            padding-top: 5px;
+            border-top: 1px solid #ddd;
             text-align: center;
-            font-size: 12px;
+            font-size: {{ setting('report_card_font_size', 11) - 2 }}px;
             color: #666;
         }
+
         .signature-line {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-around;
+            margin-top: 20px;
+            width: 100%;
         }
+
         .signature-box {
+            display: inline-block;
+            width: 30%;
             text-align: center;
+            vertical-align: top;
         }
+
         .signature-line-text {
             border-top: 1px solid #333;
-            padding-top: 5px;
-            margin-top: 50px;
-            width: 200px;
+            padding-top: 3px;
+            margin-top: 30px;
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <div class="school-name">{{ $school->name }}</div>
-        <div>{{ setting('school_address', 'School Address') }}</div>
-        <div>Tel: {{ setting('school_phone', 'N/A') }} | Email: {{ setting('school_email', 'N/A') }}</div>
+        @php
+            $logoPath = setting('school_logo');
+            $logoFile = $logoPath ? storage_path('app/public/' . $logoPath) : null;
+        @endphp
+        @if (setting('report_card_show_logo', true) && $logoFile && file_exists($logoFile))
+            <div style="margin-bottom: 5px;">
+                <img src="{{ $logoFile }}" alt="School Logo"
+                    style="max-height: {{ setting('report_card_logo_height', 100) }}px; max-width: {{ setting('report_card_logo_width', 200) }}px;">
+            </div>
+        @endif
+        <div class="school-name">{{ setting('report_card_school_name', $school->name) }}</div>
+        <div>{!! nl2br(
+            e(
+                setting(
+                    'report_card_address',
+                    setting('school_address') . "\nTel: " . setting('school_phone') . ' | Email: ' . setting('school_email'),
+                ),
+            ),
+        ) !!}</div>
         <div class="report-title">STUDENT REPORT CARD</div>
         <div>Academic Year: {{ $academic_year }} | {{ $term }}</div>
     </div>
 
     <div class="student-info">
-        <div class="info-row">
-            <div class="info-label">Student Name:</div>
-            <div>{{ $student->name }}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Student ID:</div>
-            <div>{{ $student->id }}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Email:</div>
-            <div>{{ $student->email }}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Class Rank:</div>
-            <div>{{ $class_rank }} of {{ $total_students }}</div>
-        </div>
+        <table style="width: 100%; border: none; margin: 0;">
+            <tr>
+                <td style="border: none; vertical-align: top; padding: 0;">
+                    <div class="info-row">
+                        <span class="info-label">Student Name:</span>
+                        <span>{{ $student->name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Student ID:</span>
+                        <span>{{ $student->id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span>{{ $student->email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Class Rank:</span>
+                        <span>{{ $class_rank }} of {{ $total_students }}</span>
+                    </div>
+                </td>
+                <td
+                    style="border: none; width: {{ setting('report_card_photo_width', 80) + 10 }}px; text-align: right; vertical-align: top; padding: 0;">
+                    @php
+                        $photoPath = $student->profile_photo
+                            ? storage_path('app/public/' . $student->profile_photo)
+                            : null;
+                    @endphp
+                    @if ($photoPath && file_exists($photoPath))
+                        <img src="{{ $photoPath }}" alt="Student Photo"
+                            style="width: {{ setting('report_card_photo_width', 80) }}px; height: {{ setting('report_card_photo_height', 80) }}px; object-fit: cover; border: 1px solid #ddd; border-radius: 5px;">
+                    @else
+                        <div
+                            style="width: {{ setting('report_card_photo_width', 80) }}px; height: {{ setting('report_card_photo_height', 80) }}px; background-color: #eee; border: 1px solid #ddd; border-radius: 5px; display: inline-block; text-align: center; line-height: {{ setting('report_card_photo_height', 80) }}px; color: #999; font-size: 10px;">
+                            No Photo</div>
+                    @endif
+                </td>
+            </tr>
+        </table>
     </div>
 
+    @php
+        $assessmentColumns = $assessment_columns ?? [];
+        $assessmentLabels = $assessment_labels ?? [];
+    @endphp
     <table>
         <thead>
             <tr>
                 <th>Subject</th>
-                <th style="text-align: center;">Mark</th>
-                <th style="text-align: center;">Out Of</th>
+                @forelse($assessmentColumns as $code)
+                    <th style="text-align: center;">{{ $assessmentLabels[$code] ?? $code }}</th>
+                @empty
+                    <th style="text-align: center;">Mark</th>
+                    <th style="text-align: center;">Out Of</th>
+                @endforelse
+                <th style="text-align: center;">Average</th>
                 <th style="text-align: center;">Grade</th>
                 <th>Comment</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($grades as $grade)
-            <tr class="grade-{{ str_replace('+', '-plus', $grade['grade']) }}">
-                <td>{{ $grade['subject'] }}</td>
-                <td style="text-align: center;">{{ $grade['mark'] }}</td>
-                <td style="text-align: center;">{{ $grade['out_of'] }}</td>
-                <td style="text-align: center;"><strong>{{ $grade['grade'] }}</strong></td>
-                <td>{{ $grade['comment'] }}</td>
-            </tr>
+            @foreach ($grades as $grade)
+                <tr class="grade-{{ str_replace('+', '-plus', $grade['grade']) }}">
+                    <td>{{ $grade['subject'] }}</td>
+                    @forelse($assessmentColumns as $code)
+                        @php $value = $grade['assessments'][$code] ?? null; @endphp
+                        <td style="text-align: center;">{{ $value !== null ? $value . '%' : '—' }}</td>
+                    @empty
+                        <td style="text-align: center;">{{ $grade['mark'] }}</td>
+                        <td style="text-align: center;">{{ $grade['out_of'] }}</td>
+                    @endforelse
+                    <td style="text-align: center;">{{ $grade['mark'] }}%</td>
+                    <td style="text-align: center;"><strong>{{ $grade['grade'] }}</strong></td>
+                    <td>{{ $grade['comment'] }}</td>
+                </tr>
             @endforeach
         </tbody>
     </table>
@@ -180,7 +299,8 @@
         </div>
         <div class="summary-item">
             <span><strong>Attendance:</strong></span>
-            <span>Present: {{ $attendance['present'] }} | Absent: {{ $attendance['absent'] }} | Late: {{ $attendance['late'] }}</span>
+            <span>Present: {{ $attendance['present'] }} | Absent: {{ $attendance['absent'] }} | Late:
+                {{ $attendance['late'] }}</span>
         </div>
     </div>
 
@@ -198,13 +318,13 @@
 
     <div class="signature-line">
         <div class="signature-box">
-            <div class="signature-line-text">Class Teacher</div>
+            <div class="signature-line-text">{{ setting('report_card_signature_1', 'Class Teacher') }}</div>
         </div>
         <div class="signature-box">
-            <div class="signature-line-text">Principal</div>
+            <div class="signature-line-text">{{ setting('report_card_signature_2', 'Principal') }}</div>
         </div>
         <div class="signature-box">
-            <div class="signature-line-text">Parent/Guardian</div>
+            <div class="signature-line-text">{{ setting('report_card_signature_3', 'Parent/Guardian') }}</div>
         </div>
     </div>
 
@@ -214,4 +334,5 @@
         <p><em>This is an official document. Any alteration will render it invalid.</em></p>
     </div>
 </body>
+
 </html>

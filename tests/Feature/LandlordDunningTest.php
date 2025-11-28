@@ -2,18 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Console\Commands\ProcessLandlordInvoices;
 use App\Models\LandlordDunningPolicy;
 use App\Models\LandlordInvoice;
 use App\Models\LandlordInvoiceItem;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Tests\TestCase;
+use Tests\CentralTestCase;
 
-class LandlordDunningTest extends TestCase
+class LandlordDunningTest extends CentralTestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();

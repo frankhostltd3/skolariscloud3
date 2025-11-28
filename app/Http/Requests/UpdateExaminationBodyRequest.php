@@ -11,7 +11,7 @@ class UpdateExaminationBodyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,13 @@ class UpdateExaminationBodyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50',
+            'country_id' => 'required|exists:countries,id',
+            'website' => 'nullable|url|max:255',
+            'description' => 'nullable|string',
+            'is_international' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 }

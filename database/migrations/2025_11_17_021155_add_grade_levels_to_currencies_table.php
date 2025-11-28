@@ -11,8 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('currencies', function (Blueprint $table) {
-            $table->json('grade_levels')->nullable()->after('decimal_separator');
+        $schema = Schema::connection('tenant');
+
+        if (! $schema->hasTable('currencies')) {
+            return;
+        }
+
+        $schema->table('currencies', function (Blueprint $table) use ($schema) {
+            if ($schema->hasColumn('currencies', 'grade_levels')) {
+                return;
+            }
+
+            $afterColumn = $schema->hasColumn('currencies', 'decimal_separator')
+                ? 'decimal_separator'
+                : ($schema->hasColumn('currencies', 'symbol') ? 'symbol' : 'exchange_rate');
+
+            $table->json('grade_levels')->nullable()->after($afterColumn);
         });
     }
 
@@ -21,8 +35,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('currencies', function (Blueprint $table) {
-            $table->dropColumn('grade_levels');
+        $schema = Schema::connection('tenant');
+
+        if (! $schema->hasTable('currencies')) {
+            return;
+        }
+
+        $schema->table('currencies', function (Blueprint $table) use ($schema) {
+            if ($schema->hasColumn('currencies', 'grade_levels')) {
+                $table->dropColumn('grade_levels');
+            }
         });
     }
 };

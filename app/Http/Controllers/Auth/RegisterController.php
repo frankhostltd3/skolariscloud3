@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolUserInvitation;
 use App\Models\User;
+use App\Models\Student;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,13 +15,18 @@ use App\Services\TenantDatabaseManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use App\Support\CentralDomain;
+use App\Support\TenantAccessConfigurator;
 
 class RegisterController extends Controller
 {
-    public function __construct(private TenantDatabaseManager $tenants)
+    public function __construct(
+        private TenantDatabaseManager $tenants,
+        private TenantAccessConfigurator $accessConfigurator
+    )
     {
     }
 
@@ -109,22 +115,32 @@ class RegisterController extends Controller
             $approvalMode = setting('user_approval_mode', 'manual');
             $approvalStatus = 'pending'; // Default
 
-            // Check if automatic approval is enabled
-            if ($approvalMode === 'automatic') {
-                $approvalStatus = 'approved';
-            }
-            // Check if email verification is required
-            elseif ($approvalMode === 'email_verification') {
-                $approvalStatus = 'pending'; // Will be approved after email verification
-            }
-            // Check role-specific auto-approval in manual mode
-            elseif ($approvalMode === 'manual') {
-                $userType = strtolower($invitation->user_type->value ?? $invitation->user_type);
-                if (($userType === 'teacher' && setting('auto_approve_teachers', false)) ||
-                    ($userType === 'student' && setting('auto_approve_students', false)) ||
-                    ($userType === 'parent' && setting('auto_approve_parents', false))) {
+            switch ($approvalMode) {
+                case 'automatic':
                     $approvalStatus = 'approved';
-                }
+                    break;
+
+                case 'email_verification':
+                    $approvalStatus = 'pending';
+                    // Status will be updated to 'approved' via UpdateApprovalStatusOnVerification listener
+                    break;
+
+                case 'otp_approval':
+                    $approvalStatus = 'pending';
+                    break;
+
+                case 'manual':
+                default:
+                    $userType = strtolower($invitation->user_type->value ?? $invitation->user_type);
+                    if (($userType === 'teacher' && setting('auto_approve_teachers', false)) ||
+                        ($userType === 'parent' && setting('auto_approve_parents', false))) {
+                        $approvalStatus = 'approved';
+                    }
+                    // Explicitly disable auto-approval for students to ensure manual verification
+                    if ($userType === 'student') {
+                        $approvalStatus = 'pending';
+                    }
+                    break;
             }
 
             $user = User::create([
@@ -136,6 +152,29 @@ class RegisterController extends Controller
                 'approval_status' => $approvalStatus,
             ]);
 
+            // Handle OTP generation if mode is otp_approval
+            if ($approvalMode === 'otp_approval') {
+                $code = (string) random_int(100000, 999999);
+                \App\Models\OtpCode::create([
+                    'user_id' => $user->id,
+                    'code' => $code,
+                    'expires_at' => now()->addMinutes(10),
+                ]);
+                // We will send the notification after transaction commit or login
+            }
+
+            // Create Student record if user is a student
+            $userType = strtolower($invitation->user_type->value ?? $invitation->user_type);
+            if ($userType === 'student') {
+                Student::create([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'admission_no' => date('Y') . strtoupper(Str::random(6)),
+                    'status' => 'active',
+                    'admission_date' => now(),
+                ]);
+            }
+
             $invitation->markAccepted();
 
             return $user;
@@ -143,6 +182,14 @@ class RegisterController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        // Send OTP notification if needed
+        if (setting('user_approval_mode') === 'otp_approval') {
+            $otp = \App\Models\OtpCode::where('user_id', $user->id)->latest()->first();
+            if ($otp) {
+                $user->notify(new \App\Notifications\SendOtpNotification($otp->code));
+            }
+        }
 
         return redirect()->route('dashboard');
     }
@@ -184,33 +231,51 @@ class RegisterController extends Controller
             $this->tenants->runFor(
                 $school,
                 function () use ($validated, $school) {
-                    $user = User::create([
-                        'name' => $validated['admin_name'],
-                        'email' => $validated['admin_email'],
-                        'password' => Hash::make($validated['password']),
-                        'user_type' => UserType::ADMIN,
-                        'school_id' => $school->id,
-                        'approval_status' => 'approved',
-                    ]);
+                    $this->accessConfigurator->withTeamContext(function () use ($validated, $school) {
+                        $this->accessConfigurator->seed(includeSampleUsers: false);
 
-                    // Assign admin role to school registrant
-                    $user->assignRole('admin');
+                        $user = User::create([
+                            'name' => $validated['admin_name'],
+                            'email' => $validated['admin_email'],
+                            'password' => Hash::make($validated['password']),
+                            'user_type' => UserType::ADMIN,
+                            'school_id' => $school->id,
+                            'approval_status' => 'approved',
+                        ]);
+
+                        // Assign admin role to school registrant
+                        $user->assignRole('admin');
+                    }, $school->id);
                 },
                 runMigrations: true
             );
         } catch (\Throwable $exception) {
             $school->delete();
+            Log::error('Failed to register school', [
+                'message' => $exception->getMessage(),
+                'school' => $school->name,
+                'subdomain' => $school->subdomain,
+            ]);
 
-            throw $exception;
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'general' => __('We could not complete your registration. Please try again or contact support.'),
+                ])
+                ->with('registration_error', __('We ran into a problem while setting up your school. Please retry in a moment or reach out to support if this continues.'));
         }
 
-        if ($school->url) {
-            $request->session()->flash('workspace_url', $school->url);
-        }
+        $tenantUrl = $school->url ? rtrim($school->url, '/') : null;
+        $loginUrl = $tenantUrl ? $tenantUrl . '/login' : null;
 
         return redirect()
-            ->route('home')
-            ->with('status', 'Your workspace is ready. Sign in using your new school address.');
+            ->route('register')
+            ->with('registration_success', [
+                'school' => $school->name,
+                'domain' => $tenantUrl,
+                'login_url' => $loginUrl,
+                'admin_email' => $validated['admin_email'],
+            ]);
     }
 
     private function normalizeSubdomain(string $value): string

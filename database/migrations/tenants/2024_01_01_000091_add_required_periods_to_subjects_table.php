@@ -9,9 +9,16 @@ return new class extends Migration {
 
     public function up(): void
     {
-        Schema::table('subjects', function (Blueprint $table) {
+        $afterColumn = Schema::hasColumn('subjects', 'credit_hours')
+            ? 'credit_hours'
+            : (Schema::hasColumn('subjects', 'pass_mark') ? 'pass_mark' : null);
+
+        Schema::table('subjects', function (Blueprint $table) use ($afterColumn) {
             if (!Schema::hasColumn('subjects', 'required_periods_per_week')) {
-                $table->unsignedTinyInteger('required_periods_per_week')->nullable()->after('credit_hours');
+                $column = $table->unsignedTinyInteger('required_periods_per_week')->nullable();
+                if ($afterColumn) {
+                    $column->after($afterColumn);
+                }
             }
         });
     }

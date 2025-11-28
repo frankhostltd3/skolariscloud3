@@ -1,5 +1,149 @@
 <?php
 
+if (!function_exists('tenancy')) {
+    function tenancy(): \Stancl\Tenancy\Tenancy
+    {
+        return app(\Stancl\Tenancy\Tenancy::class);
+    }
+}
+
+if (!function_exists('central_connection')) {
+    /**
+     * Resolve the configured central (landlord) database connection name.
+     */
+    function central_connection(): string
+    {
+        return config(
+            'tenancy.database.central_connection',
+            config('database.central_connection', config('database.default'))
+        );
+    }
+}
+
+if (!function_exists('tenant')) {
+    /**
+     * Retrieve the currently initialized tenant or a specific attribute.
+     */
+    function tenant(?string $key = null)
+    {
+        $binding = null;
+
+        if (app()->bound(\Stancl\Tenancy\Contracts\Tenant::class)) {
+            $binding = app(\Stancl\Tenancy\Contracts\Tenant::class);
+        } elseif (app()->bound('currentTenant')) {
+            $binding = app('currentTenant');
+        } elseif (app()->bound('currentSchool')) {
+            $binding = app('currentSchool');
+        }
+
+        if (! $binding) {
+            return null;
+        }
+
+        if ($key === null) {
+            return $binding;
+        }
+
+        $value = data_get($binding, $key);
+
+        if ($value !== null) {
+            return $value;
+        }
+
+        $data = method_exists($binding, 'getAttribute')
+            ? $binding->getAttribute('data')
+            : null;
+
+        return is_array($data) ? data_get($data, $key) : null;
+    }
+}
+
+if (!function_exists('tenant_table_exists')) {
+    /**
+     * Determine if a table exists on the current tenant connection.
+     */
+    function tenant_table_exists(string $table, ?string $connection = null): bool
+    {
+        $connection = $connection
+            ?? (app()->bound('currentSchool') || config('database.default') === 'tenant'
+                ? 'tenant'
+                : config('database.default'));
+
+        try {
+            $db = \Illuminate\Support\Facades\DB::connection($connection);
+            $database = $db->getDatabaseName();
+
+            if (! $database) {
+                return false;
+            }
+
+            $result = $db->selectOne(
+                'SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1',
+                [$database, $table]
+            );
+
+            if ($result === null) {
+                return false;
+            }
+
+            if (is_object($result)) {
+                $count = (int) ($result->table_count ?? ($result->TABLE_COUNT ?? 0));
+            } elseif (is_array($result)) {
+                $count = (int) (array_values($result)[0] ?? 0);
+            } else {
+                $count = (int) $result;
+            }
+
+            return $count > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+        if (!function_exists('tenant_column_exists')) {
+            /**
+             * Determine if a column exists on the current tenant connection.
+             */
+            function tenant_column_exists(string $table, string $column, ?string $connection = null): bool
+            {
+                $connection = $connection
+                    ?? (app()->bound('currentSchool') || config('database.default') === 'tenant'
+                        ? 'tenant'
+                        : config('database.default'));
+
+                try {
+                    $db = \Illuminate\Support\Facades\DB::connection($connection);
+                    $database = $db->getDatabaseName();
+
+                    if (! $database) {
+                        return false;
+                    }
+
+                    $result = $db->selectOne(
+                        'SELECT COUNT(*) AS column_count FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ? LIMIT 1',
+                        [$database, $table, $column]
+                    );
+
+                    if ($result === null) {
+                        return false;
+                    }
+
+                    if (is_object($result)) {
+                        $count = (int) ($result->column_count ?? ($result->COLUMN_COUNT ?? 0));
+                    } elseif (is_array($result)) {
+                        $count = (int) (array_values($result)[0] ?? 0);
+                    } else {
+                        $count = (int) $result;
+                    }
+
+                    return $count > 0;
+                } catch (\Throwable $e) {
+                    return false;
+                }
+            }
+        }
+}
+
 if (!function_exists('setting')) {
     /**
      * Get or set application settings.
@@ -124,6 +268,16 @@ if (!function_exists('formatMoney')) {
         }
 
         return $currency->format($amount);
+    }
+}
+
+if (!function_exists('format_money')) {
+    /**
+     * Backwards-compatible alias for formatMoney helper.
+     */
+    function format_money(float $amount, $currency = null): string
+    {
+        return formatMoney($amount, $currency);
     }
 }
 

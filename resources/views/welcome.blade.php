@@ -7,6 +7,14 @@
 
 
     <!-- Hero Section -->
+    @if (!empty($registrationSummary))
+        <section class="py-5 bg-white">
+            <div class="container">
+                <x-registration.pipeline context="landing" :stages="$registrationSummary['stages'] ?? []" :summary="$registrationSummary['summary'] ?? []" :mode="$registrationSummary['stats']['mode'] ?? null" />
+            </div>
+        </section>
+    @endif
+
     @section('content')@section('content')
     <section class="py-5"
         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: 0; margin-right: 0; width: 100%;">

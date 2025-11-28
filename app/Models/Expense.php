@@ -84,6 +84,11 @@ class Expense extends Model
         return $query->where('status', 'rejected');
     }
 
+    public function scopeDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('expense_date', [$startDate, $endDate]);
+    }
+
     public function scopeThisMonth($query)
     {
         return $query->whereMonth('expense_date', now()->month)

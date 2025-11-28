@@ -281,6 +281,16 @@
                                                                     {{ __('Edit Employment') }}
                                                                 </a>
                                                             </li>
+                                                            @if (in_array($user->user_type?->value ?? $user->user_type, ['teaching_staff', 'general_staff', 'admin']))
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#changeTypeModal{{ $user->id }}">
+                                                                        <i class="bi bi-arrow-left-right me-1"></i>
+                                                                        {{ __('Change Staff Type') }}
+                                                                    </a>
+                                                                </li>
+                                                            @endif
                                                         @endif
 
                                                         @if ($isStudent)
@@ -376,11 +386,11 @@
                                                 <div class="modal fade" id="employmentModal{{ $user->id }}"
                                                     tabindex="-1" aria-hidden="true">
                                                     <div class="modal-dialog modal-lg">
-                                                        <div class="modal-content">
-                                                            <form method="POST"
-                                                                action="{{ route('admin.user-approvals.employment', $user) }}"
-                                                                id="employmentForm{{ $user->id }}">
-                                                                @csrf
+                                                        <form method="POST"
+                                                            action="{{ route('admin.user-approvals.employment', $user) }}"
+                                                            id="employmentForm{{ $user->id }}">
+                                                            @csrf
+                                                            <div class="modal-content">
                                                                 <div class="modal-header">
                                                                     <h5 class="modal-title">
                                                                         {{ __('Edit Employment for') }}
@@ -515,6 +525,79 @@
                                                                         data-bs-dismiss="modal">{{ __('Close') }}</button>
                                                                     <button type="submit"
                                                                         class="btn btn-primary">{{ __('Save Changes') }}</button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if (in_array($user->user_type?->value ?? $user->user_type, ['teaching_staff', 'general_staff', 'admin']))
+                                                <div class="modal fade" id="changeTypeModal{{ $user->id }}"
+                                                    tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <form method="POST"
+                                                                action="{{ route('admin.staff.change-type', $user) }}">
+                                                                @csrf
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">
+                                                                        {{ __('Change Staff Type for') }}
+                                                                        {{ $user->name }}</h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="alert alert-info">
+                                                                        <i class="bi bi-info-circle"></i>
+                                                                        {{ __('Current Type:') }}
+                                                                        <strong>{{ $user->user_type instanceof \App\Enums\UserType ? $user->user_type->label() : ucwords(str_replace('_', ' ', $user->user_type)) }}</strong>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label for="new_user_type_{{ $user->id }}"
+                                                                            class="form-label">{{ __('New Staff Type') }}</label>
+                                                                        <select name="new_user_type"
+                                                                            id="new_user_type_{{ $user->id }}"
+                                                                            class="form-select" required>
+                                                                            <option value="">
+                                                                                {{ __('-- Select New Type --') }}</option>
+                                                                            <option value="teaching_staff">
+                                                                                {{ __('Teaching Staff (Teacher)') }}
+                                                                            </option>
+                                                                            <option value="general_staff">
+                                                                                {{ __('General Staff (Non-Teaching)') }}
+                                                                            </option>
+                                                                            <option value="admin">
+                                                                                {{ __('Administrator') }}
+                                                                            </option>
+                                                                        </select>
+                                                                        <small class="form-text text-muted">
+                                                                            {{ __('Switching to Teaching Staff will create a Teacher record. Switching away will deactivate it.') }}
+                                                                        </small>
+                                                                    </div>
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox"
+                                                                            name="sync_role"
+                                                                            id="sync_role_{{ $user->id }}"
+                                                                            value="1" checked>
+                                                                        <label class="form-check-label"
+                                                                            for="sync_role_{{ $user->id }}">
+                                                                            {{ __('Also update Spatie role (Teacher/Staff/Admin)') }}
+                                                                        </label>
+                                                                    </div>
+                                                                    <div class="alert alert-warning mt-3">
+                                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                                        {{ __('This updates the user type, role, and related Teacher/Employee records.') }}
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                                                                    <button type="submit" class="btn btn-primary">
+                                                                        <i class="bi bi-arrow-left-right"></i>
+                                                                        {{ __('Change Type') }}
+                                                                    </button>
                                                                 </div>
                                                             </form>
                                                         </div>

@@ -24,7 +24,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (config('database.default') === 'tenant') {
+            $this->seedPaymentGateways();
+            $this->seedMessagingChannels();
+            $this->call(\Database\Seeders\LeaveTypesSeeder::class);
+            $this->call(\Database\Seeders\AcademicYearSeeder::class);
+            $this->call(\Database\Seeders\EmployeeIdSettingsSeeder::class);
+            $this->call(\Database\Seeders\PayrollSettingsSeeder::class);
+            return;
+        }
+
         $centralDomain = CentralDomain::base();
+        $port = CentralDomain::port();
+        $domainSuffix = $centralDomain . ($port ? ':' . $port : '');
         $manager = app(TenantDatabaseManager::class);
 
         $schools = [
@@ -32,13 +44,24 @@ class DatabaseSeeder extends Seeder
                 'code' => 'SMATCAMPUS',
                 'name' => 'SMATCAMPUS Demo School',
                 'subdomain' => 'demo',
-                'domain' => $centralDomain ? 'demo.' . $centralDomain : null,
+                'domain' => $centralDomain ? 'demo.' . $domainSuffix : null,
                 'admin' => [
                     'name' => 'Test Admin',
                     'email' => 'test@example.com',
                     'password' => env('DEMO_ADMIN_PASSWORD', 'password'),
                 ],
                 'invitation_email' => 'test@example.com',
+            ],
+            [
+                'code' => 'VICTORIANILE',
+                'name' => 'Victoria Nile School',
+                'subdomain' => 'victorianileschool',
+                'domain' => $centralDomain ? 'victorianileschool.' . $domainSuffix : null,
+                'admin' => [
+                    'name' => 'Victoria Nile Admin',
+                    'email' => 'admin@victorianileschool.com',
+                    'password' => '5Loaves+2Fish',
+                ],
             ],
         ];
 
@@ -131,6 +154,10 @@ class DatabaseSeeder extends Seeder
 
                 $this->seedPaymentGateways();
                 $this->seedMessagingChannels();
+                $this->call(\Database\Seeders\LeaveTypesSeeder::class);
+                $this->call(\Database\Seeders\AcademicYearSeeder::class);
+                $this->call(\Database\Seeders\EmployeeIdSettingsSeeder::class);
+                $this->call(\Database\Seeders\PayrollSettingsSeeder::class);
             },
             runMigrations: true
         );

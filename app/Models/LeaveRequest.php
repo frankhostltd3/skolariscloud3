@@ -188,12 +188,15 @@ class LeaveRequest extends Model
         $year = $year ?? now()->year;
         $leaveType = LeaveType::find($leaveTypeId);
 
-        if (!$leaveType || !$leaveType->annual_entitlement) {
+        $entitlement = $leaveType ? ($leaveType->annual_entitlement ?? $leaveType->default_days ?? 0) : 0;
+
+        if ($entitlement === 0) {
             return [
                 'entitlement' => 0,
                 'used' => 0,
                 'remaining' => 0,
                 'pending' => 0,
+                'available' => 0,
             ];
         }
 
@@ -211,10 +214,10 @@ class LeaveRequest extends Model
             ->whereYear('start_date', $year)
             ->sum('days_requested');
 
-        $remaining = max(0, $leaveType->annual_entitlement - $usedDays);
+        $remaining = max(0, $entitlement - $usedDays);
 
         return [
-            'entitlement' => $leaveType->annual_entitlement,
+            'entitlement' => $entitlement,
             'used' => $usedDays,
             'remaining' => $remaining,
             'pending' => $pendingDays,
@@ -228,7 +231,10 @@ class LeaveRequest extends Model
     public static function getAllBalances(int $employeeId, ?int $year = null): array
     {
         $year = $year ?? now()->year;
-        $leaveTypes = LeaveType::whereNotNull('annual_entitlement')->get();
+        $leaveTypes = LeaveType::where(function($query) {
+            $query->whereNotNull('annual_entitlement')
+                  ->orWhereNotNull('default_days');
+        })->get();
 
         $balances = [];
         foreach ($leaveTypes as $leaveType) {

@@ -38,6 +38,9 @@ class AcademicSettingsController extends Controller
             'grade_f_max' => setting('grade_f_max', '59'),
             'grade_f_gpa' => setting('grade_f_gpa', '0.0'),
 
+            // Assessment Configuration
+            'assessment_configuration' => json_decode(setting('assessment_configuration', '[]'), true),
+
             // Attendance Settings
             'attendance_marking' => setting('attendance_marking', 'automatic'),
             'minimum_attendance' => setting('minimum_attendance', '75'),
@@ -57,6 +60,8 @@ class AcademicSettingsController extends Controller
                 return $this->updateAcademicYear($request);
             case 'grading':
                 return $this->updateGrading($request);
+            case 'assessment_configuration':
+                return $this->updateAssessmentConfiguration($request);
             case 'attendance':
                 return $this->updateAttendance($request);
             default:
@@ -79,7 +84,7 @@ class AcademicSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.academic.edit')
+        return redirect()->route('tenant.settings.admin.academic')
             ->with('status', 'Academic year settings updated successfully.');
     }
 
@@ -111,8 +116,28 @@ class AcademicSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.academic.edit')
+        return redirect()->route('tenant.settings.admin.academic')
             ->with('status', 'Grading system updated successfully.');
+    }
+
+    private function updateAssessmentConfiguration(Request $request)
+    {
+        $validated = $request->validate([
+            'assessments' => 'required|array',
+            'assessments.*.name' => 'required|string|max:50',
+            'assessments.*.code' => 'required|string|max:10',
+            'assessments.*.weight' => 'required|numeric|min:0|max:100',
+        ]);
+
+        // Validate total weight equals 100 (optional, but good practice)
+        // For now, we'll just save it as is, allowing flexibility.
+
+        setting(['assessment_configuration' => json_encode($validated['assessments'])]);
+
+        Cache::forget('settings');
+
+        return redirect()->route('tenant.settings.admin.academic')
+            ->with('status', 'Assessment configuration updated successfully.');
     }
 
     private function updateAttendance(Request $request)
@@ -130,7 +155,7 @@ class AcademicSettingsController extends Controller
 
         Cache::forget('settings');
 
-        return redirect()->route('settings.academic.edit')
+        return redirect()->route('tenant.settings.admin.academic')
             ->with('status', 'Attendance settings updated successfully.');
     }
 

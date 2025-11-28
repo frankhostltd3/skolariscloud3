@@ -99,5 +99,21 @@ class ExerciseSubmission extends Model
             'graded_at' => now(),
             'graded_by' => $gradedBy,
         ]);
+
+        // Send notification to student
+        $this->student->notify(new \App\Notifications\AssignmentGradedNotification($this));
+    }
+
+    /**
+     * Calculate score with late penalty
+     */
+    public function calculateScoreWithPenalty()
+    {
+        if (!$this->is_late || !$this->exercise->late_penalty_percent) {
+            return $this->score;
+        }
+
+        $penalty = ($this->score * $this->exercise->late_penalty_percent) / 100;
+        return max(0, $this->score - $penalty);
     }
 }

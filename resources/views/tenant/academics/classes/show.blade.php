@@ -24,7 +24,7 @@
             <a class="btn btn-primary" href="{{ route('tenant.academics.classes.edit', $class) }}">
                 <i class="bi bi-pencil me-1"></i>{{ __('Edit Class') }}
             </a>
-            <a class="btn btn-outline-secondary" href="{{ url('/tenant/academics/classes') }}">
+            <a class="btn btn-outline-secondary" href="{{ route('tenant.academics.classes.index') }}">
                 <i class="bi bi-arrow-left me-1"></i>{{ __('Back to Classes') }}
             </a>
         </div>
@@ -80,11 +80,10 @@
                         <div class="col-md-6">
                             <label class="text-muted small">{{ __('Current Enrollment') }}</label>
                             <p class="mb-0">
-                                <span class="fw-semibold">{{ $class->active_students_count ?? 0 }}</span>
+                                <span class="fw-semibold">{{ $class->computed_students_count }}</span>
                                 <span class="text-muted">{{ __('students') }}</span>
-                                @if ($class->capacity && $class->active_students_count)
-                                    <span
-                                        class="text-muted">({{ number_format(($class->active_students_count / $class->capacity) * 100, 1) }}%
+                                @if ($class->capacity && $stats['capacity_used'] > 0)
+                                    <span class="text-muted">({{ number_format($stats['capacity_used'], 1) }}%
                                         {{ __('full') }})</span>
                                 @endif
                             </p>
@@ -175,6 +174,62 @@
                 </div>
             </div>
 
+            {{-- Enrolled Students --}}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">{{ __('Enrolled Students') }}</h5>
+                        <small class="text-muted">{{ __('Latest enrollment activity for this class') }}</small>
+                    </div>
+                    <a href="{{ route('tenant.academics.enrollments.index', ['class_id' => $class->id]) }}"
+                        class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-people me-1"></i>{{ __('Manage Enrollments') }}
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if ($recentEnrollments->isEmpty())
+                        <div class="text-center py-4">
+                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mb-0">{{ __('No enrollments have been recorded for this class yet.') }}
+                            </p>
+                            <small
+                                class="text-muted">{{ __('Approved students assigned to this class will appear here automatically.') }}</small>
+                        </div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Student') }}</th>
+                                        <th>{{ __('Email') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Stream') }}</th>
+                                        <th>{{ __('Academic Year') }}</th>
+                                        <th>{{ __('Enrolled') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($recentEnrollments as $enrollment)
+                                        <tr>
+                                            <td class="fw-semibold">
+                                                {{ $enrollment->student?->name ?? __('Unknown Student') }}</td>
+                                            <td>{{ $enrollment->student?->email ?? __('Not provided') }}</td>
+                                            <td>
+                                                <span
+                                                    class="badge {{ $enrollment->status_badge_class }}">{{ $enrollment->status_display }}</span>
+                                            </td>
+                                            <td>{{ $enrollment->stream?->name ?? __('Not set') }}</td>
+                                            <td>{{ $enrollment->academicYear?->name ?? __('Not set') }}</td>
+                                            <td>{{ $enrollment->enrollment_date?->format('M d, Y') ?? __('N/A') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- Assigned Subjects --}}
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -226,18 +281,21 @@
                         <a href="{{ route('tenant.academics.classes.edit', $class) }}" class="btn btn-outline-primary">
                             <i class="bi bi-pencil me-2"></i>{{ __('Edit Class Details') }}
                         </a>
-                        <button class="btn btn-outline-secondary" disabled>
+                        <a href="{{ route('tenant.academics.enrollments.index', ['class_id' => $class->id]) }}"
+                            class="btn btn-outline-secondary">
                             <i class="bi bi-people me-2"></i>{{ __('View Students') }}
-                        </button>
-                        <button class="btn btn-outline-secondary" disabled>
+                        </a>
+                        <a href="{{ route('tenant.academics.classes.subjects', $class) }}"
+                            class="btn btn-outline-secondary">
                             <i class="bi bi-book me-2"></i>{{ __('Manage Subjects') }}
-                        </button>
+                        </a>
                         <a href="{{ route('tenant.academics.streams.index', $class) }}" class="btn btn-outline-primary">
                             <i class="bi bi-diagram-3 me-2"></i>{{ __('Manage Streams') }}
                         </a>
-                        <button class="btn btn-outline-secondary" disabled>
+                        <a href="{{ route('tenant.academics.timetable.class', ['class' => $class->id]) }}"
+                            class="btn btn-outline-secondary">
                             <i class="bi bi-calendar-check me-2"></i>{{ __('View Timetable') }}
-                        </button>
+                        </a>
                         <hr class="my-2">
                         <form action="{{ route('tenant.academics.classes.destroy', $class) }}" method="POST"
                             onsubmit="return confirm('{{ __('Are you sure you want to delete this class? This action cannot be undone.') }}');">
@@ -261,18 +319,16 @@
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="text-muted">{{ __('Capacity Used') }}</span>
                             @if ($class->capacity)
-                                <span
-                                    class="fw-semibold">{{ number_format(($class->active_students_count / $class->capacity) * 100, 1) }}%</span>
+                                <span class="fw-semibold">{{ number_format($stats['capacity_used'] ?? 0, 1) }}%</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
                         </div>
                         @if ($class->capacity)
                             <div class="progress" style="height: 8px;">
-                                <div class="progress-bar {{ $class->active_students_count / $class->capacity >= 0.9 ? 'bg-danger' : ($class->active_students_count / $class->capacity >= 0.7 ? 'bg-warning' : 'bg-success') }}"
-                                    role="progressbar"
-                                    style="width: {{ min(($class->active_students_count / $class->capacity) * 100, 100) }}%"
-                                    aria-valuenow="{{ $class->active_students_count }}" aria-valuemin="0"
+                                <div class="progress-bar {{ ($stats['capacity_used'] ?? 0) >= 90 ? 'bg-danger' : (($stats['capacity_used'] ?? 0) >= 70 ? 'bg-warning' : 'bg-success') }}"
+                                    role="progressbar" style="width: {{ min($stats['capacity_used'] ?? 0, 100) }}%"
+                                    aria-valuenow="{{ $stats['students_count'] ?? 0 }}" aria-valuemin="0"
                                     aria-valuemax="{{ $class->capacity }}">
                                 </div>
                             </div>
@@ -282,19 +338,22 @@
                     <div class="row g-3 text-center">
                         <div class="col-6">
                             <div class="p-3 border rounded">
-                                <div class="h4 mb-0 fw-bold">{{ $class->streams->count() }}</div>
+                                <div class="h4 mb-0 fw-bold">{{ $stats['streams_count'] ?? $class->streams->count() }}
+                                </div>
                                 <small class="text-muted">{{ __('Streams') }}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="p-3 border rounded">
-                                <div class="h4 mb-0 fw-bold">{{ $class->subjects->count() }}</div>
+                                <div class="h4 mb-0 fw-bold">{{ $stats['subjects_count'] ?? $class->subjects->count() }}
+                                </div>
                                 <small class="text-muted">{{ __('Subjects') }}</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="p-3 border rounded">
-                                <div class="h4 mb-0 fw-bold">{{ $class->active_students_count ?? 0 }}</div>
+                                <div class="h4 mb-0 fw-bold">
+                                    {{ $stats['students_count'] ?? $class->computed_students_count }}</div>
                                 <small class="text-muted">{{ __('Students') }}</small>
                             </div>
                         </div>
@@ -310,4 +369,3 @@
         </div>
     </div>
 @endsection
-

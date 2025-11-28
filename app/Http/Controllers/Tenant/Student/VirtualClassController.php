@@ -21,7 +21,7 @@ class VirtualClassController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $query = VirtualClass::whereIn('class_id', $classIds)
             ->with(['class', 'subject', 'teacher']);
@@ -107,7 +107,7 @@ class VirtualClassController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $class = VirtualClass::whereIn('class_id', $classIds)
             ->with(['class', 'subject', 'teacher'])
@@ -143,7 +143,7 @@ class VirtualClassController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $class = VirtualClass::whereIn('class_id', $classIds)
             ->findOrFail($id);
@@ -176,7 +176,7 @@ class VirtualClassController extends Controller
         // Get student's enrolled class IDs
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $class = VirtualClass::whereIn('class_id', $classIds)
             ->findOrFail($id);
@@ -198,7 +198,7 @@ class VirtualClassController extends Controller
         
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $attendances = \App\Models\VirtualClassAttendance::where('student_id', $student->id)
             ->whereHas('virtualClass', function ($q) use ($classIds) {
@@ -253,7 +253,7 @@ class VirtualClassController extends Controller
         
         $classIds = $student->enrollments()
             ->where('status', 'active')
-            ->pluck('school_class_id');
+            ->pluck('class_id');
 
         $classes = VirtualClass::whereIn('class_id', $classIds)
             ->whereDate('scheduled_at', Carbon::today())

@@ -1,0 +1,21 @@
+<?php
+
+namespace Stancl\Tenancy\Database\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Domain extends Model
+{
+    protected $table = 'domains';
+
+    protected $fillable = [
+        'tenant_id',
+        'domain',
+    ];
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+}

@@ -9,24 +9,23 @@ use App\Models\Academic\ClassRoom;
 use App\Models\Attendance;
 use App\Models\User;
 use App\Services\AttendanceService;
-use App\Services\BiometricService;
-use App\Services\BarcodeService;
+use App\Services\Attendance\FingerprintService;
+use App\Services\Attendance\BarcodeService;
+use App\Models\AttendanceSetting;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
     protected $attendanceService;
-    protected $biometricService;
     protected $barcodeService;
 
     public function __construct(
         AttendanceService $attendanceService,
-        BiometricService $biometricService,
         BarcodeService $barcodeService
     ) {
         $this->attendanceService = $attendanceService;
-        $this->biometricService = $biometricService;
         $this->barcodeService = $barcodeService;
     }
 
@@ -36,40 +35,69 @@ class AttendanceController extends Controller
     public function index()
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
+        $hasMarkedByColumn = tenant_column_exists('attendance', 'marked_by', $connection);
         $today = Carbon::today();
 
-        // Get classes where user is class teacher or subject teacher
-        $classes = ClassRoom::where(function($query) use ($teacher) {
-                $query->where('class_teacher_id', $teacher->id)
-                    ->orWhereHas('subjects', function ($q) use ($teacher) {
-                        $q->where('class_subjects.teacher_id', $teacher->id);
-                    });
-            })
-            ->withCount(['activeEnrollments as students_count'])
-            ->orderBy('grade_level')
-            ->orderBy('section')
-            ->orderBy('stream')
-            ->get();
+        $classesQuery = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn);
+
+        if ($hasEnrollments) {
+            $classesQuery->withCount(['students as students_count' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+        } elseif ($hasStudentTable) {
+            $classesQuery->withCount(['students as students_count']);
+        }
+
+        $this->applyClassOrdering($classesQuery, $connection);
+
+        $classes = $classesQuery->get();
+
+        $classes->each(function ($class) use ($hasEnrollments, $hasStudentTable) {
+            if ($class->getAttribute('students_count') === null) {
+                if ($hasEnrollments || $hasStudentTable) {
+                    $class->setAttribute('students_count', $class->students()->count());
+                } else {
+                    $class->setAttribute('students_count', 0);
+                }
+            }
+        });
+
+        if (! $hasEnrollments && ! $hasStudentTable) {
+            $classes->each(function ($class) {
+                $class->setAttribute('students_count', 0);
+            });
+        }
 
         // Today's attendance summary per class
         $attendanceSummary = [];
         foreach ($classes as $class) {
             $total = $class->students_count;
-            $marked = Attendance::where('class_id', $class->id)
+            
+            $attendance = Attendance::where('class_id', $class->id)
                 ->whereDate('attendance_date', $today)
-                ->count();
-            $present = Attendance::where('class_id', $class->id)
-                ->whereDate('attendance_date', $today)
-                ->where('status', 'present')
-                ->count();
-            $absent = Attendance::where('class_id', $class->id)
-                ->whereDate('attendance_date', $today)
-                ->where('status', 'absent')
-                ->count();
-            $late = Attendance::where('class_id', $class->id)
-                ->whereDate('attendance_date', $today)
-                ->where('status', 'late')
-                ->count();
+                ->first();
+
+            if ($attendance) {
+                $stats = $attendance->getStatistics();
+                $marked = $stats['total'];
+                $present = $stats['present'];
+                $absent = $stats['absent'];
+                $late = $stats['late'];
+            } else {
+                $marked = 0;
+                $present = 0;
+                $absent = 0;
+                $late = 0;
+            }
 
             $attendanceSummary[$class->id] = [
                 'class' => $class,
@@ -84,14 +112,21 @@ class AttendanceController extends Controller
         }
 
         // Recent attendance activity
-        $recentActivity = Attendance::whereHas('class', function ($q) use ($teacher) {
-                $q->where('class_teacher_id', $teacher->id)
-                    ->orWhereHas('subjects', function ($sq) use ($teacher) {
-                        $sq->where('class_subjects.teacher_id', $teacher->id);
-                    });
+        $recentActivityQuery = Attendance::whereHas('class', function ($q) use ($teacher, $classSubjectTable, $hasClassTeacherColumn) {
+                $this->applyTeacherClassConstraint($q, $teacher->id, $classSubjectTable, $hasClassTeacherColumn);
             })
-            ->with(['student', 'class'])
-            ->where('marked_by', $teacher->id)
+            ->with(['class', 'teacher']);
+
+        if ($hasMarkedByColumn) {
+            // If marked_by exists, use it, otherwise fallback to teacher_id
+             $recentActivityQuery->where(function($q) use ($teacher) {
+                 $q->where('teacher_id', $teacher->id);
+             });
+        } else {
+             $recentActivityQuery->where('teacher_id', $teacher->id);
+        }
+
+        $recentActivity = $recentActivityQuery
             ->latest()
             ->limit(10)
             ->get();
@@ -107,20 +142,63 @@ class AttendanceController extends Controller
         $teacher = Auth::user();
         $classId = $request->query('class_id');
 
-        $classes = ClassRoom::where(function($query) use ($teacher) {
-                $query->where('class_teacher_id', $teacher->id)
-                    ->orWhereHas('subjects', function ($q) use ($teacher) {
-                        $q->where('class_subjects.teacher_id', $teacher->id);
-                    });
-            })
-            ->with(['activeEnrollments'])
-            ->withCount(['activeEnrollments as students_count'])
-            ->orderBy('grade_level')
-            ->orderBy('section')
-            ->orderBy('stream')
-            ->get();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
 
-        $selectedClass = $classId ? ClassRoom::with('activeStudents')->find($classId) : null;
+        $classesQuery = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn);
+
+        if ($hasEnrollments) {
+            $classesQuery->with(['students' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+            $classesQuery->withCount(['students as students_count' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+        } elseif ($hasStudentTable) {
+            $classesQuery->with('students');
+            $classesQuery->withCount(['students as students_count']);
+        }
+
+        $this->applyClassOrdering($classesQuery, $connection);
+
+        $classes = $classesQuery->get();
+
+        $classes->each(function ($class) use ($hasEnrollments, $hasStudentTable) {
+            if ($class->getAttribute('students_count') === null) {
+                if ($hasEnrollments || $hasStudentTable) {
+                    $class->setAttribute('students_count', $class->students()->count());
+                } else {
+                    $class->setAttribute('students_count', 0);
+                }
+            }
+        });
+
+        $selectedClass = null;
+        if ($classId) {
+            $selectedClass = ClassRoom::find($classId);
+            if ($selectedClass) {
+                if ($hasEnrollments) {
+                    $selectedClass->load(['students' => function ($query) {
+                        $query->where(function ($subQuery) {
+                            $subQuery->where('enrollments.status', 'active')
+                                ->orWhereNull('enrollments.status');
+                        });
+                    }]);
+                } elseif ($hasStudentTable) {
+                    $selectedClass->load('students');
+                }
+            }
+        }
 
         // Check if attendance already taken today
         $today = Carbon::today();
@@ -141,26 +219,54 @@ class AttendanceController extends Controller
     {
         $teacher = Auth::user();
         $classId = $request->query('class_id');
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
 
         if (!$classId) {
             return redirect()->route('tenant.teacher.attendance.take')->with('error', 'Please select a class.');
         }
 
-        $class = ClassRoom::with('students')->findOrFail($classId);
+        $class = ClassRoom::findOrFail($classId);
+
+        if ($hasEnrollments) {
+            $class->load(['students' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+        } elseif ($hasStudentTable) {
+            $class->load('students');
+        }
 
         // Check permission
-        if ($class->class_teacher_id !== $teacher->id && !$class->subjects()->where('class_subjects.teacher_id', $teacher->id)->exists()) {
+        if (! $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
             abort(403, 'Unauthorized to take attendance for this class.');
         }
 
         $today = Carbon::today();
-        $students = $class->students()->orderBy('name')->get();
+        $studentsQuery = $class->students();
+        if ($hasEnrollments) {
+            $studentsQuery->where(function ($subQuery) {
+                $subQuery->where('enrollments.status', 'active')
+                    ->orWhereNull('enrollments.status');
+            });
+        }
+        $students = $studentsQuery->orderBy('name')->get();
 
         // Get existing attendance for today
-        $existingAttendance = Attendance::where('class_id', $classId)
+        $attendance = Attendance::where('class_id', $classId)
             ->whereDate('attendance_date', $today)
-            ->pluck('status', 'student_id')
-            ->toArray();
+            ->first();
+
+        $existingAttendance = [];
+        if ($attendance) {
+            $existingAttendance = $attendance->records()->pluck('status', 'student_id')->toArray();
+        }
 
         return view('tenant.teacher.attendance.manual', compact('class', 'students', 'existingAttendance', 'today'));
     }
@@ -171,6 +277,14 @@ class AttendanceController extends Controller
     public function store(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasMarkedByColumn = tenant_column_exists('attendance', 'marked_by', $connection);
+        $hasMethodColumn = tenant_column_exists('attendance', 'method', $connection);
+        $hasNotesColumn = tenant_column_exists('attendance', 'notes', $connection);
 
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
@@ -183,25 +297,59 @@ class AttendanceController extends Controller
         $class = ClassRoom::findOrFail($validated['class_id']);
 
         // Check permission
-        if ($class->class_teacher_id !== $teacher->id && !$class->subjects()->where('class_subjects.teacher_id', $teacher->id)->exists()) {
+        if (! $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
             abort(403, 'Unauthorized to take attendance for this class.');
         }
 
         DB::beginTransaction();
         try {
+            // 1. Create or update the parent Attendance record
+            $attendanceData = [
+                'school_id' => $teacher->school_id,
+                'class_id' => $validated['class_id'],
+                'teacher_id' => $teacher->id,
+                'attendance_date' => $validated['attendance_date'],
+                'attendance_type' => 'classroom',
+            ];
+
+            if ($hasNotesColumn && isset($validated['notes'])) {
+                $attendanceData['notes'] = $validated['notes'];
+            }
+
+            // Use firstOrCreate to avoid duplicates for the same class/date
+            $attendance = Attendance::firstOrCreate(
+                [
+                    'class_id' => $validated['class_id'],
+                    'attendance_date' => $validated['attendance_date'],
+                ],
+                $attendanceData
+            );
+
+            // Update notes if provided and record already existed
+            if ($hasNotesColumn && isset($validated['notes'])) {
+                $attendance->update(['notes' => $validated['notes']]);
+            }
+
             foreach ($validated['attendance'] as $studentId => $status) {
-                Attendance::updateOrCreate(
+                if ($hasEnrollments && ! $class->students()->where('users.id', $studentId)->exists()) {
+                    continue; // skip students not in class under current schema
+                }
+                
+                $recordData = ['status' => $status];
+                // Note: marked_by, method are typically on the parent attendance record or specific log table
+                // But if the schema has them on records, we can add them. 
+                // Based on migration 2024_01_01_000121, attendance_records only has status and remarks.
+                // Migration 2024_01_01_000124 adds method to 'attendances' (plural) table, which maps to Attendance model.
+                
+                // If we need to track method per student, we might need to check if columns exist on attendance_records
+                // But for now, let's stick to the basic status.
+                
+                \App\Models\AttendanceRecord::updateOrCreate(
                     [
+                        'attendance_id' => $attendance->id,
                         'student_id' => $studentId,
-                        'class_id' => $validated['class_id'],
-                        'attendance_date' => $validated['attendance_date'],
                     ],
-                    [
-                        'status' => $status,
-                        'marked_by' => $teacher->id,
-                        'method' => 'manual',
-                        'notes' => $validated['notes'] ?? null,
-                    ]
+                    $recordData
                 );
             }
 
@@ -222,15 +370,32 @@ class AttendanceController extends Controller
         $teacher = Auth::user();
         $classId = $request->query('class_id');
         $type = $request->query('type', 'fingerprint'); // fingerprint or iris
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
 
         if (!$classId) {
             return redirect()->route('tenant.teacher.attendance.take')->with('error', 'Please select a class.');
         }
 
-        $class = ClassRoom::with('students')->findOrFail($classId);
+        $class = ClassRoom::findOrFail($classId);
+
+        if ($hasEnrollments) {
+            $class->load(['students' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+        } elseif ($hasStudentTable) {
+            $class->load('students');
+        }
 
         // Check permission
-        if ($class->class_teacher_id !== $teacher->id && !$class->subjects()->where('class_subjects.teacher_id', $teacher->id)->exists()) {
+        if (! $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
             abort(403, 'Unauthorized to take attendance for this class.');
         }
 
@@ -243,7 +408,9 @@ class AttendanceController extends Controller
             ->get();
 
         // Check biometric device status
-        $deviceStatus = $this->biometricService->checkDeviceStatus($type);
+        $settings = AttendanceSetting::getOrCreateForSchool($teacher->school_id);
+        $fingerprintService = new FingerprintService($settings);
+        $deviceStatus = $fingerprintService->getDeviceStatus();
 
         return view('tenant.teacher.attendance.biometric', compact('class', 'type', 'today', 'markedStudents', 'deviceStatus'));
     }
@@ -254,6 +421,10 @@ class AttendanceController extends Controller
     public function processBiometric(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $hasMarkedByColumn = tenant_column_exists('attendance', 'marked_by', $connection);
+        $hasMethodColumn = tenant_column_exists('attendance', 'method', $connection);
+        $hasBiometricColumn = tenant_column_exists('attendance', 'biometric_verified', $connection);
 
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
@@ -263,28 +434,48 @@ class AttendanceController extends Controller
         ]);
 
         // Verify biometric data and identify student
-        $result = $this->biometricService->verify($validated['biometric_data'], $validated['type']);
+        $settings = AttendanceSetting::getOrCreateForSchool($teacher->school_id);
+        $fingerprintService = new FingerprintService($settings);
+        $template = $fingerprintService->identify($validated['biometric_data']);
 
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'message' => $result['message']], 400);
+        if (!$template) {
+            return response()->json(['success' => false, 'message' => 'Fingerprint not recognized.'], 400);
         }
 
-        $studentId = $result['student_id'];
+        $studentId = $template->user_id;
 
         // Mark attendance
         try {
-            $attendance = Attendance::updateOrCreate(
+            // 1. Create or update parent Attendance
+            $attendanceData = [
+                'school_id' => $teacher->school_id,
+                'class_id' => $validated['class_id'],
+                'teacher_id' => $teacher->id,
+                'attendance_date' => $validated['attendance_date'],
+                'attendance_type' => 'classroom',
+            ];
+
+            if ($hasMethodColumn) {
+                $attendanceData['attendance_method'] = $validated['type']; // Note: migration used 'attendance_method'
+            }
+
+            $attendance = Attendance::firstOrCreate(
                 [
-                    'student_id' => $studentId,
                     'class_id' => $validated['class_id'],
                     'attendance_date' => $validated['attendance_date'],
                 ],
+                $attendanceData
+            );
+
+            // 2. Create or update AttendanceRecord
+            $recordData = ['status' => 'present'];
+            
+            \App\Models\AttendanceRecord::updateOrCreate(
                 [
-                    'status' => 'present',
-                    'marked_by' => $teacher->id,
-                    'method' => $validated['type'],
-                    'biometric_verified' => true,
-                ]
+                    'attendance_id' => $attendance->id,
+                    'student_id' => $studentId,
+                ],
+                $recordData
             );
 
             $student = User::find($studentId);
@@ -300,7 +491,7 @@ class AttendanceController extends Controller
                 'timestamp' => now()->format('H:i:s'),
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to mark attendance'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to mark attendance: ' . $e->getMessage()], 500);
         }
     }
 
@@ -311,15 +502,32 @@ class AttendanceController extends Controller
     {
         $teacher = Auth::user();
         $classId = $request->query('class_id');
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $schema = Schema::connection($connection);
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+        $hasEnrollments = $schema->hasTable('enrollments');
+        $hasStudentTable = $schema->hasTable('students');
 
         if (!$classId) {
             return redirect()->route('tenant.teacher.attendance.take')->with('error', 'Please select a class.');
         }
 
-        $class = ClassRoom::with('students')->findOrFail($classId);
+        $class = ClassRoom::findOrFail($classId);
+
+        if ($hasEnrollments) {
+            $class->load(['students' => function ($query) {
+                $query->where(function ($subQuery) {
+                    $subQuery->where('enrollments.status', 'active')
+                        ->orWhereNull('enrollments.status');
+                });
+            }]);
+        } elseif ($hasStudentTable) {
+            $class->load('students');
+        }
 
         // Check permission
-        if ($class->class_teacher_id !== $teacher->id && !$class->subjects()->where('class_subjects.teacher_id', $teacher->id)->exists()) {
+        if (! $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
             abort(403, 'Unauthorized to take attendance for this class.');
         }
 
@@ -340,6 +548,9 @@ class AttendanceController extends Controller
     public function processBarcode(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $hasMarkedByColumn = tenant_column_exists('attendance', 'marked_by', $connection);
+        $hasMethodColumn = tenant_column_exists('attendance', 'method', $connection);
 
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
@@ -348,13 +559,13 @@ class AttendanceController extends Controller
         ]);
 
         // Decode barcode and identify student
-        $result = $this->barcodeService->decode($validated['barcode']);
+        $parsed = $this->barcodeService->parseCode($validated['barcode']);
 
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'message' => $result['message']], 400);
+        if (!$parsed) {
+            return response()->json(['success' => false, 'message' => 'Invalid barcode format'], 400);
         }
 
-        $studentId = $result['student_id'];
+        $studentId = $parsed['user_id'];
 
         // Verify student belongs to the class
         $class = ClassRoom::findOrFail($validated['class_id']);
@@ -364,17 +575,36 @@ class AttendanceController extends Controller
 
         // Mark attendance
         try {
-            $attendance = Attendance::updateOrCreate(
+            // 1. Create or update parent Attendance
+            $attendanceData = [
+                'school_id' => $teacher->school_id,
+                'class_id' => $validated['class_id'],
+                'teacher_id' => $teacher->id,
+                'attendance_date' => $validated['attendance_date'],
+                'attendance_type' => 'classroom',
+            ];
+
+            if ($hasMethodColumn) {
+                $attendanceData['attendance_method'] = 'barcode';
+            }
+
+            $attendance = Attendance::firstOrCreate(
                 [
-                    'student_id' => $studentId,
                     'class_id' => $validated['class_id'],
                     'attendance_date' => $validated['attendance_date'],
                 ],
+                $attendanceData
+            );
+
+            // 2. Create or update AttendanceRecord
+            $recordData = ['status' => 'present'];
+            
+            \App\Models\AttendanceRecord::updateOrCreate(
                 [
-                    'status' => 'present',
-                    'marked_by' => $teacher->id,
-                    'method' => 'barcode',
-                ]
+                    'attendance_id' => $attendance->id,
+                    'student_id' => $studentId,
+                ],
+                $recordData
             );
 
             $student = User::find($studentId);
@@ -390,7 +620,7 @@ class AttendanceController extends Controller
                 'timestamp' => now()->format('H:i:s'),
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to mark attendance'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to mark attendance: ' . $e->getMessage()], 500);
         }
     }
 
@@ -404,18 +634,18 @@ class AttendanceController extends Controller
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', Carbon::now()->toDateString());
 
-        $classes = ClassRoom::where(function($query) use ($teacher) {
-                $query->where('class_teacher_id', $teacher->id)
-                    ->orWhereHas('subjects', function ($q) use ($teacher) {
-                        $q->where('class_subjects.teacher_id', $teacher->id);
-                    });
-            })
-            ->orderBy('grade_level')
-            ->orderBy('section')
-            ->orderBy('stream')
-            ->get();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+
+        $classesQuery = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn);
+        $this->applyClassOrdering($classesQuery, $connection);
+        $classes = $classesQuery->get();
 
         $selectedClass = $classId ? ClassRoom::find($classId) : null;
+        if ($selectedClass && ! $this->teacherHasClassSubjectAccess($selectedClass, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
+            $selectedClass = null;
+        }
 
         $patterns = null;
         if ($selectedClass) {
@@ -440,18 +670,18 @@ class AttendanceController extends Controller
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', Carbon::now()->toDateString());
 
-        $classes = ClassRoom::where(function($query) use ($teacher) {
-                $query->where('class_teacher_id', $teacher->id)
-                    ->orWhereHas('subjects', function ($q) use ($teacher) {
-                        $q->where('class_subjects.teacher_id', $teacher->id);
-                    });
-            })
-            ->orderBy('grade_level')
-            ->orderBy('section')
-            ->orderBy('stream')
-            ->get();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
+
+        $classesQuery = $this->teacherClassesQuery($teacher->id, $classSubjectTable, $hasClassTeacherColumn);
+        $this->applyClassOrdering($classesQuery, $connection);
+        $classes = $classesQuery->get();
 
         $selectedClass = $classId ? ClassRoom::find($classId) : null;
+        if ($selectedClass && ! $this->teacherHasClassSubjectAccess($selectedClass, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
+            $selectedClass = null;
+        }
 
         $reportData = null;
         if ($selectedClass) {
@@ -472,6 +702,9 @@ class AttendanceController extends Controller
     public function exportReport(Request $request)
     {
         $teacher = Auth::user();
+        $connection = $teacher->getConnectionName() ?? config('database.default', 'tenant');
+        $hasClassTeacherColumn = tenant_column_exists('classes', 'class_teacher_id', $connection);
+        $classSubjectTable = $this->resolveClassSubjectTable($connection);
 
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
@@ -484,7 +717,7 @@ class AttendanceController extends Controller
         $class = ClassRoom::findOrFail($validated['class_id']);
 
         // Check permission
-        if ($class->class_teacher_id !== $teacher->id && !$class->subjects()->where('class_subjects.teacher_id', $teacher->id)->exists()) {
+        if (! $this->teacherHasClassSubjectAccess($class, $teacher->id, $classSubjectTable, $hasClassTeacherColumn)) {
             abort(403, 'Unauthorized');
         }
 
@@ -495,5 +728,93 @@ class AttendanceController extends Controller
             $validated['start_date'],
             $validated['end_date']
         );
+    }
+
+    private function resolveClassSubjectTable(string $connection): ?string
+    {
+        foreach (['class_subjects', 'class_subject'] as $candidate) {
+            if (tenant_table_exists($candidate, $connection)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function teacherClassesQuery(int $teacherId, ?string $classSubjectTable, bool $hasClassTeacherColumn)
+    {
+        $query = ClassRoom::query();
+
+        $this->applyTeacherClassConstraint($query, $teacherId, $classSubjectTable, $hasClassTeacherColumn);
+
+        return $query;
+    }
+
+    private function applyTeacherClassConstraint($query, int $teacherId, ?string $classSubjectTable, bool $hasClassTeacherColumn): void
+    {
+        $query->where(function ($builder) use ($teacherId, $classSubjectTable, $hasClassTeacherColumn) {
+            $applied = false;
+
+            if ($hasClassTeacherColumn) {
+                $builder->where('class_teacher_id', $teacherId);
+                $applied = true;
+            }
+
+            if ($classSubjectTable) {
+                $constraint = function ($subjectQuery) use ($teacherId, $classSubjectTable) {
+                    $subjectQuery->where($classSubjectTable . '.teacher_id', $teacherId);
+                };
+
+                if ($applied) {
+                    $builder->orWhereHas('subjects', $constraint);
+                } else {
+                    $builder->whereHas('subjects', $constraint);
+                }
+
+                $applied = true;
+            }
+
+            if (! $applied) {
+                $builder->whereRaw('0 = 1');
+            }
+        });
+    }
+
+    private function applyClassOrdering($query, string $connection): void
+    {
+        if (tenant_column_exists('classes', 'grade_level', $connection)) {
+            $query->orderBy('grade_level');
+        }
+
+        if (tenant_column_exists('classes', 'section', $connection)) {
+            $query->orderBy('section');
+        }
+
+        if (tenant_column_exists('classes', 'stream', $connection)) {
+            $query->orderBy('stream');
+        }
+
+        $query->orderBy('name');
+    }
+
+    private function teacherHasClassSubjectAccess(ClassRoom $class, int $teacherId, ?string $classSubjectTable, bool $hasClassTeacherColumn, ?int $subjectId = null): bool
+    {
+        $isClassTeacher = $hasClassTeacherColumn && $class->class_teacher_id === $teacherId;
+
+        if ($isClassTeacher) {
+            return true;
+        }
+
+        if (! $classSubjectTable) {
+            return false;
+        }
+
+        $subjectQuery = $class->subjects()->where($classSubjectTable . '.teacher_id', $teacherId);
+
+        if ($subjectId) {
+            $subjectQuery->where('subjects.id', $subjectId);
+        }
+
+        return $subjectQuery->exists();
     }
 }

@@ -5,16 +5,22 @@ namespace App\Http\Controllers\Tenant\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
+use App\Models\Student;
 use App\Services\FileUploadService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ExerciseController extends Controller
 {
     protected $fileUploadService;
+    protected array $classCache = [];
 
     public function __construct(FileUploadService $fileUploadService)
     {
@@ -28,11 +34,25 @@ class ExerciseController extends Controller
     {
         $student = Auth::user();
         $studentId = $student->id;
-        
-        // Get student's enrolled class IDs with caching
-        $classIds = $student->enrollments()
-            ->where('status', 'active')
-            ->pluck('school_class_id');
+
+        $classIds = $this->resolveStudentClassIds($student);
+        $filter = $request->get('filter', 'all');
+
+        if ($classIds->isEmpty()) {
+            $exercises = new LengthAwarePaginator([], 0, 15, $request->input('page', 1), [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+
+            $stats = [
+                'total' => 0,
+                'pending' => 0,
+                'submitted' => 0,
+                'graded' => 0,
+            ];
+
+            return view('tenant.student.classroom.exercises.index', compact('exercises', 'stats', 'filter'));
+        }
 
         // Eager load relationships with select optimization
         $query = Exercise::whereIn('class_id', $classIds)
@@ -44,8 +64,6 @@ class ExerciseController extends Controller
             ->select('id', 'title', 'description', 'class_id', 'subject_id', 'teacher_id', 'due_date', 'max_score', 'allow_late_submission', 'late_penalty_percent');
 
         // Filter by status
-        $filter = $request->get('filter', 'all');
-        
         switch ($filter) {
             case 'pending':
                 // Not submitted and not overdue
@@ -54,14 +72,14 @@ class ExerciseController extends Controller
                         $q->where('student_id', $studentId);
                     });
                 break;
-                
+
             case 'submitted':
                 // Submitted
                 $query->whereHas('submissions', function ($q) use ($studentId) {
                     $q->where('student_id', $studentId);
                 });
                 break;
-                
+
             case 'graded':
                 // Submitted and graded
                 $query->whereHas('submissions', function ($q) use ($studentId) {
@@ -69,7 +87,7 @@ class ExerciseController extends Controller
                       ->whereNotNull('grade');
                 });
                 break;
-                
+
             case 'overdue':
                 // Not submitted and overdue
                 $query->where('due_date', '<', Carbon::now())
@@ -110,7 +128,7 @@ class ExerciseController extends Controller
             ->whereHas('exercise', function ($q) use ($classIds) {
                 $q->whereIn('class_id', $classIds);
             });
-        
+
         $stats = [
             'total' => (clone $baseQuery)->count(),
             'pending' => (clone $baseQuery)
@@ -132,22 +150,9 @@ class ExerciseController extends Controller
     public function show($id)
     {
         $student = Auth::user();
-        
-        // Get student's enrolled class IDs
-        $classIds = $student->enrollments()
-            ->where('status', 'active')
-            ->pluck('school_class_id');
 
-        $exercise = Exercise::whereIn('class_id', $classIds)
-            ->with(['class', 'subject', 'teacher'])
-            ->findOrFail($id);
+        [$exercise, $submission] = $this->getExerciseForStudent($student, $id);
 
-        // Get student's submission if exists
-        $submission = $exercise->submissions()
-            ->where('student_id', $student->id)
-            ->first();
-
-        // Check if can submit
         $canSubmit = $exercise->canSubmit($student->id);
         $isLate = Carbon::now()->isAfter($exercise->due_date);
 
@@ -159,17 +164,46 @@ class ExerciseController extends Controller
         ));
     }
 
+    public function downloadPdf($id)
+    {
+        $student = Auth::user();
+        [$exercise, $submission] = $this->getExerciseForStudent($student, $id);
+
+        $pdf = Pdf::loadView('tenant.student.classroom.exercises.export-pdf', [
+            'exercise' => $exercise,
+            'submission' => $submission,
+            'student' => $student,
+        ])->setPaper('A4', 'portrait');
+
+        $filename = Str::slug($exercise->title ?? 'assignment') . '-assignment.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    public function printView($id)
+    {
+        $student = Auth::user();
+        [$exercise, $submission] = $this->getExerciseForStudent($student, $id);
+
+        return view('tenant.student.classroom.exercises.print', [
+            'exercise' => $exercise,
+            'submission' => $submission,
+            'student' => $student,
+        ]);
+    }
+
     /**
      * Submit an assignment
      */
     public function submit(Request $request, $id)
     {
         $student = Auth::user();
-        
-        // Get student's enrolled class IDs
-        $classIds = $student->enrollments()
-            ->where('status', 'active')
-            ->pluck('school_class_id');
+
+        $classIds = $this->resolveStudentClassIds($student);
+
+        if ($classIds->isEmpty()) {
+            abort(403, 'You are not currently assigned to a class.');
+        }
 
         $exercise = Exercise::whereIn('class_id', $classIds)
             ->findOrFail($id);
@@ -234,7 +268,7 @@ class ExerciseController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to submit assignment: ' . $e->getMessage());
@@ -267,10 +301,24 @@ class ExerciseController extends Controller
     public function grades()
     {
         $student = Auth::user();
-        
-        $classIds = $student->enrollments()
-            ->where('status', 'active')
-            ->pluck('school_class_id');
+
+        $classIds = $this->resolveStudentClassIds($student);
+
+        if ($classIds->isEmpty()) {
+            $submissions = new LengthAwarePaginator([], 0, 15, request()->input('page', 1), [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+
+            $stats = [
+                'total_graded' => 0,
+                'average_grade' => null,
+                'highest_grade' => null,
+                'lowest_grade' => null,
+            ];
+
+            return view('tenant.student.classroom.exercises.grades', compact('submissions', 'stats'));
+        }
 
         $submissions = ExerciseSubmission::where('student_id', $student->id)
             ->whereHas('exercise', function ($q) use ($classIds) {
@@ -308,5 +356,50 @@ class ExerciseController extends Controller
         $stats['average_grade'] = $stats['average_grade'] ? round($stats['average_grade'], 1) : null;
 
         return view('tenant.student.classroom.exercises.grades', compact('submissions', 'stats'));
+    }
+
+    protected function getExerciseForStudent($student, int $exerciseId): array
+    {
+        $classIds = $this->resolveStudentClassIds($student);
+
+        if ($classIds->isEmpty()) {
+            abort(403, 'You are not currently assigned to a class.');
+        }
+
+        $exercise = Exercise::whereIn('class_id', $classIds)
+            ->with(['class', 'subject', 'teacher'])
+            ->findOrFail($exerciseId);
+
+        $submission = $exercise->submissions()
+            ->where('student_id', $student->id)
+            ->first();
+
+        return [$exercise, $submission];
+    }
+
+    protected function resolveStudentClassIds($student): Collection
+    {
+        if (array_key_exists($student->id, $this->classCache)) {
+            return $this->classCache[$student->id];
+        }
+
+        $classIds = $student->enrollments()
+            ->where('status', 'active')
+            ->pluck('class_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($classIds->isEmpty()) {
+            $profile = Student::select('class_id')
+                ->where('email', $student->email)
+                ->first();
+
+            if ($profile?->class_id) {
+                $classIds = collect([$profile->class_id]);
+            }
+        }
+
+        return $this->classCache[$student->id] = $classIds ?? collect();
     }
 }

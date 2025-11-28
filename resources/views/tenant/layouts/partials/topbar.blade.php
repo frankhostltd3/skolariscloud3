@@ -38,23 +38,22 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ url('/security/two-factor') }}">
-                                <i class="bi bi-shield-lock"></i>
-                                Two-Factor Authentication
-                                @if ($user->two_factor_confirmed_at)
-                                    <span class="badge bg-success badge-sm ms-1">Enabled</span>
-                                @else
-                                    @if (setting('enable_two_factor_auth', false))
-                                        <span class="badge bg-warning badge-sm ms-1">Required</span>
-                                    @endif
-                                @endif
+                            <a class="dropdown-item" href="{{ route('tenant.bookstore.my-orders') }}">
+                                <i class="bi bi-bag me-2"></i>My Orders
                             </a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <form method="POST" action="{{ route('tenant.logout') }}">
+                            @php
+                                $logoutAction = \Illuminate\Support\Facades\Route::has('tenant.logout')
+                                    ? route('tenant.logout')
+                                    : (\Illuminate\Support\Facades\Route::has('logout')
+                                        ? route('logout')
+                                        : url('/logout'));
+                            @endphp
+                            <form method="POST" action="{{ $logoutAction }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item text-danger">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout

@@ -53,12 +53,18 @@ class AdminRegistrationController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $schoolId = config('tenant.school_id');
+        if (!$schoolId && app()->bound('currentSchool')) {
+            $schoolId = app('currentSchool')->id;
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'email_verified_at' => now(), // Auto-verify admin
             'password_changed_at' => now(),
+            'school_id' => $schoolId,
         ]);
 
         // Assign Admin role

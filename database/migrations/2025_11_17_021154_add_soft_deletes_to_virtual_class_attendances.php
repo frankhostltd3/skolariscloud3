@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('virtual_class_attendances')) {
+            return;
+        }
+
         Schema::table('virtual_class_attendances', function (Blueprint $table) {
-            $table->softDeletes();
+            if (! Schema::hasColumn('virtual_class_attendances', 'deleted_at')) {
+                $table->softDeletes();
+            }
         });
     }
 
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('virtual_class_attendances')) {
+            return;
+        }
+
         Schema::table('virtual_class_attendances', function (Blueprint $table) {
-            $table->dropSoftDeletes();
+            if (Schema::hasColumn('virtual_class_attendances', 'deleted_at')) {
+                $table->dropSoftDeletes();
+            }
         });
     }
 };

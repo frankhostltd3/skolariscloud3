@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EmployeeIdSetting extends Model
 {
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'template_name',
         'card_width',
@@ -57,6 +59,9 @@ class EmployeeIdSetting extends Model
      */
     public static function getActive()
     {
-        return static::where('is_active', true)->get();
+        return static::where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('template_name')
+            ->get();
     }
 }

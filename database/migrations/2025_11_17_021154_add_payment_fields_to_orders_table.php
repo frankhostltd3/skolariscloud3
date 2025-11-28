@@ -10,17 +10,39 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('orders')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('payment_method')->nullable()->after('status');
-            $table->timestamp('paid_at')->nullable()->after('payment_method');
-            $table->timestamp('receipt_email_sent_at')->nullable()->after('paid_at');
+            if (! Schema::hasColumn('orders', 'payment_method')) {
+                $table->string('payment_method')->nullable()->after('status');
+            }
+
+            if (! Schema::hasColumn('orders', 'paid_at')) {
+                $table->timestamp('paid_at')->nullable()->after('payment_method');
+            }
+
+            if (! Schema::hasColumn('orders', 'receipt_email_sent_at')) {
+                $table->timestamp('receipt_email_sent_at')->nullable()->after('paid_at');
+            }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('orders')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn(['payment_method','paid_at','receipt_email_sent_at']);
+            $columns = collect(['payment_method','paid_at','receipt_email_sent_at'])
+                ->filter(fn ($column) => Schema::hasColumn('orders', $column))
+                ->all();
+
+            if (! empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ReportsController;
-use App\Http\Controllers\Admin\UserApprovalsController;
+use App\Http\Controllers\Admin\UserApprovalController;
 use App\Http\Controllers\Settings\AcademicSettingsController;
 use App\Http\Controllers\Settings\CurrencyController;
 use App\Http\Controllers\Settings\GeneralSettingsController;
@@ -11,6 +11,7 @@ use App\Http\Controllers\Settings\PaymentSettingsController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Settings\SystemSettingsController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\Tenant\Admin\LessonPlanReviewController;
 use Illuminate\Support\Facades\Route;
 
 // Two-Factor Authentication Routes
@@ -22,44 +23,55 @@ Route::get('/security/two-factor/qr-code', [TwoFactorController::class, 'qrCode'
 Route::get('/security/two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes'])->name('two-factor.recovery-codes');
 Route::post('/security/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes.regenerate');
 
+// Permissions, Settings, & Access Control Routes
+Route::prefix('settings/admin')->name('tenant.settings.admin.')->group(function () {
+    // General Settings
+    Route::get('/general', [GeneralSettingsController::class, 'edit'])->name('general');
+    Route::put('/general', [GeneralSettingsController::class, 'update'])->name('general.update');
+    Route::post('/general/clear-cache', [GeneralSettingsController::class, 'clearCache'])->name('general.clear-cache');
+
+    // Academic Settings
+    Route::get('/academic', [AcademicSettingsController::class, 'edit'])->name('academic');
+    Route::put('/academic', [AcademicSettingsController::class, 'update'])->name('academic.update');
+    Route::post('/academic/clear-cache', [AcademicSettingsController::class, 'clearCache'])->name('academic.clear-cache');
+
+    // System Settings
+    Route::get('/system', [SystemSettingsController::class, 'edit'])->name('system');
+    Route::put('/system', [SystemSettingsController::class, 'update'])->name('system.update');
+    Route::post('/system/clear-cache', [SystemSettingsController::class, 'clearCache'])->name('system.clear-cache');
+
+    // Mail Settings
+    Route::get('/mail', [MailSettingsController::class, 'edit'])->name('mail');
+    Route::put('/mail', [MailSettingsController::class, 'update'])->name('mail.update');
+
+    // Finance (Payment) Settings
+    Route::get('/finance', [PaymentSettingsController::class, 'edit'])->name('finance');
+    Route::put('/finance', [PaymentSettingsController::class, 'update'])->name('finance.update');
+
+    // Messaging Settings
+    Route::get('/messaging', [MessagingSettingsController::class, 'edit'])->name('messaging');
+    Route::put('/messaging', [MessagingSettingsController::class, 'update'])->name('messaging.update');
+
+    // Currencies
+    Route::resource('currencies', CurrencyController::class)->except(['show']);
+    Route::post('currencies/{currency}/set-default', [CurrencyController::class, 'setDefault'])->name('currencies.set-default');
+    Route::post('currencies/{currency}/toggle-active', [CurrencyController::class, 'toggleActive'])->name('currencies.toggle-active');
+    Route::post('currencies/{currency}/toggle-auto-update', [CurrencyController::class, 'toggleAutoUpdate'])->name('currencies.toggle-auto-update');
+    Route::post('currencies/update-rates', [CurrencyController::class, 'updateRates'])->name('currencies.update-rates');
+
+    // Permissions
+    Route::get('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'index'])->name('permissions');
+    Route::post('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'update'])->name('permissions.update');
+    Route::post('/roles', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'storeRole'])->name('roles.store');
+    Route::get('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'getRolePermissions'])->name('roles.permissions.get');
+    Route::post('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'updateRolePermissions'])->name('roles.permissions.update');
+    Route::delete('/roles/{role}', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'destroyRole'])->name('roles.destroy');
+    Route::post('/permissions/sync-registry', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'syncRegistry'])->name('permissions.sync-registry');
+    Route::post('/roles/bulk-assign', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'bulkAssignRole'])->name('roles.bulkAssign');
+    Route::post('/permissions/clear-cache', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'clearCache'])->name('permissions.clear-cache');
+});
+
 Route::middleware('user.type:admin')->group(function (): void {
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::get('/settings/general', [GeneralSettingsController::class, 'edit'])->name('settings.general.edit');
-    Route::put('/settings/general', [GeneralSettingsController::class, 'update'])->name('settings.general.update');
-    Route::post('/settings/general/clear-cache', [GeneralSettingsController::class, 'clearCache'])->name('settings.general.clear-cache');
-    Route::get('/settings/mail', [MailSettingsController::class, 'edit'])->name('settings.mail.edit');
-    Route::put('/settings/mail', [MailSettingsController::class, 'update'])->name('settings.mail.update');
-    Route::get('/settings/payments', [PaymentSettingsController::class, 'edit'])->name('settings.payments.edit');
-    Route::put('/settings/payments', [PaymentSettingsController::class, 'update'])->name('settings.payments.update');
-    Route::get('/settings/messaging', [MessagingSettingsController::class, 'edit'])->name('settings.messaging.edit');
-    Route::put('/settings/messaging', [MessagingSettingsController::class, 'update'])->name('settings.messaging.update');
-    Route::get('/settings/academic', [AcademicSettingsController::class, 'edit'])->name('settings.academic.edit');
-    Route::put('/settings/academic', [AcademicSettingsController::class, 'update'])->name('settings.academic.update');
-    Route::post('/settings/academic/clear-cache', [AcademicSettingsController::class, 'clearCache'])->name('settings.academic.clear-cache');
-    Route::get('/settings/system', [SystemSettingsController::class, 'edit'])->name('settings.system.edit');
-    Route::put('/settings/system', [SystemSettingsController::class, 'update'])->name('settings.system.update');
-    Route::post('/settings/system/clear-cache', [SystemSettingsController::class, 'clearCache'])->name('settings.system.clear-cache');
-
-    // Currency Routes
-    Route::resource('settings/currencies', CurrencyController::class)->names('settings.currencies');
-    Route::post('/settings/currencies/{currency}/set-default', [CurrencyController::class, 'setDefault'])->name('settings.currencies.set-default');
-    Route::post('/settings/currencies/{currency}/toggle-active', [CurrencyController::class, 'toggleActive'])->name('settings.currencies.toggle-active');
-    Route::post('/settings/currencies/{currency}/toggle-auto-update', [CurrencyController::class, 'toggleAutoUpdate'])->name('settings.currencies.toggle-auto-update');
-    Route::post('/settings/currencies/update-rates', [CurrencyController::class, 'updateRates'])->name('settings.currencies.update-rates');
-
-    // Permissions & Access Control Routes
-    Route::prefix('settings/admin')->name('tenant.settings.admin.')->group(function () {
-        Route::get('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'index'])->name('permissions');
-        Route::post('/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'update'])->name('permissions.update');
-        Route::post('/roles', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'storeRole'])->name('roles.store');
-        Route::get('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'getRolePermissions'])->name('roles.permissions.get');
-        Route::post('/roles/{role}/permissions', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'updateRolePermissions'])->name('roles.permissions.update');
-        Route::delete('/roles/{role}', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'destroyRole'])->name('roles.destroy');
-        Route::post('/permissions/sync-registry', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'syncRegistry'])->name('permissions.sync-registry');
-        Route::post('/roles/bulk-assign', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'bulkAssignRole'])->name('roles.bulkAssign');
-        Route::post('/permissions/clear-cache', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'clearCache'])->name('permissions.clear-cache');
-    });
-
     // Academic Management Routes
     Route::prefix('tenant/academics')->name('tenant.academics.')->group(function () {
         // Core Academic Resources
@@ -100,8 +112,20 @@ Route::middleware('user.type:admin')->group(function (): void {
 
         Route::resource('classes', \App\Http\Controllers\Tenant\Academic\ClassController::class);
 
+        // Room Management
+        Route::resource('rooms', \App\Http\Controllers\Tenant\Academic\RoomController::class);
+
+        // Class Subjects Management
+        Route::get('classes/{class}/subjects', [\App\Http\Controllers\Tenant\Academic\ClassController::class, 'manageSubjects'])->name('classes.subjects');
+        Route::post('classes/{class}/subjects', [\App\Http\Controllers\Tenant\Academic\ClassController::class, 'updateSubjects'])->name('classes.subjects.update');
+
+        // Enrollment Management
+        Route::resource('enrollments', \App\Http\Controllers\Tenant\Academics\EnrollmentController::class);
+        Route::get('enrollments/streams', [\App\Http\Controllers\Tenant\Academics\EnrollmentController::class, 'getClassStreams'])->name('enrollments.streams');
+
         // Class Streams Routes (nested under classes)
         Route::prefix('classes/{class}/streams')->name('streams.')->group(function () {
+            Route::get('/list', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'list'])->name('list');
             Route::get('/', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Tenant\Academic\ClassStreamController::class, 'store'])->name('store');
@@ -113,19 +137,35 @@ Route::middleware('user.type:admin')->group(function (): void {
         });
     });
 
+        // Lesson Plan Reviews
+        Route::prefix('tenant/admin/lesson-plans')->name('tenant.admin.lesson-plans.')->group(function () {
+            Route::get('/', [LessonPlanReviewController::class, 'index'])->name('index');
+            Route::get('/{lessonPlan}', [LessonPlanReviewController::class, 'show'])->name('show');
+            Route::post('/{lessonPlan}/approve', [LessonPlanReviewController::class, 'approve'])->name('approve');
+            Route::post('/{lessonPlan}/request-revision', [LessonPlanReviewController::class, 'requestRevision'])->name('request-revision');
+            Route::post('/{lessonPlan}/reject', [LessonPlanReviewController::class, 'reject'])->name('reject');
+            Route::post('/{lessonPlan}/reopen', [LessonPlanReviewController::class, 'reopen'])->name('reopen');
+        });
+
     // User Approvals Routes
     Route::prefix('admin/user-approvals')->name('admin.user-approvals.')->group(function () {
-        Route::get('/', [UserApprovalsController::class, 'index'])->name('index');
-        Route::get('/{user}', [UserApprovalsController::class, 'show'])->name('show');
-        Route::post('/{user}/approve', [UserApprovalsController::class, 'approve'])->name('approve');
-        Route::post('/{user}/reject', [UserApprovalsController::class, 'reject'])->name('reject');
-        Route::post('/bulk-approve', [UserApprovalsController::class, 'bulkApprove'])->name('bulk-approve');
-        Route::post('/bulk-reject', [UserApprovalsController::class, 'bulkReject'])->name('bulk-reject');
-        Route::post('/{user}/employment', [UserApprovalsController::class, 'updateEmployment'])->name('employment');
-        Route::post('/{user}/student-enrollment', [UserApprovalsController::class, 'updateStudentEnrollment'])->name('student-enrollment');
-        Route::post('/{user}/suspend', [UserApprovalsController::class, 'suspend'])->name('suspend');
-        Route::post('/{user}/reinstate', [UserApprovalsController::class, 'reinstate'])->name('reinstate');
-        Route::post('/{user}/expel', [UserApprovalsController::class, 'expel'])->name('expel');
+        Route::get('/', [UserApprovalController::class, 'index'])->name('index');
+        Route::get('/{user}', [UserApprovalController::class, 'show'])->name('show');
+        Route::post('/{user}/approve', [UserApprovalController::class, 'approve'])->name('approve');
+        Route::post('/{user}/reject', [UserApprovalController::class, 'reject'])->name('reject');
+        Route::post('/bulk-approve', [UserApprovalController::class, 'bulkApprove'])->name('bulk-approve');
+        Route::post('/bulk-reject', [UserApprovalController::class, 'bulkReject'])->name('bulk-reject');
+        Route::post('/{user}/employment', [UserApprovalController::class, 'updateEmployment'])->name('employment');
+        Route::post('/{user}/student-enrollment', [UserApprovalController::class, 'updateStudentEnrollment'])->name('student-enrollment');
+        Route::post('/{user}/sync-student', [UserApprovalController::class, 'syncStudentProfile'])->name('sync-student');
+        Route::post('/{user}/suspend', [UserApprovalController::class, 'suspend'])->name('suspend');
+        Route::post('/{user}/reinstate', [UserApprovalController::class, 'reinstate'])->name('reinstate');
+        Route::post('/{user}/expel', [UserApprovalController::class, 'expel'])->name('expel');
+    });
+
+    // Staff Role Management Routes
+    Route::prefix('admin/staff')->name('admin.staff.')->group(function () {
+        Route::post('/{user}/change-type', [\App\Http\Controllers\Admin\StaffRoleController::class, 'changeUserType'])->name('change-type');
     });
 
     // Reports Routes
@@ -141,6 +181,11 @@ Route::middleware('user.type:admin')->group(function (): void {
         Route::get('/enrollment', [ReportsController::class, 'enrollment'])->name('enrollment');
         Route::get('/late-submissions', [ReportsController::class, 'lateSubmissions'])->name('late-submissions');
         Route::get('/late-submissions/export', [ReportsController::class, 'lateSubmissionsExport'])->name('late-submissions.export');
+
+        // Report Card Settings
+        Route::get('/settings', [\App\Http\Controllers\Admin\ReportSettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [\App\Http\Controllers\Admin\ReportSettingsController::class, 'update'])->name('settings.update');
+
         Route::get('/report-cards', [ReportsController::class, 'reportCards'])->name('report-cards');
         Route::post('/report-cards/export-student', [ReportsController::class, 'exportStudentReportCard'])->name('report-cards.export-student');
         Route::post('/report-cards/export-class', [ReportsController::class, 'exportClassReportCards'])->name('report-cards.export-class');
@@ -164,23 +209,76 @@ Route::middleware('user.type:admin')->group(function (): void {
         Route::get('payments/{payment}/receipt', [\App\Http\Controllers\Tenant\Finance\PaymentController::class, 'receipt'])->name('payments.receipt');
     });
 
+
     // Human Resource Management Routes
     Route::prefix('tenant/modules/human-resource')->name('tenant.modules.human-resource.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Tenant\Modules\HumanResourceController::class, 'index'])->name('index');
         Route::resource('employees', \App\Http\Controllers\Tenant\Modules\HumanResource\EmployeesController::class);
-        Route::get('employees/{employee}/id-card', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'show'])->name('employees.id-card');
+        Route::put('employees/{employee}/update-detail', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeesController::class, 'updateDetail'])
+            ->name('employees.update-detail');
+        Route::put('employees/{employee}/update-photo', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeesController::class, 'updatePhoto'])
+            ->name('employees.update-photo');
+
+        // Employee IDs Management
+        Route::get('employee-ids', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'index'])->name('employee-ids.index');
+        Route::post('employee-ids/generate', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'generate'])->name('employee-ids.generate');
+        Route::post('employee-ids/preview', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'preview'])->name('employee-ids.preview');
+        Route::any('employee-ids/download-svg', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'downloadSvg'])->name('employee-ids.download-svg');
+        Route::any('employee-ids/download-png', [\App\Http\Controllers\Tenant\Modules\HumanResource\EmployeeIdController::class, 'downloadPng'])->name('employee-ids.download-png');
+
         Route::resource('departments', \App\Http\Controllers\Tenant\Modules\HumanResource\DepartmentsController::class);
         Route::resource('positions', \App\Http\Controllers\Tenant\Modules\HumanResource\PositionsController::class);
+
+        // Salary Scales Custom Routes
+        Route::get('salary-scales/export-template', [\App\Http\Controllers\Tenant\Modules\HumanResource\SalaryScalesController::class, 'exportTemplate'])->name('salary-scales.exportTemplate');
+        Route::get('salary-scales/export', [\App\Http\Controllers\Tenant\Modules\HumanResource\SalaryScalesController::class, 'export'])->name('salary-scales.export');
+        Route::post('salary-scales/import/{format}', [\App\Http\Controllers\Tenant\Modules\HumanResource\SalaryScalesController::class, 'import'])->name('salary-scales.import');
         Route::resource('salary-scales', \App\Http\Controllers\Tenant\Modules\HumanResource\SalaryScalesController::class);
+
+        // Leave Types Custom Routes
+        Route::get('leave-types/export-template', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class, 'exportTemplate'])->name('leave-types.exportTemplate');
+        Route::get('leave-types/export-sql-template', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class, 'exportSqlTemplate'])->name('leave-types.exportSqlTemplate');
+        Route::get('leave-types/export', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class, 'export'])->name('leave-types.export');
+        Route::post('leave-types/import/{format}', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class, 'import'])->name('leave-types.import');
         Route::resource('leave-types', \App\Http\Controllers\Tenant\Modules\HumanResource\LeaveTypesController::class);
+
+        // Leave Requests Custom Routes
+        Route::get('leave-requests/financial-report', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'financialReport'])->name('leave-requests.financial-report');
+        Route::get('leave-requests/export-financial', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'exportFinancialReport'])->name('leave-requests.export-financial');
+        Route::get('leave-requests/employee-balance/{employeeId?}', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'employeeBalance'])->name('leave-requests.employee-balance');
+        Route::post('leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'approve'])->name('leave-requests.approve');
+        Route::post('leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class, 'reject'])->name('leave-requests.reject');
         Route::resource('leave-requests', \App\Http\Controllers\Tenant\Modules\HumanResource\LeaveRequestsController::class);
-        Route::resource('payroll-settings', \App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class);
-        Route::resource('payroll-payslip', \App\Http\Controllers\Tenant\Modules\HumanResource\PayrollPayslipController::class);
+        Route::get('payroll-settings', [\App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class, 'index'])
+            ->name('payroll-settings.index');
+        Route::get('payroll-settings/edit', [\App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class, 'edit'])
+            ->name('payroll-settings.edit');
+        Route::put('payroll-settings', [\App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class, 'update'])
+            ->name('payroll-settings.update');
+        Route::post('payroll-settings/reset', [\App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class, 'reset'])
+            ->name('payroll-settings.reset');
+        Route::post('payroll-settings/export', [\App\Http\Controllers\Tenant\Modules\HumanResource\PayrollSettingsController::class, 'export'])
+            ->name('payroll-settings.export');
     });
 
     // Library Management Routes
     Route::prefix('tenant/modules/library')->name('tenant.modules.library.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'index'])->name('index');
+
+        // Books
+        Route::get('/books', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'books'])->name('books.index');
+        Route::get('/books/create', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'createBook'])->name('books.create');
+        Route::post('/books', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'storeBook'])->name('books.store');
+        Route::get('/books/{book}', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'showBook'])->name('books.show');
+        Route::get('/books/{book}/edit', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'editBook'])->name('books.edit');
+        Route::put('/books/{book}', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'updateBook'])->name('books.update');
+        Route::delete('/books/{book}', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'destroyBook'])->name('books.destroy');
+
+        // Transactions
+        Route::get('/transactions', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'transactions'])->name('transactions.index');
+        Route::get('/transactions/borrow', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'borrowForm'])->name('transactions.borrow');
+        Route::post('/transactions/borrow', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'borrow'])->name('transactions.store');
+        Route::post('/transactions/{transaction}/return', [\App\Http\Controllers\Tenant\Modules\LibraryController::class, 'returnBook'])->name('transactions.return');
     });
 
     // Pamphlets Management Routes
@@ -188,26 +286,71 @@ Route::middleware('user.type:admin')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\Tenant\Modules\PamphletsController::class, 'index'])->name('index');
     });
 
-    // Books Module Routes
-    Route::prefix('tenant/modules/books')->name('tenant.modules.books.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Tenant\Modules\BooksController::class, 'index'])->name('index');
+    // Bookstore Module Routes
+    Route::prefix('tenant/modules/bookstore')->name('tenant.modules.bookstore.')->group(function () {
+        // Dashboard
+        Route::get('/', [\App\Http\Controllers\Tenant\Modules\BookstoreController::class, 'index'])->name('index');
+
+        // Books (Inventory)
+        Route::resource('books', \App\Http\Controllers\Tenant\Modules\BooksController::class);
+
+        // Orders
+        Route::get('orders', [\App\Http\Controllers\Tenant\Modules\OrdersController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [\App\Http\Controllers\Tenant\Modules\OrdersController::class, 'show'])->name('orders.show');
+        Route::post('orders/{order}/notes', [\App\Http\Controllers\Tenant\Modules\OrdersController::class, 'updateNotes'])->name('orders.update-notes');
+        Route::post('orders/{order}/paid', [\App\Http\Controllers\Tenant\Modules\OrdersController::class, 'markPaid'])->name('orders.mark-paid');
+        Route::post('orders/{order}/cancelled', [\App\Http\Controllers\Tenant\Modules\OrdersController::class, 'markCancelled'])->name('orders.mark-cancelled');
     });
 
     // Bookstore Management Routes
     Route::prefix('tenant/bookstore')->name('tenant.bookstore.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Tenant\BookstoreController::class, 'index'])->name('index');
     });
+
+    Route::prefix('admin')->name('tenant.')->group(function () {
+        Route::resource('profile/admin', \App\Http\Controllers\Tenant\Admin\ProfileController::class)->names('profile.admin');
+    });
+
+    // User Management Routes
+    Route::prefix('tenant/users')->name('tenant.users.')->group(function () {
+        // Admins
+        Route::resource('admins', \App\Http\Controllers\Tenant\Users\AdminsController::class)->names([
+            'index' => 'admins',
+        ]);
+        Route::post('admins/{user}/activate', [\App\Http\Controllers\Tenant\Users\AdminsController::class, 'activate'])->name('admins.activate');
+        Route::post('admins/{user}/deactivate', [\App\Http\Controllers\Tenant\Users\AdminsController::class, 'deactivate'])->name('admins.deactivate');
+
+        // Parents
+        Route::resource('parents', \App\Http\Controllers\Tenant\Users\ParentsController::class)->names([
+            'index' => 'parents',
+        ]);
+        Route::post('parents/{user}/activate', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'activate'])->name('parents.activate');
+        Route::post('parents/{user}/deactivate', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'deactivate'])->name('parents.deactivate');
+    });
+
+    // Student & Teacher Management Routes
+    Route::prefix('tenant/modules')->name('tenant.modules.')->group(function () {
+        Route::resource('students', \App\Http\Controllers\Tenant\Modules\StudentsController::class);
+        Route::resource('teachers', \App\Http\Controllers\Tenant\Modules\TeachersController::class);
+    });
+});
+
+// Student & Parent Accessible Payment Page
+Route::middleware('role:Admin|admin|Student|student|Parent|parent')->group(function (): void {
+    Route::get('/finance/pay', function () {
+        return view('tenant.finance.payments.pay');
+    })->name('tenant.finance.payments.pay');
 });
 
 // Attendance Management Routes (accessible to admin, teaching staff, and general staff)
 Route::middleware(['auth', 'user.type:admin,teaching_staff,general_staff'])->group(function (): void {
-    Route::prefix('admin/attendance')->name('admin.attendance.')->group(function () {
+    Route::prefix('tenant/modules/attendance')->name('tenant.modules.attendance.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\AttendanceController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\AttendanceController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\AttendanceController::class, 'store'])->name('store');
         Route::get('/{id}', [\App\Http\Controllers\Admin\AttendanceController::class, 'show'])->name('show');
-        Route::get('/{id}/mark', [\App\Http\Controllers\Admin\AttendanceController::class, 'mark'])->name('mark');
-        Route::post('/{id}/records', [\App\Http\Controllers\Admin\AttendanceController::class, 'saveRecords'])->name('save-records');
+        Route::get('/{id}/mark', [\App\Http\Controllers\Admin\ManualAttendanceController::class, 'mark'])->name('mark');
+        Route::post('/{id}/records', [\App\Http\Controllers\Admin\ManualAttendanceController::class, 'saveManual'])->name('save-records');
         Route::delete('/{id}', [\App\Http\Controllers\Admin\AttendanceController::class, 'destroy'])->name('destroy');
         Route::get('/kiosk/mode', [\App\Http\Controllers\Admin\AttendanceController::class, 'kiosk'])->name('kiosk');
         Route::post('/kiosk/check-in', [\App\Http\Controllers\Admin\AttendanceController::class, 'kioskCheckIn'])->name('kiosk.check-in');
@@ -281,5 +424,22 @@ Route::middleware(['auth', 'user.type:admin,teaching_staff,general_staff'])->gro
         Route::get('/{id}/mark', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'mark'])->name('mark');
         Route::post('/{id}/records', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'saveRecords'])->name('save-records');
         Route::delete('/{id}', [\App\Http\Controllers\Admin\ExamAttendanceController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('admin/notifications')->name('admin.notifications.')->group(function() {
+        Route::get('/', [\App\Http\Controllers\Admin\NotificationsController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\NotificationsController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\NotificationsController::class, 'store'])->name('store');
+    });
+
+    Route::prefix('admin/messages')->name('admin.messages.')->group(function() {
+        Route::get('/', [\App\Http\Controllers\Admin\MessagesController::class, 'index'])->name('index');
+    });
+
+    // Password Management Routes
+    Route::prefix('admin/users')->name('admin.users.')->group(function() {
+        Route::get('password', [\App\Http\Controllers\Admin\Users\PasswordController::class, 'index'])->name('password.index');
+        Route::get('{user}/password', [\App\Http\Controllers\Admin\Users\PasswordController::class, 'show'])->name('password.show');
+        Route::put('{user}/password/reset', [\App\Http\Controllers\Admin\Users\PasswordController::class, 'reset'])->name('password.reset');
     });
 });

@@ -15,9 +15,14 @@
                             {{ __('Automatically generate a timetable for a class using intelligent scheduling algorithms') }}
                         </p>
                     </div>
-                    <a href="{{ route('tenant.academics.timetable.index') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>{{ __('Back to Timetable') }}
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('tenant.academics.timetable.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>{{ __('Manual Entry') }}
+                        </a>
+                        <a href="{{ route('tenant.academics.timetable.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>{{ __('Back to Timetable') }}
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,80 +52,115 @@
                         <h5 class="mb-0">{{ __('Generation Settings') }}</h5>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('tenant.academics.timetable.storeGenerated') }}" method="POST">
+                        <form action="{{ route('tenant.academics.timetable.storeGenerated') }}" method="POST"
+                            id="generateForm">
                             @csrf
 
-                            <!-- Class Selection -->
+                            <!-- Generation Scope -->
                             <div class="mb-4">
-                                <label for="class_id" class="form-label fw-semibold">{{ __('Select Class') }} <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('class_id') is-invalid @enderror" id="class_id"
-                                    name="class_id" required>
-                                    <option value="">{{ __('Choose a class...') }}</option>
-                                    @foreach ($classes as $class)
-                                        <option value="{{ $class->id }}"
-                                            {{ old('class_id') == $class->id ? 'selected' : '' }}>
-                                            {{ $class->name }} ({{ $class->subjects_count ?? 0 }} subjects)
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('class_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label class="form-label fw-semibold">{{ __('Generation Scope') }}</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="scope" id="scope_single"
+                                            value="single" checked>
+                                        <label class="form-check-label" for="scope_single">
+                                            {{ __('Single Class/Stream') }}
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="scope" id="scope_all"
+                                            value="all">
+                                        <label class="form-check-label" for="scope_all">
+                                            {{ __('All Classes & Streams') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Class & Stream Selection -->
+                            <div id="single_class_selection" class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="class_id" class="form-label fw-semibold">{{ __('Select Class') }} <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select @error('class_id') is-invalid @enderror" id="class_id"
+                                        name="class_id">
+                                        <option value="">{{ __('Choose a class...') }}</option>
+                                        @foreach ($classes as $class)
+                                            <option value="{{ $class->id }}"
+                                                {{ old('class_id') == $class->id ? 'selected' : '' }}>
+                                                {{ $class->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('class_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="class_stream_id" class="form-label fw-semibold">{{ __('Select Stream') }}
+                                        <span class="text-muted small">({{ __('Optional') }})</span></label>
+                                    <select class="form-select @error('class_stream_id') is-invalid @enderror"
+                                        id="class_stream_id" name="class_stream_id">
+                                        <option value="">{{ __('All Streams') }}</option>
+                                    </select>
+                                    @error('class_stream_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
 
                             <!-- Schedule Settings -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label for="max_periods_per_day"
-                                        class="form-label">{{ __('Max Periods per Day') }}</label>
+                                    <label for="max_periods_per_day" class="form-label">{{ __('Max Periods per Day') }}
+                                        <span class="text-danger">*</span></label>
                                     <input type="number"
                                         class="form-control @error('max_periods_per_day') is-invalid @enderror"
                                         id="max_periods_per_day" name="max_periods_per_day"
-                                        value="{{ old('max_periods_per_day', 8) }}" min="1" max="12">
+                                        value="{{ old('max_periods_per_day', 8) }}" min="1" max="12" required>
                                     @error('max_periods_per_day')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                     <small class="text-muted">{{ __('Number of teaching periods per day') }}</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="max_periods_per_week"
-                                        class="form-label">{{ __('Max Periods per Week') }}</label>
-                                    <input type="number"
-                                        class="form-control @error('max_periods_per_week') is-invalid @enderror"
-                                        id="max_periods_per_week" name="max_periods_per_week"
-                                        value="{{ old('max_periods_per_week', 40) }}" min="1" max="60">
-                                    @error('max_periods_per_week')
+                                    <label for="start_time" class="form-label">{{ __('School Start Time') }} <span
+                                            class="text-danger">*</span></label>
+                                    <input type="time" class="form-control @error('start_time') is-invalid @enderror"
+                                        id="start_time" name="start_time" value="{{ old('start_time', '08:00') }}"
+                                        required>
+                                    @error('start_time')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">{{ __('Total periods per week for the class') }}</small>
+                                    <small class="text-muted">{{ __('When does school start') }}</small>
                                 </div>
                             </div>
 
-                            <!-- Break Settings -->
+                            <!-- Period Duration -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label for="break_after_periods"
-                                        class="form-label">{{ __('Break After Periods') }}</label>
+                                    <label for="period_duration" class="form-label">{{ __('Period Duration (minutes)') }}
+                                        <span class="text-danger">*</span></label>
                                     <input type="number"
-                                        class="form-control @error('break_after_periods') is-invalid @enderror"
-                                        id="break_after_periods" name="break_after_periods"
-                                        value="{{ old('break_after_periods', 4) }}" min="1" max="10">
-                                    @error('break_after_periods')
+                                        class="form-control @error('period_duration') is-invalid @enderror"
+                                        id="period_duration" name="period_duration"
+                                        value="{{ old('period_duration', 40) }}" min="30" max="90" required>
+                                    @error('period_duration')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">{{ __('Insert break after this many periods') }}</small>
+                                    <small class="text-muted">{{ __('Duration of each period') }}</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="lunch_break_slot" class="form-label">{{ __('Lunch Break Slot') }}</label>
+                                    <label for="break_duration" class="form-label">{{ __('Break Duration (minutes)') }}
+                                        <span class="text-danger">*</span></label>
                                     <input type="number"
-                                        class="form-control @error('lunch_break_slot') is-invalid @enderror"
-                                        id="lunch_break_slot" name="lunch_break_slot"
-                                        value="{{ old('lunch_break_slot', 4) }}" min="1" max="10">
-                                    @error('lunch_break_slot')
+                                        class="form-control @error('break_duration') is-invalid @enderror"
+                                        id="break_duration" name="break_duration"
+                                        value="{{ old('break_duration', 15) }}" min="5" max="60" required>
+                                    @error('break_duration')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">{{ __('Position of lunch break (period number)') }}</small>
+                                    <small class="text-muted">{{ __('Break between periods') }}</small>
                                 </div>
                             </div>
 
@@ -263,14 +303,68 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-select reasonable defaults based on class selection
-            document.getElementById('class_id').addEventListener('change', function() {
-                const classId = this.value;
-                if (classId) {
-                    // Could add AJAX call here to get class-specific defaults
-                    console.log('Class selected:', classId);
+            const streamsByClass = @json($streamsByClass);
+            const classSelect = document.getElementById('class_id');
+            const streamSelect = document.getElementById('class_stream_id');
+            const scopeRadios = document.querySelectorAll('input[name="scope"]');
+            const singleClassSelection = document.getElementById('single_class_selection');
+
+            // Function to update streams
+            function updateStreams() {
+                const classId = classSelect.value;
+                const currentStreamId = streamSelect.getAttribute('data-old-value');
+
+                streamSelect.innerHTML = '<option value="">{{ __('All Streams') }}</option>';
+
+                // Handle both array (if keys are sequential 0-based) and object
+                let streams = null;
+                if (streamsByClass) {
+                    if (Array.isArray(streamsByClass)) {
+                        streams = streamsByClass[classId];
+                    } else {
+                        streams = streamsByClass[classId];
+                    }
                 }
+
+                if (classId && streams && streams.length > 0) {
+                    streams.forEach(stream => {
+                        const option = document.createElement('option');
+                        option.value = stream.id;
+                        option.textContent = stream.name;
+                        if (currentStreamId && stream.id == currentStreamId) {
+                            option.selected = true;
+                        }
+                        streamSelect.appendChild(option);
+                    });
+                    streamSelect.disabled = false;
+                } else {
+                    streamSelect.disabled = true;
+                }
+            }
+
+            // Handle Scope Change
+            scopeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'all') {
+                        singleClassSelection.style.display = 'none';
+                        classSelect.removeAttribute('required');
+                    } else {
+                        singleClassSelection.style.display = 'flex';
+                        classSelect.setAttribute('required', 'required');
+                    }
+                });
             });
+
+            // Handle Class Change
+            classSelect.addEventListener('change', function() {
+                // Clear old value when class changes manually
+                streamSelect.removeAttribute('data-old-value');
+                updateStreams();
+            });
+
+            // Initialize
+            streamSelect.setAttribute('data-old-value', '{{ old('class_stream_id') }}');
+            updateStreams();
 
             // Form validation
             const form = document.querySelector('form');

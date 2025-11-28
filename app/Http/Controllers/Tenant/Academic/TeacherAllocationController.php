@@ -7,6 +7,7 @@ use App\Http\Requests\StoreTeacherAllocationRequest;
 use App\Models\Academic\ClassRoom;
 use App\Models\Academic\Subject;
 use App\Models\User;
+use App\Enums\UserType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -60,7 +61,7 @@ class TeacherAllocationController extends Controller
 
         // Get dropdown data
         $teachers = User::where('school_id', $schoolId)
-            ->where('user_type', 'teacher')
+            ->where('user_type', UserType::TEACHING_STAFF)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
@@ -94,7 +95,7 @@ class TeacherAllocationController extends Controller
         $schoolId = auth()->user()->school_id;
 
         $teachers = User::where('school_id', $schoolId)
-            ->where('user_type', 'teacher')
+            ->where('user_type', UserType::TEACHING_STAFF)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
@@ -211,56 +212,79 @@ class TeacherAllocationController extends Controller
     public function workload(Request $request)
     {
         $schoolId = auth()->user()->school_id;
-        $teacherId = $request->input('teacher_id', auth()->id());
 
-        // Get teacher details
-        $teacher = User::where('id', $teacherId)
-            ->where('school_id', $schoolId)
-            ->where('user_type', 'teacher')
-            ->firstOrFail();
-
-        // Get all allocations for this teacher
-        $allocations = DB::table('class_subject')
-            ->join('classes', 'class_subject.class_id', '=', 'classes.id')
-            ->join('subjects', 'class_subject.subject_id', '=', 'subjects.id')
-            ->leftJoin('education_levels', 'classes.education_level_id', '=', 'education_levels.id')
-            ->where('class_subject.teacher_id', $teacherId)
-            ->where('classes.school_id', $schoolId)
-            ->select(
-                'class_subject.id',
-                'classes.name as class_name',
-                'subjects.name as subject_name',
-                'subjects.code as subject_code',
-                'subjects.type as subject_type',
-                'class_subject.is_compulsory',
-                'education_levels.name as level_name'
-            )
-            ->orderBy('education_levels.name')
-            ->orderBy('classes.name')
-            ->get();
-
-        // Get statistics
-        $stats = [
-            'total_subjects' => $allocations->count(),
-            'total_classes' => $allocations->pluck('class_name')->unique()->count(),
-            'core_subjects' => $allocations->where('subject_type', 'core')->count(),
-            'elective_subjects' => $allocations->where('subject_type', 'elective')->count(),
-            'optional_subjects' => $allocations->where('subject_type', 'optional')->count(),
-        ];
-
-        // Get all teachers for dropdown
+        // Fetch all active teachers once for dropdowns and fallbacks
         $teachers = User::where('school_id', $schoolId)
-            ->where('user_type', 'teacher')
+            ->where('user_type', UserType::TEACHING_STAFF)
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        return view('tenant.academics.teacher-allocations.workload', compact(
-            'teacher',
-            'allocations',
-            'stats',
-            'teachers'
-        ));
+        // Determine which teacher to display
+        $teacherId = $request->input('teacher_id');
+
+        if (! $teacherId) {
+            if (auth()->user()->hasUserType(UserType::TEACHING_STAFF)) {
+                $teacherId = auth()->id();
+            } else {
+                $teacherId = $teachers->first()?->id;
+            }
+        }
+
+        $teacher = null;
+        if ($teacherId) {
+            $teacher = $teachers->firstWhere('id', (int) $teacherId)
+                ?? User::where('id', $teacherId)
+                    ->where('school_id', $schoolId)
+                    ->where('user_type', UserType::TEACHING_STAFF)
+                    ->first();
+        }
+
+        $allocations = collect();
+        $stats = [
+            'total_subjects' => 0,
+            'total_classes' => 0,
+            'core_subjects' => 0,
+            'elective_subjects' => 0,
+            'optional_subjects' => 0,
+        ];
+
+        if ($teacher) {
+            $allocations = DB::table('class_subject')
+                ->join('classes', 'class_subject.class_id', '=', 'classes.id')
+                ->join('subjects', 'class_subject.subject_id', '=', 'subjects.id')
+                ->leftJoin('education_levels', 'classes.education_level_id', '=', 'education_levels.id')
+                ->where('class_subject.teacher_id', $teacher->id)
+                ->where('classes.school_id', $schoolId)
+                ->select(
+                    'class_subject.id',
+                    'classes.name as class_name',
+                    'subjects.name as subject_name',
+                    'subjects.code as subject_code',
+                    'subjects.type as subject_type',
+                    'class_subject.is_compulsory',
+                    'education_levels.name as level_name'
+                )
+                ->orderBy('education_levels.name')
+                ->orderBy('classes.name')
+                ->get();
+
+            $stats = [
+                'total_subjects' => $allocations->count(),
+                'total_classes' => $allocations->pluck('class_name')->unique()->count(),
+                'core_subjects' => $allocations->where('subject_type', 'core')->count(),
+                'elective_subjects' => $allocations->where('subject_type', 'elective')->count(),
+                'optional_subjects' => $allocations->where('subject_type', 'optional')->count(),
+            ];
+        }
+
+        return view('tenant.academics.teacher-allocations.workload', [
+            'teacher' => $teacher,
+            'allocations' => $allocations,
+            'stats' => $stats,
+            'teachers' => $teachers,
+            'selectedTeacherId' => $teacher?->id,
+        ]);
     }
 
     /**

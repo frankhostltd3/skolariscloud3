@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (! Schema::hasTable('classes')) {
+            return;
+        }
+
         Schema::table('classes', function (Blueprint $table) {
             if (!Schema::hasColumn('classes', 'max_capacity')) {
                 $table->unsignedSmallInteger('max_capacity')->nullable()->after('name');
@@ -19,6 +23,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (! Schema::hasTable('classes')) {
+            return;
+        }
+
         Schema::table('classes', function (Blueprint $table) {
             if (Schema::hasColumn('classes', 'class_teacher_id')) {
                 $table->dropConstrainedForeignId('class_teacher_id');

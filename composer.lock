@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "354991a861b2d55a7f54df1931a2cfe9",
+    "content-hash": "eb502bfe3027df42de2a99f98b834a27",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -3996,6 +3996,96 @@
                 "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v8.9.0"
             },
             "time": "2025-07-11T13:20:48+00:00"
+        },
+        {
+            "name": "skolaris/academic-reports",
+            "version": "dev-feature/full-test-suite-stabilization",
+            "dist": {
+                "type": "path",
+                "url": "./packages/skolaris/academic-reports",
+                "reference": "4e1b01237627c24d95555ae9f397f43c87e4b7bf"
+            },
+            "require": {
+                "barryvdh/laravel-dompdf": "^2.0|^3.0",
+                "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Skolaris\\AcademicReports\\SkolarisAcademicReportsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Skolaris\\AcademicReports\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Skolaris",
+                    "email": "info@skolaris.com"
+                }
+            ],
+            "description": "A Laravel module for student performance reports.",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "skolaris/fees-pay",
+            "version": "dev-feature/full-test-suite-stabilization",
+            "dist": {
+                "type": "path",
+                "url": "./packages/skolaris/fees-pay",
+                "reference": "85da1a64cdffdb27ba8e3bc9bb1deffc5f6ce18e"
+            },
+            "require": {
+                "barryvdh/laravel-dompdf": "^2.0|^3.0",
+                "illuminate/support": "^10.0|^11.0|^12.0",
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0",
+                "phpunit/phpunit": "^10.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Skolaris\\FeesPay\\SkolarisFeesPayServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Skolaris\\FeesPay\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Skolaris\\FeesPay\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Skolaris Cloud FeesPay",
+                    "email": "info@skolaris.com"
+                }
+            ],
+            "description": "A Drop-in Laravel package to handle school fees payments for a multi-tenant SaaS.",
+            "transport-options": {
+                "relative": true
+            }
         },
         {
             "name": "spatie/db-dumper",
@@ -9508,7 +9598,10 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "skolaris/academic-reports": 20,
+        "skolaris/fees-pay": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

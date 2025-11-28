@@ -1,8 +1,4 @@
-@extends('tenant.layouts.app')
-
-@section('sidebar')
-    @include('tenant.parent._sidebar')
-@endsection
+@extends('layouts.dashboard-parent')
 
 @section('title', __('Attendance Overview'))
 
@@ -233,4 +229,3 @@
     @endif
 @endif
 @endsection
-

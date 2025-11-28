@@ -18,6 +18,8 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
+    'central_connection' => env('CENTRAL_DB_CONNECTION', env('DB_CONNECTION', 'sqlite')),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

@@ -16,7 +16,7 @@
                 </h2>
                 <p class="text-muted mb-0">Mark and manage daily classroom attendance</p>
             </div>
-            <a href="{{ route('admin.attendance.create') }}" class="btn btn-primary">
+            <a href="{{ route('tenant.modules.attendance.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i>New Attendance Session
             </a>
         </div>
@@ -38,7 +38,7 @@
         <!-- Filters -->
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.attendance.index') }}">
+                <form method="GET" action="{{ route('tenant.modules.attendance.index') }}">
                     <div class="row align-items-end">
                         <div class="col-md-4 mb-3">
                             <label for="date" class="form-label">Date</label>
@@ -61,7 +61,7 @@
                             <button type="submit" class="btn btn-primary me-2">
                                 <i class="fas fa-filter me-1"></i>Filter
                             </button>
-                            <a href="{{ route('admin.attendance.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('tenant.modules.attendance.index') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-1"></i>Clear
                             </a>
                         </div>
@@ -103,15 +103,15 @@
                                         <td>{{ $attendance->teacher->full_name ?? 'N/A' }}</td>
                                         <td>{{ $attendance->time_in ? $attendance->time_in->format('H:i') : '-' }}</td>
                                         <td>
-                                            <a href="{{ route('admin.attendance.show', $attendance->id) }}"
+                                            <a href="{{ route('tenant.modules.attendance.show', $attendance->id) }}"
                                                 class="btn btn-sm btn-outline-primary" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('admin.attendance.mark', $attendance->id) }}"
+                                            <a href="{{ route('tenant.modules.attendance.mark', $attendance->id) }}"
                                                 class="btn btn-sm btn-outline-success" title="Mark Attendance">
                                                 <i class="fas fa-check"></i>
                                             </a>
-                                            <form action="{{ route('admin.attendance.destroy', $attendance->id) }}"
+                                            <form action="{{ route('tenant.modules.attendance.destroy', $attendance->id) }}"
                                                 method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -134,7 +134,7 @@
                     <div class="text-center py-5">
                         <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
                         <p class="text-muted">No attendance sessions found.</p>
-                        <a href="{{ route('admin.attendance.create') }}" class="btn btn-primary">
+                        <a href="{{ route('tenant.modules.attendance.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-1"></i>Create First Session
                         </a>
                     </div>

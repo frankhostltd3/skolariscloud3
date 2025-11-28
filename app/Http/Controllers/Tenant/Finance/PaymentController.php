@@ -82,7 +82,7 @@ class PaymentController extends Controller
         $school = $request->attributes->get('currentSchool');
 
         $validated = $request->validate([
-            'invoice_id' => 'required|exists:invoices,id',
+            'invoice_id' => 'required|exists:tenant.invoices,id',
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|in:cash,card,bank_transfer,check,mobile_money',
             'payment_date' => 'required|date',

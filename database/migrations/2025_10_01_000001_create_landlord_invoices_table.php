@@ -6,9 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected function centralConnection(): string
+    {
+        return config(
+            'tenancy.database.central_connection',
+            config('database.central_connection', config('database.default'))
+        );
+    }
+
     public function up(): void
     {
-        Schema::create('landlord_invoices', function (Blueprint $table) {
+        Schema::connection($this->centralConnection())->create('landlord_invoices', function (Blueprint $table) {
             $table->id();
             $table->string('invoice_number')->unique();
             $table->string('tenant_id', 64)->nullable()->index();
@@ -40,6 +48,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('landlord_invoices');
+        Schema::connection($this->centralConnection())->dropIfExists('landlord_invoices');
     }
 };

@@ -21,6 +21,7 @@ class Discussion extends Model
         'is_locked',
         'allow_replies',
         'requires_approval',
+        'attachments',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class Discussion extends Model
         'is_locked' => 'boolean',
         'allow_replies' => 'boolean',
         'requires_approval' => 'boolean',
+        'attachments' => 'array',
     ];
 
     protected $appends = ['type_label', 'replies_count', 'likes_count'];

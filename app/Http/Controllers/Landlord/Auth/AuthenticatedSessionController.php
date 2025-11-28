@@ -107,12 +107,21 @@ class AuthenticatedSessionController extends Controller
         ]));
         $registrar->setPermissionsTeamId($teamId);
 
-        // Create permission first
-        $permission = Permission::query()->firstOrCreate([
-            'tenant_id' => $teamId,
-            'name' => 'access landlord dashboard',
-            'guard_name' => 'landlord',
-        ]);
+        // Create permission first, but reuse existing record on sqlite where the unique index ignores tenant_id
+        $permission = Permission::query()
+            ->where('name', 'access landlord dashboard')
+            ->where('guard_name', 'landlord')
+            ->first();
+
+        if (! $permission) {
+            $permission = Permission::query()->create([
+                'tenant_id' => $teamId,
+                'name' => 'access landlord dashboard',
+                'guard_name' => 'landlord',
+            ]);
+        } elseif (! $permission->tenant_id) {
+            $permission->forceFill(['tenant_id' => $teamId])->save();
+        }
 
         // Flush cache to ensure permission is available
         app(PermissionRegistrar::class)->forgetCachedPermissions();

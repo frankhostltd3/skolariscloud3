@@ -25,7 +25,7 @@ class LandlordNotification extends Model
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->setConnection(config('tenancy.database.central_connection'));
+        $this->setConnection(central_connection());
     }
 
     public function creator()
