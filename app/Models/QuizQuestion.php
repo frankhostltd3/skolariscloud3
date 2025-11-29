@@ -69,8 +69,8 @@ class QuizQuestion extends Model
             $correctRaw = $this->getRawOriginal('correct_answer') ?? $this->correct_answer;
             $correctValue = $this->extractFirstValue($correctRaw);
             $studentValue = $this->extractFirstValue($studentAnswer);
-            
-            return $correctValue !== null && $studentValue !== null 
+
+            return $correctValue !== null && $studentValue !== null
                 && strtoupper(trim((string) $correctValue)) === strtoupper(trim((string) $studentValue));
         }
 
@@ -78,11 +78,11 @@ class QuizQuestion extends Model
             $correctRaw = $this->getRawOriginal('correct_answer') ?? $this->correct_answer;
             $correctValue = $this->extractFirstValue($correctRaw);
             $studentValue = $this->extractFirstValue($studentAnswer);
-            
+
             // Normalize both to boolean
             $correctBool = $this->normalizeBooleanValue($correctValue);
             $studentBool = $this->normalizeBooleanValue($studentValue);
-            
+
             return $correctBool !== null && $correctBool === $studentBool;
         }
 
@@ -133,11 +133,11 @@ class QuizQuestion extends Model
         }
 
         $value = strtolower(trim((string) $value));
-        
+
         if (in_array($value, ['true', '1', 'yes', 't'], true)) {
             return true;
         }
-        
+
         if (in_array($value, ['false', '0', 'no', 'f'], true)) {
             return false;
         }

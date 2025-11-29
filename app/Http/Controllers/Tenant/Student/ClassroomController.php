@@ -150,7 +150,10 @@ class ClassroomController extends Controller
         $student = Auth::user();
 
         $enrolledClasses = $student->enrollments()
-            ->with(['schoolClass.grade', 'academicYear'])
+            ->with(['schoolClass' => function($query) {
+                $query->with('educationLevel')
+                      ->withCount(['subjects', 'activeEnrollments as students_count']);
+            }, 'academicYear'])
             ->where('status', 'active')
             ->get();
 
@@ -171,7 +174,7 @@ class ClassroomController extends Controller
             ->firstOrFail();
 
         $class = $enrollment->schoolClass;
-        $class->load('grade', 'section');
+        $class->load('educationLevel', 'streams');
 
         // Get class statistics
         $stats = [

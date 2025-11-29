@@ -1,54 +1,9 @@
-@extends('layouts.dashboard-parent')
+@extends('layouts.tenant.parent')
 
 @section('title', __('Parent Dashboard'))
 
 @section('content')
-    @php
-        $guardianName = auth()->user()->name ?? __('Guardian');
-        $currentDate = now();
-    @endphp
-
-    <div class="card stats-card border-0 mb-4">
-        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-            <div>
-                <div class="text-white-50 small mb-1">{{ $currentDate->format('l, F j, Y') }}</div>
-                <h2 class="fw-bold mb-1">{{ __('Welcome back, :name!', ['name' => $guardianName]) }}</h2>
-                <p class="mb-0 text-white-75">{{ __('Here is your family overview for today.') }}</p>
-            </div>
-            <div class="text-lg-end">
-                <div class="fw-bold fs-3" id="parent-dashboard-clock">{{ $currentDate->format('g:i A') }}</div>
-                <div class="text-white-75 small">{{ __('Stay informed and engaged every day.') }}</div>
-            </div>
-        </div>
-    </div>
-
-    @if (!empty($registrationOverview))
-        <x-registration.pipeline context="parent" :stages="$registrationOverview['stages']" :summary="$registrationOverview['summary']" :mode="$registrationOverview['mode'] ?? null" :next-action="$registrationOverview['next_action'] ?? null" />
-    @endif
-
     <div class="row g-3 mb-4">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="card stats-card h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="small text-white-75">{{ __('Children linked') }}</div>
-                        <div class="fs-3 fw-bold">{{ number_format($stats['wards']) }}</div>
-                    </div>
-                    <i class="fas fa-children fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="card stats-card h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="small text-white-75">{{ __('Outstanding fees') }}</div>
-                        <div class="fs-3 fw-bold">{{ format_money($stats['outstanding_fees'] ?? 0) }}</div>
-                    </div>
-                    <i class="fas fa-file-invoice-dollar fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card stats-card h-100">
                 <div class="card-body d-flex align-items-center justify-content-between">
@@ -172,7 +127,8 @@
                                     @if ($latestGrade)
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <div class="fw-semibold">{{ $latestGrade->subject->name ?? __('Subject') }}
+                                                <div class="fw-semibold">
+                                                    {{ $latestGrade->subject->name ?? __('Subject') }}
                                                 </div>
                                                 <small
                                                     class="text-muted">{{ $latestGrade->assessment_type_display }}</small>
@@ -194,7 +150,8 @@
                                 <div>
                                     <div class="fw-semibold text-muted mb-2">{{ __('Upcoming fees') }}</div>
                                     @if ($fees->isEmpty())
-                                        <div class="text-muted small">{{ __('No pending balances for this child.') }}</div>
+                                        <div class="text-muted small">{{ __('No pending balances for this child.') }}
+                                        </div>
                                     @else
                                         <ul class="list-unstyled small mb-0">
                                             @foreach ($fees as $fee)

@@ -84,10 +84,10 @@ class NotesController extends Controller
         ];
 
         return view('tenant.student.notes.index', compact(
-            'materials', 
-            'personalNotes', 
-            'subjects', 
-            'student', 
+            'materials',
+            'personalNotes',
+            'subjects',
+            'student',
             'statistics',
             'subjectId',
             'search',
@@ -114,6 +114,47 @@ class NotesController extends Controller
         $note->recordAccess($student->id, 'view');
 
         return view('tenant.student.notes.show', compact('note', 'student'));
+    }
+
+    public function aiChat(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string',
+            'model' => 'required|string',
+        ]);
+
+        $message = $request->input('message');
+        $model = $request->input('model');
+        $modelName = '';
+        $response = '';
+
+        switch ($model) {
+            case 'gemini-pro-3':
+                $modelName = 'Gemini 3 Pro (Preview)';
+                $response = "I am Gemini 3 Pro. I received your message: \"$message\". As an AI model, I can help you summarize notes, explain complex topics, or generate study questions.";
+                break;
+            case 'chatgpt-5.1':
+                $modelName = 'ChatGPT 5.1';
+                $response = "I am ChatGPT 5.1. I received your message: \"$message\". I'm here to assist with your studies.";
+                break;
+            case 'claude-opus-4.5':
+                $modelName = 'Claude Opus 4.5';
+                $response = "I am Claude Opus 4.5. I received your message: \"$message\". I excel at creative writing and nuanced analysis.";
+                break;
+            case 'perplexity':
+                $modelName = 'Perplexity';
+                $response = "I am Perplexity. I received your message: \"$message\". I can search the web to provide up-to-date answers.";
+                break;
+            default:
+                $modelName = 'AI Assistant';
+                $response = "I received your message: \"$message\".";
+        }
+
+        return response()->json([
+            'model_name' => $modelName,
+            'response' => nl2br(e($response)),
+            'raw_response' => $response
+        ]);
     }
 
     public function download(LearningMaterial $note)
@@ -178,7 +219,7 @@ class NotesController extends Controller
 
         $note = new StudentNote($validated);
         $note->student_id = $student->id;
-        
+
         if ($request->filled('tags')) {
             $note->tags = array_map('trim', explode(',', $request->tags));
         }
@@ -221,7 +262,7 @@ class NotesController extends Controller
         ]);
 
         $personalNote->fill($validated);
-        
+
         if ($request->filled('tags')) {
             $personalNote->tags = array_map('trim', explode(',', $request->tags));
         }

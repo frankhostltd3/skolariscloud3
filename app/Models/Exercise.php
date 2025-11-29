@@ -210,7 +210,7 @@ class Exercise extends Model
     {
         $totalStudents = $this->class->students()->count();
         if ($totalStudents === 0) return 0;
-        
+
         $submitted = $this->submissions()->count();
         return round(($submitted / $totalStudents) * 100, 1);
     }
@@ -229,7 +229,7 @@ class Exercise extends Model
     public function getTotalRubricPoints()
     {
         if (!$this->hasRubric()) return 0;
-        
+
         return collect($this->rubric)->sum('points');
     }
 

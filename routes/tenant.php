@@ -220,9 +220,9 @@ Route::middleware([
             ->middleware('role:Student|student|Admin|admin')
             ->name('tenant.student');
 
-        Route::get('/parent', [\App\Http\Controllers\Tenant\Guardian\DashboardController::class, '__invoke'])
+        Route::get('/parent', [\App\Http\Controllers\Tenant\Parent\DashboardController::class, 'index'])
             ->middleware('role:Parent|parent')
-            ->name('tenant.parent');
+            ->name('tenant.parent.dashboard');
     });
 
     // Shared authenticated admin & settings routes
@@ -235,19 +235,31 @@ Route::middleware([
         'role:Parent|parent',
         \App\Http\Middleware\PreventBackHistory::class,
     ])->group(function () {
-        Route::get('/attendance', [\App\Http\Controllers\Tenant\Guardian\AttendanceController::class, 'index'])
-            ->name('attendance.index');
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Tenant\Parent\DashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/fees', [\App\Http\Controllers\Tenant\Guardian\FeesController::class, 'index'])
-            ->name('fees.index');
-        Route::post('/fees/{fee}/pay', [\App\Http\Controllers\Tenant\Guardian\FeesController::class, 'pay'])
-            ->name('fees.pay');
-        Route::get('/fees/download', [\App\Http\Controllers\Tenant\Guardian\FeesController::class, 'download'])
-            ->name('fees.download');
-        Route::get('/fees/payments/{payment}', [\App\Http\Controllers\Tenant\Guardian\FeesController::class, 'showPayment'])
-            ->name('fees.payments.show');
-        Route::get('/fees/invoices/{invoice}', [\App\Http\Controllers\Tenant\Guardian\FeesController::class, 'showInvoice'])
-            ->name('fees.invoices.show');
+        // Performance
+        Route::get('/performance', [\App\Http\Controllers\Tenant\Parent\PerformanceController::class, 'index'])->name('performance.index');
+        Route::get('/performance/{student}', [\App\Http\Controllers\Tenant\Parent\PerformanceController::class, 'show'])->name('performance.show');
+        Route::get('/performance/{student}/download', [\App\Http\Controllers\Tenant\Parent\PerformanceController::class, 'downloadReport'])->name('performance.download');
+        Route::post('/performance/{student}/email', [\App\Http\Controllers\Tenant\Parent\PerformanceController::class, 'emailReport'])->name('performance.email');
+
+        // Attendance
+        Route::get('/attendance', [\App\Http\Controllers\Tenant\Parent\AttendanceController::class, 'index'])->name('attendance.index');
+
+        // Fees
+        Route::get('/fees', [\App\Http\Controllers\Tenant\Parent\FeesController::class, 'index'])->name('fees.index');
+
+        // Behaviour
+        Route::get('/behaviour', [\App\Http\Controllers\Tenant\Parent\BehaviourController::class, 'index'])->name('behaviour.index');
+
+        // Announcements
+        Route::get('/announcements', [\App\Http\Controllers\Tenant\Parent\AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::get('/announcements/{announcement}', [\App\Http\Controllers\Tenant\Parent\AnnouncementController::class, 'show'])->name('announcements.show');
+
+        // Meetings
+        Route::get('/meetings', [\App\Http\Controllers\Tenant\Parent\MeetingController::class, 'index'])->name('meetings.index');
+        Route::get('/meetings/{meeting}', [\App\Http\Controllers\Tenant\Parent\MeetingController::class, 'show'])->name('meetings.show');
     });
 
     // TWO-FACTOR AUTHENTICATION MANAGEMENT (Authenticated users)
@@ -274,7 +286,11 @@ Route::middleware([
         'role:Student|student|Admin|admin',
         'approved',
         \App\Http\Middleware\PreventBackHistory::class,
+        \App\Http\Middleware\EnsureFeesCleared::class,
     ])->group(function () {
+        // Clearance Page
+        Route::get('/clearance', [\App\Http\Controllers\Tenant\Student\ClearanceController::class, 'index'])->name('clearance');
+
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\Tenant\Student\DashboardController::class, 'index'])->name('dashboard');
 
@@ -290,6 +306,15 @@ Route::middleware([
         Route::get('/academic', [\App\Http\Controllers\Tenant\Student\AcademicController::class, 'progress'])->name('academic');
         Route::get('/academic/report/download', [\App\Http\Controllers\Tenant\Student\AcademicController::class, 'downloadReport'])->name('academic.report.download');
         Route::post('/academic/report/share', [\App\Http\Controllers\Tenant\Student\AcademicController::class, 'shareReport'])->name('academic.report.share');
+
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Student\ReportsController::class, 'index'])->name('index');
+            Route::get('/generate', [\App\Http\Controllers\Tenant\Student\ReportsController::class, 'generate'])->name('generate');
+            Route::get('/download', [\App\Http\Controllers\Tenant\Student\ReportsController::class, 'download'])->name('download');
+            Route::post('/share/email', [\App\Http\Controllers\Tenant\Student\ReportsController::class, 'shareEmail'])->name('share.email');
+            Route::post('/share/whatsapp', [\App\Http\Controllers\Tenant\Student\ReportsController::class, 'shareWhatsapp'])->name('share.whatsapp');
+        });
 
         // Assignments
         Route::get('/assignments', [\App\Http\Controllers\Tenant\Student\AssignmentsController::class, 'index'])->name('assignments.index');
@@ -393,6 +418,7 @@ Route::middleware([
         Route::put('/notes/personal/{personalNote}', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'updatePersonalNote'])->name('notes.personal.update');
         Route::delete('/notes/personal/{personalNote}', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'destroyPersonalNote'])->name('notes.personal.destroy');
         Route::post('/notes/personal/{personalNote}/favorite', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'toggleFavorite'])->name('notes.personal.favorite');
+        Route::post('/notes/ai-chat', [\App\Http\Controllers\Tenant\Student\NotesController::class, 'aiChat'])->name('notes.ai-chat');
 
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Tenant\Student\NotificationsController::class, 'index'])->name('notifications.index');
@@ -821,6 +847,12 @@ Route::middleware([
         // Fee Structures
         Route::resource('fee-structures', \App\Http\Controllers\Tenant\Finance\FeeStructureController::class);
         // Invoices
+        Route::get('invoices/generate', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'generateForTerm'])->name('invoices.generate');
+        Route::post('invoices/generate', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'storeTermInvoices'])->name('invoices.store-term');
+        Route::post('invoices/{invoice}/send-student', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'sendToStudent'])->name('invoices.send-student');
+        Route::post('invoices/{invoice}/send-parent', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'sendToParent'])->name('invoices.send-parent');
+        Route::post('invoices/{invoice}/send-both', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'sendToBoth'])->name('invoices.send-both');
+        Route::post('invoices/bulk-send', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'bulkSend'])->name('invoices.bulk-send');
         Route::resource('invoices', \App\Http\Controllers\Tenant\Finance\InvoiceController::class);
         // Payments
         Route::resource('payments', \App\Http\Controllers\Tenant\Finance\PaymentController::class);
@@ -861,3 +893,14 @@ Route::middleware([
         // For guests, the default Laravel 404 page is fine.
     })->middleware('auth');
 });
+
+    Route::middleware(['auth'])->prefix('forum')->name('tenant.forum.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'store'])->name('store');
+        Route::get('/{slug}', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'show'])->name('show');
+        Route::post('/{slug}/reply', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'reply'])->name('reply');
+        Route::patch('/{slug}/status', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'updateStatus'])->name('status.update');
+        Route::post('/ai-assist', [\App\Http\Controllers\Tenant\Forum\ForumController::class, 'aiAssist'])->name('ai-assist');
+    });
+

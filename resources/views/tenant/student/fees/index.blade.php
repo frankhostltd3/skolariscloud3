@@ -1,87 +1,59 @@
 @extends('layouts.tenant.student')
 
-@section('title', 'Fees & Payments')
+@section('title', 'My Fees')
 
 @section('content')
     <div class="container-fluid">
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="mb-0">
-                    <i class="bi bi-cash me-2"></i>{{ __('Fees & Payments') }}
-                </h4>
-                <p class="text-muted mb-0">{{ __('Manage your school fees and payments') }}</p>
-            </div>
-        </div>
-
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if (session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        <!-- Summary Cards -->
         <div class="row mb-4">
-            <div class="col-md-4 mb-3">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-12">
+                <h1 class="h3 mb-0 text-gray-800">My Fees</h1>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">{{ __('Total Paid') }}</h6>
-                                <h3 class="mb-0 text-success">{{ format_money($totalPaid) }}</h3>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Due</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ format_money($totalDue) }}</div>
                             </div>
-                            <div class="text-success" style="font-size: 2rem;">
-                                <i class="bi bi-check-circle"></i>
+                            <div class="col-auto">
+                                <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4 mb-3">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">{{ __('Outstanding') }}</h6>
-                                <h3 class="mb-0 {{ $totalOutstanding > 0 ? 'text-danger' : 'text-success' }}">
-                                    {{ format_money($totalOutstanding) }}
-                                </h3>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Paid</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ format_money($totalPaid) }}</div>
                             </div>
-                            <div class="{{ $totalOutstanding > 0 ? 'text-danger' : 'text-success' }}"
-                                style="font-size: 2rem;">
-                                <i class="bi bi-exclamation-triangle"></i>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4 mb-3">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-danger shadow h-100 py-2">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">{{ __('Active Fees') }}</h6>
-                                <h3 class="mb-0 text-info">{{ $fees->count() }}</h3>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Outstanding Balance
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ format_money($balance) }}</div>
                             </div>
-                            <div class="text-info" style="font-size: 2rem;">
-                                <i class="bi bi-receipt"></i>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -89,154 +61,62 @@
             </div>
         </div>
 
-        <!-- Fees List -->
-        @if ($fees->count() > 0)
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0">
-                    <h5 class="mb-0 fw-semibold">
-                        <i class="bi bi-list-ul me-2"></i>{{ __('Your Fees') }}
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="bg-light">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Invoice History</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($invoices as $invoice)
                                 <tr>
-                                    <th>{{ __('Fee Name') }}</th>
-                                    <th>{{ __('Amount') }}</th>
-                                    <th>{{ __('Paid') }}</th>
-                                    <th>{{ __('Outstanding') }}</th>
-                                    <th>{{ __('Status') }}</th>
-                                    <th>{{ __('Due Date') }}</th>
-                                    <th>{{ __('Actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($fees as $feeData)
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <strong>{{ $feeData['fee']->name }}</strong>
-                                                <br><small class="text-muted">{{ $feeData['fee']->description }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <strong>{{ format_money($feeData['assignment']->amount ?? 0) }}</strong>
-                                        </td>
-                                        <td class="text-success">
-                                            {{ format_money($feeData['total_paid']) }}
-                                        </td>
-                                        <td class="{{ $feeData['outstanding'] > 0 ? 'text-danger' : 'text-muted' }}">
-                                            {{ format_money($feeData['outstanding']) }}
-                                        </td>
-                                        <td>
-                                            @if ($feeData['is_paid'])
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-circle me-1"></i>{{ __('Paid') }}
-                                                </span>
-                                            @else
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-clock me-1"></i>{{ __('Pending') }}
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($feeData['assignment'] && $feeData['assignment']->due_date)
-                                                {{ $feeData['assignment']->due_date->format('M d, Y') }}
-                                                @if ($feeData['assignment']->due_date->isPast() && !$feeData['is_paid'])
-                                                    <br><small
-                                                        class="text-danger">{{ $feeData['assignment']->due_date->diffInDays(now()) }}
-                                                        days overdue</small>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('tenant.student.fees.show', $feeData['fee']) }}"
-                                                class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-eye me-1"></i>{{ __('View') }}
+                                    <td>{{ $invoice->invoice_number }}</td>
+                                    <td>{{ $invoice->issue_date->format('d M Y') }}</td>
+                                    <td>{{ $invoice->feeStructure->name ?? 'N/A' }}</td>
+                                    <td>{{ format_money($invoice->total_amount) }}</td>
+                                    <td>{{ format_money($invoice->paid_amount) }}</td>
+                                    <td>{{ format_money($invoice->balance) }}</td>
+                                    <td>
+                                        <span
+                                            class="badge badge-{{ $invoice->status === 'paid' ? 'success' : ($invoice->status === 'partial' ? 'warning' : 'danger') }}">
+                                            {{ ucfirst($invoice->status) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('tenant.student.fees.show', $invoice) }}"
+                                            class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        @if ($invoice->balance > 0)
+                                            <a href="{{ route('tenant.student.fees.pay', $invoice) }}"
+                                                class="btn btn-sm btn-primary">
+                                                <i class="fas fa-credit-card"></i> Pay
                                             </a>
-                                            @if (!$feeData['is_paid'])
-                                                <form method="POST"
-                                                    action="{{ route('tenant.student.fees.pay', $feeData['fee']) }}"
-                                                    class="d-inline ms-1">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-success btn-sm">
-                                                        <i class="bi bi-credit-card me-1"></i>{{ __('Pay Now') }}
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center">No invoices found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        @else
-            <!-- Empty State -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-receipt text-muted" style="font-size: 4rem;"></i>
-                    <h5 class="mt-3 text-muted">{{ __('No Fees Assigned') }}</h5>
-                    <p class="text-muted">
-                        {{ __('You currently have no fees assigned to your account.') }}
-                    </p>
-                </div>
-            </div>
-        @endif
-
-        <!-- Recent Payments -->
-        @if ($recentPayments->count() > 0)
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h5 class="mb-0 fw-semibold">
-                        <i class="bi bi-clock-history me-2"></i>{{ __('Recent Payments') }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach ($recentPayments as $payment)
-                            <div class="col-md-6 mb-3">
-                                <div class="card border">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h6 class="mb-1">{{ $payment->fee->name }}</h6>
-                                                <p class="text-muted small mb-1">{{ $payment->reference }}</p>
-                                                <p class="text-muted small mb-0">
-                                                    {{ $payment->paid_at->format('M d, Y H:i') }}</p>
-                                            </div>
-                                            <div class="text-end">
-                                                <h5 class="mb-1 text-success">{{ format_money($payment->amount) }}</h5>
-                                                <span
-                                                    class="badge bg-{{ $payment->status === 'confirmed' ? 'success' : 'warning' }}">
-                                                    {{ ucfirst($payment->status) }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Payment Information -->
-        <div class="alert alert-info mt-4">
-            <h6 class="alert-heading">
-                <i class="bi bi-info-circle me-2"></i>{{ __('Payment Information') }}
-            </h6>
-            <ul class="mb-0 small">
-                <li>{{ __('You can pay your fees online using various payment methods') }}</li>
-                <li>{{ __('Payments are processed securely through our payment gateway') }}</li>
-                <li>{{ __('Receipts are automatically generated for all successful payments') }}</li>
-                <li>{{ __('Contact the school administration if you have any payment issues') }}</li>
-            </ul>
         </div>
     </div>
 @endsection

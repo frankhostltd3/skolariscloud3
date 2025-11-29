@@ -139,13 +139,13 @@ class QuizAttempt extends Model
 
             // Get the correct answer - handle both array cast and raw string
             $correctRaw = $question->getRawOriginal('correct_answer') ?? $question->correct_answer;
-            
+
             switch ($question->type) {
                 case 'multiple_choice':
                     // Normalize both to comparable format (trimmed, uppercase string)
                     $correctValue = $this->extractFirstValue($correctRaw);
                     $studentValue = $this->extractFirstValue($response);
-                    $isCorrect = $correctValue !== null && $studentValue !== null 
+                    $isCorrect = $correctValue !== null && $studentValue !== null
                         && strtoupper(trim($correctValue)) === strtoupper(trim($studentValue));
                     break;
                 case 'true_false':
@@ -224,11 +224,11 @@ class QuizAttempt extends Model
         }
 
         $value = strtolower(trim((string) $value));
-        
+
         if (in_array($value, ['true', '1', 'yes', 't'], true)) {
             return true;
         }
-        
+
         if (in_array($value, ['false', '0', 'no', 'f'], true)) {
             return false;
         }

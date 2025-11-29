@@ -149,6 +149,51 @@
                 'active' => request()->routeIs('tenant.student.classroom.materials.*'),
             ];
         }
+
+        if (Route::has('tenant.student.notes.index')) {
+            $studentNavLinks[] = [
+                'label' => __('My Notes'),
+                'icon' => 'bi bi-journal-text',
+                'url' => route('tenant.student.notes.index'),
+                'active' => request()->routeIs('tenant.student.notes.*'),
+            ];
+        }
+
+        // Forum
+        if (Route::has('tenant.forum.index')) {
+            $studentNavLinks[] = [
+                'label' => __('Forum'),
+                'icon' => 'bi bi-chat-quote',
+                'url' => route('tenant.forum.index'),
+                'active' => request()->routeIs('tenant.forum.*'),
+            ];
+        }
+
+        // Research Assistant Menu
+        $studentNavLinks[] = [
+            'label' => __('Research Assistant'),
+            'icon' => 'bi bi-robot',
+            'id' => 'researchMenu',
+            'active' => request()->routeIs('tenant.student.notes.personal.create'),
+            'children' => [
+                [
+                    'label' => 'Google',
+                    'icon' => 'bi bi-google',
+                    'url' => '#',
+                ],
+                [
+                    'label' => 'Wikipedia',
+                    'icon' => 'bi bi-globe',
+                    'url' => '#',
+                ],
+                [
+                    'label' => 'AI Research',
+                    'icon' => 'bi bi-cpu',
+                    'url' => route('tenant.student.notes.personal.create'),
+                ],
+            ],
+        ];
+
         if (Route::has('tenant.finance.payments.pay')) {
             $studentNavLinks[] = [
                 'label' => __('Pay Fees'),
@@ -171,6 +216,16 @@
                 'icon' => 'bi bi-bell',
                 'url' => route('tenant.student.notifications.index'),
                 'active' => request()->routeIs('tenant.student.notifications.*'),
+            ];
+        }
+
+        // Profile
+        if (Route::has('tenant.student.profile')) {
+            $studentNavLinks[] = [
+                'label' => __('My Profile'),
+                'icon' => 'bi bi-person-circle',
+                'url' => route('tenant.student.profile'),
+                'active' => request()->routeIs('tenant.student.profile*'),
             ];
         }
     @endphp
@@ -200,28 +255,61 @@
                 </button>
             </div>
 
-            <div class="sidebar-user px-3 py-3 border-bottom d-flex align-items-center gap-2">
-                <span
-                    class="avatar-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center">
-                    <i class="bi bi-person-circle"></i>
-                </span>
+            <a href="{{ route('tenant.student.profile') }}"
+                class="sidebar-user px-3 py-3 border-bottom d-flex align-items-center gap-2 text-decoration-none">
+                @if ($studentUser->profile_photo)
+                    <img src="{{ asset('storage/' . $studentUser->profile_photo) }}" alt="{{ $studentUser->name }}"
+                        class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;">
+                @else
+                    <span
+                        class="avatar-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-circle"></i>
+                    </span>
+                @endif
                 <div>
-                    <div class="fw-semibold">{{ $studentUser->name ?? __('Student') }}</div>
-                    <small class="text-muted">{{ __('Student Portal') }}</small>
+                    <div class="fw-semibold text-dark">{{ $studentUser->name ?? __('Student') }}</div>
+                    <small class="text-muted">{{ __('View Profile') }}</small>
                 </div>
-            </div>
+            </a>
 
             @if (!empty($studentNavLinks))
                 <nav class="py-4">
                     <ul class="list-unstyled mb-0">
                         @foreach ($studentNavLinks as $link)
-                            <li class="px-3">
-                                <a href="{{ $link['url'] }}"
-                                    class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none {{ $link['active'] ? 'bg-primary text-white' : 'text-body' }}">
-                                    <i class="{{ $link['icon'] }}"></i>
-                                    <span class="fw-medium">{{ $link['label'] }}</span>
-                                </a>
-                            </li>
+                            @if (isset($link['children']))
+                                <li class="px-3">
+                                    <a class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none {{ $link['active'] ? 'bg-primary text-white' : 'text-body' }}"
+                                        data-bs-toggle="collapse" href="#{{ $link['id'] }}" role="button"
+                                        aria-expanded="{{ $link['active'] ? 'true' : 'false' }}"
+                                        aria-controls="{{ $link['id'] }}">
+                                        <i class="{{ $link['icon'] }}"></i>
+                                        <span class="fw-medium flex-grow-1">{{ $link['label'] }}</span>
+                                        <span class="bi bi-chevron-down small"></span>
+                                    </a>
+                                    <div class="collapse {{ $link['active'] ? 'show' : '' }}"
+                                        id="{{ $link['id'] }}">
+                                        <ul class="list-unstyled ms-3">
+                                            @foreach ($link['children'] as $child)
+                                                <li>
+                                                    <a href="{{ $child['url'] }}"
+                                                        class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none text-body">
+                                                        <i class="{{ $child['icon'] ?? 'bi-circle' }}"></i>
+                                                        <span class="fw-medium">{{ $child['label'] }}</span>
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </li>
+                            @else
+                                <li class="px-3">
+                                    <a href="{{ $link['url'] }}"
+                                        class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none {{ $link['active'] ? 'bg-primary text-white' : 'text-body' }}">
+                                        <i class="{{ $link['icon'] }}"></i>
+                                        <span class="fw-medium">{{ $link['label'] }}</span>
+                                    </a>
+                                </li>
+                            @endif
                         @endforeach
                         <li class="px-3">
                             <a href="{{ route('tenant.student.academic') }}"

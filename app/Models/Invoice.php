@@ -27,6 +27,12 @@ class Invoice extends Model
         'academic_year',
         'term',
         'notes',
+        'created_by',
+        'cancellation_reason',
+        'cancelled_by',
+        'cancelled_at',
+        'deletion_reason',
+        'revision_reason',
     ];
 
     protected $casts = [
@@ -35,6 +41,7 @@ class Invoice extends Model
         'balance' => 'decimal:2',
         'issue_date' => 'date',
         'due_date' => 'date',
+        'cancelled_at' => 'datetime',
     ];
 
     /**
@@ -67,6 +74,22 @@ class Invoice extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the user who cancelled the invoice.
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
+     * Get the user who created the invoice.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
@@ -127,7 +150,50 @@ class Invoice extends Model
             'partial' => 'bg-info',
             'unpaid' => 'bg-warning',
             'overdue' => 'bg-danger',
+            'cancelled' => 'bg-secondary',
             default => 'bg-secondary',
         };
     }
+
+    /**
+     * Generate WhatsApp share URL
+     */
+    public function getWhatsAppShareUrl(): string
+    {
+        $message = urlencode("Invoice #{$this->invoice_number}\nStudent: {$this->student->name}\nAmount: " . formatMoney($this->total_amount) . "\nDue: " . $this->due_date->format('M d, Y') . "\nView: " . route('tenant.finance.invoices.show', $this->id));
+        return "https://wa.me/?text={$message}";
+    }
+
+    /**
+     * Generate SMS message content
+     */
+    public function getSmsMessage(): string
+    {
+        return "Invoice #{$this->invoice_number} - {$this->student->name}: " . formatMoney($this->total_amount) . " due on " . $this->due_date->format('M d, Y') . ". View: " . route('tenant.finance.invoices.show', $this->id);
+    }
+
+    /**
+     * Generate email subject
+     */
+    public function getEmailSubject(): string
+    {
+        return "Invoice #{$this->invoice_number} - {$this->feeStructure->fee_name}";
+    }
+
+    /**
+     * Get print URL
+     */
+    public function getPrintUrl(): string
+    {
+        return route('tenant.finance.invoices.print', $this->id);
+    }
+
+    /**
+     * Get download PDF URL
+     */
+    public function getDownloadUrl(): string
+    {
+        return route('tenant.finance.invoices.download', $this->id);
+    }
 }
+

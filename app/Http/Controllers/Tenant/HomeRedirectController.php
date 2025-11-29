@@ -33,7 +33,7 @@ class HomeRedirectController extends Controller
 
         // Check for Parent role
         if ($user->hasRole(['parent', 'Parent'])) {
-            return redirect()->route('tenant.parent');
+            return redirect()->route('tenant.parent.dashboard');
         }
 
         // Check for Accountant role

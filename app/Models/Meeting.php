@@ -21,6 +21,8 @@ class Meeting extends Model
         'location',
         'status',
         'organizer_id',
+        'student_id',
+        'teacher_id',
         'participants',
         'notes',
         'is_active',
@@ -39,6 +41,22 @@ class Meeting extends Model
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'organizer_id');
+    }
+
+    /**
+     * Get the student associated with this meeting.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Get the teacher associated with this meeting.
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
     }
 
     /**

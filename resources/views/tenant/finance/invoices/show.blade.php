@@ -4,7 +4,46 @@
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Invoice #{{ $invoice->invoice_number }}</h1>
-            <div>
+            <div class="d-flex gap-2">
+                <!-- Send Invoice Dropdown -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="bi bi-envelope me-1"></i> Send Invoice
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form action="{{ route('tenant.finance.invoices.send-student', $invoice) }}" method="POST"
+                                class="d-inline">
+                                @csrf
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-person me-2"></i> Send to Student
+                                </button>
+                            </form>
+                        </li>
+                        <li>
+                            <form action="{{ route('tenant.finance.invoices.send-parent', $invoice) }}" method="POST"
+                                class="d-inline">
+                                @csrf
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-people me-2"></i> Send to Parent(s)
+                                </button>
+                            </form>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form action="{{ route('tenant.finance.invoices.send-both', $invoice) }}" method="POST"
+                                class="d-inline">
+                                @csrf
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-send me-2"></i> Send to Both
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
                 <a href="{{ route('tenant.finance.invoices.edit', $invoice) }}" class="btn btn-warning"><i
                         class="bi bi-pencil me-1"></i> Edit</a>
                 <a href="{{ route('tenant.finance.invoices.index') }}" class="btn btn-secondary">Back</a>
@@ -21,7 +60,7 @@
                     </div>
                     <div class="col-md-6 text-end">
                         <h5>Invoice Details</h5>
-                        <p><strong>Date:</strong> {{ $invoice->invoice_date->format('M d, Y') }}<br>
+                        <p><strong>Date:</strong> {{ $invoice->issue_date->format('M d, Y') }}<br>
                             <strong>Due Date:</strong> {{ $invoice->due_date->format('M d, Y') }}<br>
                             <strong>Status:</strong> <span
                                 class="badge {{ $invoice->status_badge_class }}">{{ ucfirst($invoice->status) }}</span>

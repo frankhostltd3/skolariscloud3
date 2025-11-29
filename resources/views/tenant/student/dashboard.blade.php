@@ -255,6 +255,25 @@
 
             <!-- Continue + Unread -->
             <div class="col-xl-4 col-lg-5 mb-4">
+                <!-- Quick Actions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('tenant.student.notes.personal.create') }}"
+                                class="btn btn-outline-primary text-start">
+                                <i class="bi bi-journal-plus me-2"></i> Create New Note
+                            </a>
+                            <a href="{{ route('tenant.student.notes.index', ['view' => 'personal']) }}"
+                                class="btn btn-outline-secondary text-start">
+                                <i class="bi bi-journal-text me-2"></i> View My Notes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Continue where you left off</h5>

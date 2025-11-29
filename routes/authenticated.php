@@ -69,6 +69,40 @@ Route::prefix('settings/admin')->name('tenant.settings.admin.')->group(function 
     Route::post('/permissions/sync-registry', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'syncRegistry'])->name('permissions.sync-registry');
     Route::post('/roles/bulk-assign', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'bulkAssignRole'])->name('roles.bulkAssign');
     Route::post('/permissions/clear-cache', [\App\Http\Controllers\Tenant\Admin\PermissionsController::class, 'clearCache'])->name('permissions.clear-cache');
+
+    // Mobile Money Gateway Settings
+    Route::prefix('mobile-money')->name('mobile-money.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'store'])->name('store');
+        Route::get('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'show'])->name('show');
+        Route::get('/{mobileMoneyGateway}/edit', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'edit'])->name('edit');
+        Route::put('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'update'])->name('update');
+        Route::delete('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'destroy'])->name('destroy');
+        Route::post('/{mobileMoneyGateway}/toggle-active', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'toggleActive'])->name('toggle-active');
+        Route::post('/{mobileMoneyGateway}/set-default', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'setDefault'])->name('set-default');
+        Route::post('/{mobileMoneyGateway}/test', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'test'])->name('test');
+        Route::get('/api/providers', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'getProvidersForCountry'])->name('api.providers');
+        Route::get('/api/provider-config', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'getProviderConfig'])->name('api.provider-config');
+    });
+});
+
+Route::prefix('settings/admin')->name('tenant.settings.')->group(function () {
+    // Mobile Money Gateway Settings (duplicated to match view expectations)
+    Route::prefix('mobile-money')->name('mobile-money.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'store'])->name('store');
+        Route::get('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'show'])->name('show');
+        Route::get('/{mobileMoneyGateway}/edit', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'edit'])->name('edit');
+        Route::put('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'update'])->name('update');
+        Route::delete('/{mobileMoneyGateway}', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'destroy'])->name('destroy');
+        Route::post('/{mobileMoneyGateway}/toggle-active', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'toggleActive'])->name('toggle-active');
+        Route::post('/{mobileMoneyGateway}/set-default', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'setDefault'])->name('set-default');
+        Route::post('/{mobileMoneyGateway}/test', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'test'])->name('test');
+        Route::get('/api/providers', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'getProvidersForCountry'])->name('api.providers');
+        Route::get('/api/provider-config', [\App\Http\Controllers\Tenant\Settings\MobileMoneyGatewayController::class, 'getProviderConfig'])->name('api.provider-config');
+    });
 });
 
 Route::middleware('user.type:admin')->group(function (): void {
@@ -191,10 +225,15 @@ Route::middleware('user.type:admin')->group(function (): void {
         Route::post('/report-cards/export-class', [ReportsController::class, 'exportClassReportCards'])->name('report-cards.export-class');
     });
 
-    // Parent Management Routes (placeholder - TODO: Create ParentController)
+    // Parent Management Routes
     Route::prefix('tenant/users/parents')->name('tenant.users.parents.')->group(function () {
-        // Route::get('/{user}/edit', [ParentController::class, 'edit'])->name('edit');
-        // Route::put('/{user}', [ParentController::class, 'update'])->name('update');
+        Route::get('/', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'store'])->name('store');
+        Route::get('/{user}', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'update'])->name('update');
+        Route::delete('/{user}', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'destroy'])->name('destroy');
     });
 
     // Financial Management Routes
@@ -204,9 +243,32 @@ Route::middleware('user.type:admin')->group(function (): void {
         Route::post('expenses/{expense}/approve', [\App\Http\Controllers\Tenant\Finance\ExpenseController::class, 'approve'])->name('expenses.approve');
         Route::post('expenses/{expense}/reject', [\App\Http\Controllers\Tenant\Finance\ExpenseController::class, 'reject'])->name('expenses.reject');
         Route::resource('fee-structures', \App\Http\Controllers\Tenant\Finance\FeeStructureController::class);
+
+        // Invoice routes
+        Route::get('invoices/bulk-generate', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'showBulkGenerate'])->name('invoices.bulk-generate');
+        Route::post('invoices/generate-class', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'generateForClass'])->name('invoices.generate-class');
+        Route::post('invoices/generate-stream', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'generateForStream'])->name('invoices.generate-stream');
+        Route::post('invoices/generate-school', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'generateForSchool'])->name('invoices.generate-school');
+        Route::post('invoices/generate-students', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'generateForStudents'])->name('invoices.generate-students');
+        Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'print'])->name('invoices.print');
+        Route::get('invoices/{invoice}/download', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'download'])->name('invoices.download');
+        Route::get('invoices/{invoice}/share-whatsapp', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'shareWhatsApp'])->name('invoices.share-whatsapp');
+        Route::get('invoices/{invoice}/share-sms', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'shareSms'])->name('invoices.share-sms');
+        Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Tenant\Finance\InvoiceController::class, 'cancel'])->name('invoices.cancel');
         Route::resource('invoices', \App\Http\Controllers\Tenant\Finance\InvoiceController::class);
+
         Route::resource('payments', \App\Http\Controllers\Tenant\Finance\PaymentController::class)->except(['edit', 'update', 'destroy']);
         Route::get('payments/{payment}/receipt', [\App\Http\Controllers\Tenant\Finance\PaymentController::class, 'receipt'])->name('payments.receipt');
+    });
+
+    // Mobile Money Payment Routes
+    Route::prefix('payments/mobile-money')->name('tenant.payments.mobile-money.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'store'])->name('store');
+        Route::get('/history', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'history'])->name('history');
+        Route::get('/status/{transactionId}', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'status'])->name('status');
+        Route::post('/cancel/{transactionId}', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'cancel'])->name('cancel');
+        Route::get('/check/{transactionId}', [\App\Http\Controllers\Tenant\MobileMoneyPaymentController::class, 'checkStatus'])->name('check');
     });
 
 
@@ -323,7 +385,7 @@ Route::middleware('user.type:admin')->group(function (): void {
         // Parents
         Route::resource('parents', \App\Http\Controllers\Tenant\Users\ParentsController::class)->names([
             'index' => 'parents',
-        ]);
+        ])->parameters(['parents' => 'user']);
         Route::post('parents/{user}/activate', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'activate'])->name('parents.activate');
         Route::post('parents/{user}/deactivate', [\App\Http\Controllers\Tenant\Users\ParentsController::class, 'deactivate'])->name('parents.deactivate');
     });

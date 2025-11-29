@@ -125,7 +125,7 @@ class AuthenticatedSessionController extends Controller
         
         // Check for Parent role (case-insensitive)
         if ($user->hasAnyRole(['Parent', 'parent'])) {
-            return redirect()->route('tenant.parent')
+            return redirect()->route('tenant.parent.dashboard')
                 ->with('success', 'Welcome back, ' . $user->name . '!');
         }
 

@@ -57,6 +57,10 @@
                     href="{{ route('tenant.settings.admin.finance') }}">
                     <span class="bi bi-cash me-2"></span>{{ __('Finance') }}
                 </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.mobile-money.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.settings.mobile-money.index') }}">
+                    <span class="bi bi-phone me-2"></span>{{ __('Mobile Money') }}
+                </a>
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.settings.admin.permissions') ? 'active' : '' }}"
                     href="{{ route('tenant.settings.admin.permissions') }}">
                     <span class="bi bi-shield me-2"></span>{{ __('Permissions') }}
@@ -205,6 +209,10 @@
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.payments.*') ? 'active' : '' }}"
                     href="{{ route('tenant.finance.payments.index') }}">
                     <span class="bi bi-credit-card me-2"></span>{{ __('Payments') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.payments.mobile-money.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.payments.mobile-money.create') }}">
+                    <span class="bi bi-phone me-2"></span>{{ __('Mobile Money') }}
                 </a>
             </div>
         </div>

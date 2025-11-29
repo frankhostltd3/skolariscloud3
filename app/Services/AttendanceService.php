@@ -24,22 +24,95 @@ class AttendanceService
             ->count();
 
         $students = $records->groupBy('student_id');
-        
-        $patterns = [];
+
+        $studentStats = [];
+        $totalPresent = 0;
+        $totalAbsent = 0;
+        $totalLate = 0;
+
         foreach ($students as $studentId => $studentRecords) {
             $present = $studentRecords->where('status', 'present')->count();
             $absent = $studentRecords->where('status', 'absent')->count();
             $late = $studentRecords->where('status', 'late')->count();
-            
-            $patterns[$studentId] = [
+
+            $totalPresent += $present;
+            $totalAbsent += $absent;
+            $totalLate += $late;
+
+            $percentage = $totalDays > 0 ? ($present / $totalDays) * 100 : 0;
+
+            $student = \App\Models\User::find($studentId);
+            if (!$student) continue;
+
+            $studentStats[] = [
+                'student' => $student,
                 'present' => $present,
                 'absent' => $absent,
                 'late' => $late,
-                'attendance_rate' => $totalDays > 0 ? ($present / $totalDays) * 100 : 0,
+                'total_days' => $totalDays,
+                'percentage' => round($percentage, 1),
+                'status_label' => $this->getAttendanceStatusLabel($percentage),
             ];
         }
-        
-        return $patterns;
+
+        // Calculate overall stats
+        $overallPercentage = count($studentStats) > 0 ? collect($studentStats)->avg('percentage') : 0;
+
+        // Day of week pattern
+        $dayOfWeekPattern = Attendance::where('class_id', $classId)
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->get()
+            ->groupBy(function($attendance) {
+                return Carbon::parse($attendance->attendance_date)->format('l');
+            })
+            ->map(function($dayRecords) {
+                $totalRecords = 0;
+                $presentRecords = 0;
+                foreach ($dayRecords as $attendance) {
+                    $stats = $attendance->getStatistics();
+                    $totalRecords += $stats['total'] ?? 0;
+                    $presentRecords += $stats['present'] ?? 0;
+                }
+                return $totalRecords > 0 ? round(($presentRecords / $totalRecords) * 100, 1) : 0;
+            });
+
+        // Monthly trend
+        $monthlyTrend = Attendance::where('class_id', $classId)
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->get()
+            ->groupBy(function($attendance) {
+                return Carbon::parse($attendance->attendance_date)->format('Y-m');
+            })
+            ->map(function($monthRecords) {
+                $totalRecords = 0;
+                $presentRecords = 0;
+                foreach ($monthRecords as $attendance) {
+                    $stats = $attendance->getStatistics();
+                    $totalRecords += $stats['total'] ?? 0;
+                    $presentRecords += $stats['present'] ?? 0;
+                }
+                return $totalRecords > 0 ? round(($presentRecords / $totalRecords) * 100, 1) : 0;
+            });
+
+        return [
+            'overview' => [
+                'total_days' => $totalDays,
+                'present_count' => $totalPresent,
+                'absent_count' => $totalAbsent,
+                'late_count' => $totalLate,
+                'overall_percentage' => round($overallPercentage, 1),
+            ],
+            'student_stats' => $studentStats,
+            'day_of_week_pattern' => $dayOfWeekPattern,
+            'monthly_trend' => $monthlyTrend,
+        ];
+    }
+
+    private function getAttendanceStatusLabel($percentage) {
+        if ($percentage >= 90) return 'excellent';
+        if ($percentage >= 75) return 'good';
+        if ($percentage >= 50) return 'average';
+        return 'poor';
     }
 
     public function generateReport($classId, $reportType, $startDate, $endDate)
@@ -57,32 +130,25 @@ class AttendanceService
                     $record->method = $record->attendance->attendance_method ?? 'manual';
                     return $record;
                 });
-                
+
             return ['data' => $records];
         }
 
         // For summary and defaulters
         $patterns = $this->analyzePatterns($classId, $startDate, $endDate);
-        
-        // Get total instructional days
-        $totalDays = Attendance::where('class_id', $classId)
-            ->whereBetween('attendance_date', [$startDate, $endDate])
-            ->count();
-            
+        $studentStats = $patterns['student_stats'];
+
         $data = [];
-        foreach ($patterns as $studentId => $stats) {
-            $student = \App\Models\User::find($studentId);
-            if (!$student) continue;
-            
+        foreach ($studentStats as $stat) {
             $row = [
-                'student' => $student,
-                'total_days' => $totalDays,
-                'present' => $stats['present'],
-                'absent' => $stats['absent'],
-                'late' => $stats['late'],
-                'percentage' => round($stats['attendance_rate'], 1),
+                'student' => $stat['student'],
+                'total_days' => $stat['total_days'],
+                'present' => $stat['present'],
+                'absent' => $stat['absent'],
+                'late' => $stat['late'],
+                'percentage' => $stat['percentage'],
             ];
-            
+
             if ($reportType === 'defaulters') {
                 if ($row['percentage'] < 75) {
                     $row['risk_level'] = $row['percentage'] < 50 ? 'critical' : ($row['percentage'] < 65 ? 'high' : 'medium');
@@ -92,7 +158,7 @@ class AttendanceService
                 $data[] = $row;
             }
         }
-        
+
         return ['data' => $data];
     }
 

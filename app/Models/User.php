@@ -55,8 +55,16 @@ class User extends Authenticatable implements MustVerifyEmail
         'user_type',
         'school_id',
         'approval_status',
-        'profile_photo', // Added profile_photo
+        'profile_photo',
         'is_active',
+        'phone',
+        'gender',
+        'date_of_birth',
+        'address',
+        'qualification',
+        'specialization',
+        'emergency_contact_name',
+        'emergency_contact_phone',
     ];
 
     /**
@@ -174,6 +182,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the URL for the user's profile photo.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        if ($this->profile_photo) {
+            return asset('storage/' . $this->profile_photo);
+        }
+
+        return null;
+    }
+
+    /**
      * Get the biometric templates for this user.
      */
     public function biometricTemplates()
@@ -273,6 +293,24 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the parent profile associated with the user.
+     */
+    public function parentProfile(): HasOne
+    {
+        return $this->hasOne(ParentProfile::class);
+    }
+
+
+
+    /**
+     * Get attendance records for this user (as a student).
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class, 'student_id');
+    }
+
+    /**
      * Subjects assigned to this user (as a student).
      */
     public function studentSubjects(): BelongsToMany
@@ -280,5 +318,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(\App\Models\Academic\Subject::class, 'student_subject', 'student_id', 'subject_id')
             ->withPivot('academic_year', 'is_core', 'status')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the invoices for the user (as a student).
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'student_id');
     }
 }

@@ -70,6 +70,9 @@ class TenantConnectionProvider extends ServiceProvider
         // Set unique cache key for Spatie Permissions per tenant
         config(['permission.cache.key' => 'spatie.permission.cache.tenant.' . $school->id]);
 
+        // Set permissions team id for multi-tenant support
+        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($school->id);
+
         // Reset the permission registrar to ensure it uses the new cache key and reloads permissions
         // This fixes the "PermissionDoesNotExist" error by forcing a fresh load from the tenant DB
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();

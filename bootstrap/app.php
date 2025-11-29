@@ -26,6 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 \Illuminate\Support\Facades\Route::middleware('web')
                     ->group(base_path('routes/tenant.php'));
             }
+
+            // Load API routes for all domains
+            \Illuminate\Support\Facades\Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/api.php'));
         },
     )
     ->withCommands([

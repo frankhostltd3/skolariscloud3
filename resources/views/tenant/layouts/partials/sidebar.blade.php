@@ -21,6 +21,12 @@
                 : '#',
             'active' => ['tenant.bookstore.*'],
         ],
+        [
+            'label' => 'Forum',
+            'icon' => 'bi-chat-quote',
+            'url' => \Illuminate\Support\Facades\Route::has('tenant.forum.index') ? route('tenant.forum.index') : '#',
+            'active' => ['tenant.forum.*'],
+        ],
     ];
 
     $menus = [
@@ -188,6 +194,30 @@
                 'active' => ['tenant.student.attendance.*'],
             ],
             [
+                'label' => 'Research Assistant',
+                'icon' => 'bi-robot',
+                'type' => 'submenu',
+                'id' => 'researchMenu',
+                'active' => ['tenant.student.research.*'],
+                'children' => [
+                    [
+                        'label' => 'Google',
+                        'icon' => 'bi-google',
+                        'url' => '#',
+                    ],
+                    [
+                        'label' => 'Wikipedia',
+                        'icon' => 'bi-globe',
+                        'url' => '#',
+                    ],
+                    [
+                        'label' => 'AI Research',
+                        'icon' => 'bi-cpu',
+                        'url' => route('tenant.student.notes.personal.create'),
+                    ],
+                ],
+            ],
+            [
                 'label' => 'Pay Fees',
                 'icon' => 'bi-credit-card',
                 'url' => route('tenant.finance.payments.pay'),
@@ -264,6 +294,39 @@
                             <li class="px-3 mt-3 mb-2">
                                 <small class="text-muted fw-bold text-uppercase"
                                     style="font-size: 0.75rem; letter-spacing: 0.5px;">{{ $item['label'] }}</small>
+                            </li>
+                        @elseif($item['type'] === 'submenu')
+                            @php
+                                $isActive = false;
+                                foreach ((array) ($item['active'] ?? []) as $pattern) {
+                                    if (request()->routeIs($pattern)) {
+                                        $isActive = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            <li class="px-3">
+                                <a class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none position-relative {{ $isActive ? 'bg-primary text-white' : 'text-body' }}"
+                                    data-bs-toggle="collapse" href="#{{ $item['id'] }}" role="button"
+                                    aria-expanded="{{ $isActive ? 'true' : 'false' }}"
+                                    aria-controls="{{ $item['id'] }}">
+                                    <i class="{{ $item['icon'] ?? 'bi-circle' }}"></i>
+                                    <span class="fw-medium flex-grow-1">{{ $item['label'] }}</span>
+                                    <span class="bi bi-chevron-down small"></span>
+                                </a>
+                                <div class="collapse {{ $isActive ? 'show' : '' }}" id="{{ $item['id'] }}">
+                                    <ul class="list-unstyled ms-3">
+                                        @foreach ($item['children'] as $child)
+                                            <li>
+                                                <a href="{{ $child['url'] }}"
+                                                    class="d-flex align-items-center gap-3 px-3 py-2 rounded mb-1 text-decoration-none text-body">
+                                                    <i class="{{ $child['icon'] ?? 'bi-circle' }}"></i>
+                                                    <span class="fw-medium">{{ $child['label'] }}</span>
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             </li>
                         @endif
                     @else

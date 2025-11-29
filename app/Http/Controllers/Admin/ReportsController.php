@@ -1367,35 +1367,43 @@ class ReportsController extends Controller
         $percentage = $subjectCount > 0 ? round($totalMarks / $subjectCount, 1) : 0;
         $gpa = $this->calculateGPA($percentage);
 
-        // Calculate Class Rank
+        // Calculate Class Rank based on current enrollment (no direct class_id column on users)
         $classRank = 1;
         $totalStudents = 0;
 
-        if ($student->class_id) {
-             // Get all students in class
-             $classStudents = User::where('school_id', $school->id)
-                ->where('class_id', $student->class_id)
-                ->whereHas('roles', fn($q) => $q->where('name', 'student'))
+        $currentEnrollment = method_exists($student, 'currentEnrollment')
+            ? $student->currentEnrollment()->first()
+            : null;
+
+        if ($currentEnrollment && $currentEnrollment->class_id) {
+            $classId = $currentEnrollment->class_id;
+
+            // Get all students actively enrolled in the same class
+            $classStudents = User::where('school_id', $school->id)
+                ->whereHas('roles', fn ($q) => $q->where('name', 'student'))
+                ->whereHas('enrollments', function ($q) use ($classId) {
+                    $q->where('class_id', $classId)->where('status', 'active');
+                })
                 ->get();
 
-             $totalStudents = $classStudents->count();
+            $totalStudents = $classStudents->count();
 
-             // Calculate percentages for all students
-             $studentPercentages = [];
-             foreach ($classStudents as $s) {
-                 $studentPercentages[$s->id] = $this->calculateOverallPercentage($s, $assessmentConfig);
-             }
+            // Calculate percentages for all students
+            $studentPercentages = [];
+            foreach ($classStudents as $s) {
+                $studentPercentages[$s->id] = $this->calculateOverallPercentage($s, $assessmentConfig);
+            }
 
-             // Sort descending
-             arsort($studentPercentages);
-             $rank = 1;
-             foreach ($studentPercentages as $id => $pct) {
-                 if ($id == $student->id) {
-                     $classRank = $rank;
-                     break;
-                 }
-                 $rank++;
-             }
+            // Sort descending
+            arsort($studentPercentages);
+            $rank = 1;
+            foreach ($studentPercentages as $id => $pct) {
+                if ($id == $student->id) {
+                    $classRank = $rank;
+                    break;
+                }
+                $rank++;
+            }
         }
 
         // Fetch Attendance
@@ -1497,6 +1505,8 @@ class ReportsController extends Controller
 
         return $count > 0 ? $totalMarks / $count : 0;
     }
+
+    // GPA calculation is handled by the active grading scheme via getGradingScheme()/getGradeForScore().
 
     private function buildSubjectAssessmentBreakdown($subjectGrades, $assessmentColumns)
     {

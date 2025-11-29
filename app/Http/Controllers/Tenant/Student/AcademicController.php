@@ -8,11 +8,13 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\Finance\FeePayment;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class AcademicController extends Controller
 {
@@ -89,37 +91,7 @@ class AcademicController extends Controller
             return redirect()->back()->with('error', 'No active term found.');
         }
 
-        // Get grades for the term
-        $grades = Grade::where('student_id', $student->id)
-            ->where('semester_id', $term->id)
-            ->published()
-            ->with(['subject', 'teacher'])
-            ->get();
-
-        // Group grades by subject
-        $subjectGrades = $grades->groupBy('subject_id');
-
-        // Calculate term statistics
-        $statistics = [
-            'total_subjects' => $subjectGrades->count(),
-            'average_score' => $grades->avg('marks_obtained'),
-            'average_percentage' => $grades->count() > 0 ?
-                ($grades->sum('marks_obtained') / $grades->sum('total_marks')) * 100 : 0,
-            'total_assessments' => $grades->count(),
-        ];
-
-        // Generate PDF
-        $pdf = Pdf::loadView('tenant.student.academic.report-pdf', compact(
-            'student',
-            'term',
-            'grades',
-            'subjectGrades',
-            'statistics'
-        ));
-
-        $filename = 'academic-report-' . $student->admission_number . '-' . $term->name . '.pdf';
-
-        return $pdf->download($filename);
+        return $this->generateReportCardPDF($student->id, $term->id);
     }
 
     public function shareReport(Request $request)
@@ -208,5 +180,246 @@ class AcademicController extends Controller
 
         // Check if fully paid (with 1 currency unit tolerance)
         return $totalPaid >= ($totalFees - 1);
+    }
+
+    /**
+     * Generate the professional report card PDF (Same logic as Admin ReportsController)
+     */
+    private function generateReportCardPDF($studentId, $termId)
+    {
+        $student = Student::with(['class', 'class.educationLevel'])->findOrFail($studentId);
+        $term = Term::findOrFail($termId);
+        $school = tenant();
+
+        // Get report card settings
+        $settings = [
+            'show_logo' => setting('report_show_logo', true),
+            'show_photo' => setting('report_show_photo', true),
+            'primary_color' => setting('report_primary_color', '#0d6efd'),
+            'secondary_color' => setting('report_secondary_color', '#6c757d'),
+            'heading_font' => setting('report_heading_font', 'Helvetica'),
+            'body_font' => setting('report_body_font', 'Helvetica'),
+            'logo_width' => setting('report_logo_width', 100),
+            'logo_height' => setting('report_logo_height', 100),
+            'photo_width' => setting('report_photo_width', 100),
+            'photo_height' => setting('report_photo_height', 100),
+            'school_name' => setting('report_school_name', $school->name),
+            'school_address' => setting('report_school_address', $school->address),
+            'school_email' => setting('report_school_email', $school->email),
+            'school_phone' => setting('report_school_phone', $school->phone),
+            'principal_signature_title' => setting('report_principal_title', 'Principal'),
+            'teacher_signature_title' => setting('report_teacher_title', 'Class Teacher'),
+        ];
+
+        // Get assessment configuration
+        $assessmentConfig = json_decode(setting('assessment_configuration', '[]'), true);
+        $assessmentWeights = [];
+        foreach ($assessmentConfig as $config) {
+            if (isset($config['name']) && isset($config['weight'])) {
+                $assessmentWeights[$config['name']] = floatval($config['weight']);
+            }
+        }
+
+        // Get all grades for this student in this term
+        $grades = Grade::where('student_id', $student->id)
+            ->where('semester_id', $term->id)
+            ->with(['subject'])
+            ->get();
+
+        // Group grades by subject
+        $subjectGrades = $grades->groupBy('subject_id');
+        $processedGrades = [];
+        $totalWeightedScore = 0;
+        $totalMaxScore = 0;
+
+        foreach ($subjectGrades as $subjectId => $assessments) {
+            $subject = $assessments->first()->subject;
+            $subjectTotal = 0;
+            $subjectMax = 0;
+            $breakdown = [];
+
+            // Calculate weighted score if configuration exists
+            if (!empty($assessmentWeights)) {
+                $calculatedScore = 0;
+                $totalWeight = 0;
+
+                foreach ($assessments as $grade) {
+                    $type = $grade->assessment_type;
+                    $weight = $assessmentWeights[$type] ?? 0;
+
+                    // If we have a weight for this assessment type
+                    if ($weight > 0) {
+                        // Normalize score to 100 before applying weight
+                        $normalizedScore = ($grade->marks_obtained / $grade->total_marks) * 100;
+                        $calculatedScore += $normalizedScore * ($weight / 100);
+                        $totalWeight += $weight;
+                    }
+
+                    $breakdown[$type] = [
+                        'score' => $grade->marks_obtained,
+                        'total' => $grade->total_marks,
+                        'weight' => $weight
+                    ];
+                }
+
+                // If total weight is less than 100%, scale it up or just use what we have
+                // For now, we'll assume the calculated score is out of 100
+                $subjectTotal = $calculatedScore;
+                $subjectMax = 100;
+            } else {
+                // Fallback to simple sum if no weights configured
+                $subjectTotal = $assessments->sum('marks_obtained');
+                $subjectMax = $assessments->sum('total_marks');
+            }
+
+            // Calculate percentage
+            $percentage = $subjectMax > 0 ? ($subjectTotal / $subjectMax) * 100 : 0;
+
+            // Determine grade and points (simplified logic, ideally fetch from GradingScale)
+            $gradeLetter = $this->getGradeLetter($percentage);
+            $gradePoint = $this->getGradePoint($percentage);
+
+            $processedGrades[] = [
+                'subject' => $subject->name,
+                'code' => $subject->code,
+                'mark' => $subjectTotal,
+                'out_of' => $subjectMax,
+                'percentage' => $percentage,
+                'grade' => $gradeLetter,
+                'points' => $gradePoint,
+                'breakdown' => $breakdown,
+                'teacher' => $assessments->first()->teacher->name ?? 'N/A',
+                'comment' => $this->getRemarks($gradeLetter)
+            ];
+
+            $totalWeightedScore += $percentage; // Sum of percentages
+            $totalMaxScore += 100; // Each subject is out of 100%
+        }
+
+        // Calculate GPA and Totals
+        $subjectCount = count($processedGrades);
+        $averagePercentage = $subjectCount > 0 ? $totalWeightedScore / $subjectCount : 0;
+        $totalPoints = collect($processedGrades)->sum('points');
+        $gpa = $subjectCount > 0 ? $totalPoints / $subjectCount : 0;
+
+        // Get Attendance Stats
+        $attendanceStats = [
+            'present' => 0,
+            'absent' => 0,
+            'late' => 0,
+            'total' => 0
+        ];
+
+        if (Schema::connection('tenant')->hasTable('attendances')) {
+            // This is a simplified query, adjust based on your actual attendance model
+            $attendanceStats['present'] = DB::connection('tenant')->table('attendances')
+                ->where('student_id', $student->id)
+                ->where('status', 'present')
+                ->count();
+            $attendanceStats['absent'] = DB::connection('tenant')->table('attendances')
+                ->where('student_id', $student->id)
+                ->where('status', 'absent')
+                ->count();
+            $attendanceStats['late'] = DB::connection('tenant')->table('attendances')
+                ->where('student_id', $student->id)
+                ->where('status', 'late')
+                ->count();
+            $attendanceStats['total'] = $attendanceStats['present'] + $attendanceStats['absent'] + $attendanceStats['late'];
+        }
+
+        // Get Class Rank (Simplified)
+        // In a real scenario, you'd calculate this for all students in the class and find the rank
+        $rank = 'N/A'; // Placeholder
+
+        // Get current academic year
+        $academicYear = \App\Models\Academic\AcademicYear::current()->first();
+        $academicYearName = $academicYear ? $academicYear->name : now()->year . '-' . (now()->year + 1);
+
+        // Prepare data for view
+        $data = [
+            'student' => $student,
+            'term' => $term->name ?? 'Term',
+            'academic_year' => $academicYearName,
+            'school' => $school,
+            'grades' => $processedGrades,
+            'total_marks' => $totalWeightedScore,
+            'total_possible' => $totalMaxScore,
+            'percentage' => number_format($averagePercentage, 1),
+            'gpa' => $gpa,
+            'class_rank' => $rank,
+            'total_students' => $student->class->students()->count(),
+            'attendance' => $attendanceStats,
+            'teacher_comment' => $this->getTeacherComment($averagePercentage),
+            'principal_comment' => $this->getPrincipalComment($averagePercentage),
+            'assessment_columns' => [],
+            'assessment_labels' => [],
+            'settings' => $settings,
+            'generated_at' => now()->format('d M Y H:i A')
+        ];
+
+        // Use the Admin PDF view
+        $pdf = Pdf::loadView('admin.reports.pdf.report-card', $data);
+
+        // Set paper size and orientation
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download(Str::slug($student->name) . '-report-card.pdf');
+    }
+
+    private function getTeacherComment($percentage)
+    {
+        if ($percentage >= 80) return "Excellent performance. Keep it up!";
+        if ($percentage >= 70) return "Very good work. Consistent effort shown.";
+        if ($percentage >= 60) return "Good attempt. Can do better with more focus.";
+        if ($percentage >= 50) return "Average performance. Needs improvement.";
+        return "Below average. Requires immediate attention and extra help.";
+    }
+
+    private function getPrincipalComment($percentage)
+    {
+        if ($percentage >= 80) return "Promoted to next class with distinction.";
+        if ($percentage >= 50) return "Promoted to next class.";
+        return "Advised to repeat the class.";
+    }
+
+    private function getGradeLetter($percentage)
+    {
+        if ($percentage >= 90) return 'A+';
+        if ($percentage >= 80) return 'A';
+        if ($percentage >= 75) return 'B+';
+        if ($percentage >= 70) return 'B';
+        if ($percentage >= 65) return 'C+';
+        if ($percentage >= 60) return 'C';
+        if ($percentage >= 50) return 'D';
+        if ($percentage >= 40) return 'E';
+        return 'F';
+    }
+
+    private function getGradePoint($percentage)
+    {
+        if ($percentage >= 90) return 5.0;
+        if ($percentage >= 80) return 5.0;
+        if ($percentage >= 75) return 4.5;
+        if ($percentage >= 70) return 4.0;
+        if ($percentage >= 65) return 3.5;
+        if ($percentage >= 60) return 3.0;
+        if ($percentage >= 50) return 2.0;
+        if ($percentage >= 40) return 1.0;
+        return 0.0;
+    }
+
+    private function getRemarks($grade)
+    {
+        switch ($grade) {
+            case 'A+': return 'Excellent';
+            case 'A': return 'Excellent';
+            case 'B+': return 'Very Good';
+            case 'B': return 'Good';
+            case 'C+': return 'Fair';
+            case 'C': return 'Average';
+            case 'D': return 'Pass';
+            case 'E': return 'Weak Pass';
+            default: return 'Fail';
+        }
     }
 }

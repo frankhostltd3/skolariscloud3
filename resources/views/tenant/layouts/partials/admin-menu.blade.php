@@ -13,6 +13,14 @@
             <span class="bi bi-person-check me-2"></span>{{ __('User Approvals') }}
         </a>
 
+        {{-- Forum --}}
+        @if(\Illuminate\Support\Facades\Route::has('tenant.forum.index'))
+        <a class="list-group-item list-group-item-action {{ request()->routeIs('tenant.forum.*') ? 'active' : '' }}"
+            href="{{ route('tenant.forum.index') }}" @if (request()->routeIs('tenant.forum.*')) aria-current="page" @endif>
+            <span class="bi bi-chat-quote me-2"></span>{{ __('Forum') }}
+        </a>
+        @endif
+
         @php
             $portalsActive =
                 request()->routeIs('tenant.student.*') ||
@@ -254,6 +262,10 @@
                 <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.finance.payments.*') ? 'active' : '' }}"
                     href="{{ route('tenant.finance.payments.index') }}">
                     <span class="bi bi-credit-card me-2"></span>{{ __('Payments') }}
+                </a>
+                <a class="list-group-item list-group-item-action text-decoration-none {{ request()->routeIs('tenant.payments.mobile-money.*') ? 'active' : '' }}"
+                    href="{{ route('tenant.payments.mobile-money.create') }}">
+                    <span class="bi bi-phone me-2"></span>{{ __('Mobile Money') }}
                 </a>
             </div>
         </div>

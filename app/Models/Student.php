@@ -104,11 +104,41 @@ class Student extends Model
     }
 
     /**
+     * Get the invoices for the student (via linked user account).
+     */
+    public function invoices()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Invoice::class,
+            User::class,
+            'email', // Foreign key on users table
+            'student_id', // Foreign key on invoices table
+            'email', // Local key on students table
+            'id' // Local key on users table
+        );
+    }
+
+    /**
+     * Get the grades for the student (via linked user account).
+     */
+    public function grades()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Grade::class,
+            User::class,
+            'email', // Foreign key on users table
+            'student_id', // Foreign key on grades table
+            'email', // Local key on students table
+            'id' // Local key on users table
+        );
+    }
+
+    /**
      * Get the parents associated with this student.
      */
     public function parents()
     {
-        return $this->belongsToMany(ParentProfile::class, 'parent_student')
+        return $this->belongsToMany(ParentProfile::class, 'parent_student', 'student_id', 'parent_id')
             ->withPivot('relationship', 'is_primary', 'can_pickup', 'financial_responsibility')
             ->withTimestamps();
     }
@@ -129,5 +159,13 @@ class Student extends Model
         return $this->belongsToMany(Subject::class, 'student_subject', 'student_id', 'subject_id')
             ->withPivot('academic_year', 'is_core', 'status')
             ->withTimestamps();
+    }
+
+    /**
+     * Get behaviour records for this student.
+     */
+    public function behaviours()
+    {
+        return $this->hasMany(StudentBehaviour::class);
     }
 }

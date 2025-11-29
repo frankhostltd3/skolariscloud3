@@ -59,9 +59,9 @@ class ParentsController extends Controller
             'middle_name' => ['nullable', 'string', 'max:255'],
             'gender' => ['nullable', 'in:male,female,other'],
             'date_of_birth' => ['nullable', 'date', 'before:-18 years'],
-            'national_id' => ['nullable', 'string', 'max:50', 'unique:parents,national_id'],
+            'national_id' => ['nullable', 'string', 'max:50', 'unique:tenant.parents,national_id'],
             'blood_group' => ['nullable', 'in:A+,A-,B+,B-,O+,O-,AB+,AB-'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
 
             // Contact Information
             'phone' => ['required', 'string', 'max:20'],
@@ -211,9 +211,9 @@ class ParentsController extends Controller
             'middle_name' => ['nullable', 'string', 'max:255'],
             'gender' => ['nullable', 'in:male,female,other'],
             'date_of_birth' => ['nullable', 'date', 'before:-18 years'],
-            'national_id' => ['nullable', 'string', 'max:50', 'unique:parents,national_id,' . $user->parentProfile?->id],
+            'national_id' => ['nullable', 'string', 'max:50', 'unique:tenant.parents,national_id,' . $user->parentProfile?->id],
             'blood_group' => ['nullable', 'in:A+,A-,B+,B-,O+,O-,AB+,AB-'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
 
             // Contact Information
             'phone' => ['required', 'string', 'max:20'],

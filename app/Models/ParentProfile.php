@@ -11,6 +11,8 @@ class ParentProfile extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $table = 'parents';
 
     protected $fillable = [
@@ -86,7 +88,7 @@ class ParentProfile extends Model
             $this->middle_name,
             $this->last_name,
         ]);
-        
+
         return implode(' ', $parts);
     }
 
@@ -98,7 +100,7 @@ class ParentProfile extends Model
         if (!$this->date_of_birth) {
             return null;
         }
-        
+
         return $this->date_of_birth->age;
     }
 
