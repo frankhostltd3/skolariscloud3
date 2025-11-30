@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'landlord_team_id' => env('LANDLORD_TEAM_ID', 'skolaris-root'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

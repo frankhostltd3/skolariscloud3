@@ -7,7 +7,26 @@
 
     <title>{{ config('app.name') }} · {{ __('Landlord Console') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Custom Styles for Landlord Panel -->
+    <style>
+        .bg-body-tertiary {
+            background-color: #f8f9fa !important;
+        }
+
+        .shadow-sm {
+            box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+    </style>
 </head>
 
 <body class="bg-body-tertiary text-body">
@@ -172,6 +191,9 @@
 
     {{-- Scripts pushed by child views (e.g., Payment Methods modal JS) --}}
     @stack('scripts')
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

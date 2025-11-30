@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Landlord\Tenants;
 
 use App\Http\Controllers\Controller;
+use App\Models\School;
+use App\Services\TenantDatabaseManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
-use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class ImportController extends Controller
 {
@@ -22,7 +23,7 @@ class ImportController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'import_file' => ['required', 'file', 'mimes:xlsx,xls,csv'],
+            'import_file' => ['required', 'file', 'mimes:xlsx,xls,csv,sql'],
             'import_type' => ['required', 'in:excel,sql'],
         ]);
 
@@ -59,48 +60,76 @@ class ImportController extends Controller
                 if ($index === 0) continue;
 
                 try {
-                    $tenantData = [
-                        'id' => $row[0] ?? null,
-                        'school_name' => $row[1] ?? '',
-                        'admin_email' => $row[2] ?? '',
-                        'admin_name' => $row[3] ?? '',
-                        'plan' => $row[4] ?? 'starter',
-                        'country' => $row[5] ?? '',
+                    // Mapping based on TenantsExport columns:
+                    // 0: ID, 1: Name, 2: Code, 3: Subdomain, 4: Domain, 5: Database, 6: Plan, 7: Country, 8: Admin Email
+
+                    $schoolData = [
+                        'name' => $row[1] ?? '',
+                        'code' => $row[2] ?? '',
+                        'subdomain' => $row[3] ?? '',
+                        'domain' => $row[4] ?? null,
+                        'database' => $row[5] ?? '',
+                        'meta' => [
+                            'plan' => $row[6] ?? 'starter',
+                            'country' => $row[7] ?? '',
+                            'admin_email' => $row[8] ?? '',
+                        ]
                     ];
 
-                    if (empty($tenantData['id']) || empty($tenantData['school_name'])) {
-                        $errors[] = "Row " . ($index + 1) . ": Missing required tenant ID or school name";
+                    if (empty($schoolData['subdomain']) || empty($schoolData['name'])) {
+                        // Fallback to old format if subdomain is missing (maybe row[0] was ID/subdomain)
+                        if (!empty($row[0]) && !empty($row[1])) {
+                             $schoolData['subdomain'] = $row[0];
+                             $schoolData['name'] = $row[1];
+                             $schoolData['meta']['admin_email'] = $row[2] ?? '';
+                             // row[3] was admin name, we don't have a place for it in meta usually, but let's ignore
+                             $schoolData['meta']['plan'] = $row[4] ?? 'starter';
+                             $schoolData['meta']['country'] = $row[5] ?? '';
+                             $schoolData['database'] = 'tenant_' . str_replace('-', '_', $schoolData['subdomain']);
+                             $schoolData['code'] = strtoupper(substr($schoolData['subdomain'], 0, 3));
+                        } else {
+                            $errors[] = "Row " . ($index + 1) . ": Missing required subdomain or school name";
+                            continue;
+                        }
+                    }
+
+                    // Check if school already exists
+                    if (School::where('subdomain', $schoolData['subdomain'])->exists()) {
+                        $errors[] = "Row " . ($index + 1) . ": Subdomain '{$schoolData['subdomain']}' already exists";
                         continue;
                     }
 
-                    // Check if tenant already exists
-                    if (Tenant::find($tenantData['id'])) {
-                        $errors[] = "Row " . ($index + 1) . ": Tenant ID '{$tenantData['id']}' already exists";
-                        continue;
-                    }
+                    // Create school
+                    $school = School::create($schoolData);
 
-                    // Create tenant
-                    $tenant = Tenant::create([
-                        'id' => $tenantData['id'],
-                        'data' => $tenantData,
-                    ]);
+                    // Setup database and admin user
+                    // Note: This is a heavy operation to do in a loop.
+                    // Ideally we should queue this. For now, we'll do it synchronously but catch errors.
 
-                    // Create domain
-                    Domain::create([
-                        'domain' => $tenantData['id'] . '.' . parse_url(config('app.url'), PHP_URL_HOST),
-                        'tenant_id' => $tenant->id,
-                    ]);
+                    try {
+                        $dbManager = app(TenantDatabaseManager::class);
+                        $dbManager->connect($school);
 
-                    // Create admin user if email provided
-                    if (!empty($tenantData['admin_email'])) {
-                        tenancy()->initialize($tenant);
+                        // Run migrations
+                        Artisan::call('migrate', [
+                            '--database' => 'tenant',
+                            '--path' => 'database/migrations/tenants',
+                            '--force' => true,
+                        ]);
 
-                        \App\Models\User::create([
-                            'name' => $tenantData['admin_name'] ?: 'Admin',
-                            'email' => $tenantData['admin_email'],
-                            'password' => Hash::make('password123'), // Default password
-                            'email_verified_at' => now(),
-                        ])->assignRole('admin');
+                        // Create admin user if email provided
+                        if (!empty($schoolData['meta']['admin_email'])) {
+                            \App\Models\User::create([
+                                'name' => 'Admin', // We don't have name in export, default to Admin
+                                'email' => $schoolData['meta']['admin_email'],
+                                'password' => Hash::make('password123'), // Default password
+                                'email_verified_at' => now(),
+                            ])->assignRole('admin');
+                        }
+                    } catch (\Exception $e) {
+                        $errors[] = "Row " . ($index + 1) . " (DB Setup): " . $e->getMessage();
+                        // We don't rollback the school creation here to allow manual retry/fix?
+                        // Or maybe we should. Let's just log error.
                     }
 
                     $imported++;
@@ -141,9 +170,8 @@ class ImportController extends Controller
             foreach ($statements as $statement) {
                 if (empty($statement) || strpos($statement, '--') === 0) continue;
 
-                // Basic validation - only allow INSERT statements for tenants and domains
-                if (stripos($statement, 'INSERT INTO tenants') === 0 ||
-                    stripos($statement, 'INSERT INTO domains') === 0) {
+                // Basic validation - only allow INSERT statements for schools
+                if (stripos($statement, 'INSERT INTO schools') === 0) {
                     DB::statement($statement);
                     $imported++;
                 }

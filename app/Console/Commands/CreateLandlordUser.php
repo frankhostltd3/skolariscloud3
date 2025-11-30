@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class CreateLandlordUser extends Command
 {
@@ -61,6 +62,8 @@ class CreateLandlordUser extends Command
         }
 
         try {
+            PermissionRegistrar::setPermissionsTeamId('skolaris-root');
+
             // Create user on central connection
             $user = User::on(config('tenancy.database.central_connection'))->create([
                 'name' => $name,

@@ -17,6 +17,18 @@ class SwitchTenantDatabase
 
     public function handle(Request $request, Closure $next): Response
     {
+        // Check if this is a central domain (no subdomain)
+        $host = $request->getHost();
+        $host = parse_url('http://' . $host, PHP_URL_HOST) ?? $host;
+        $host = strtolower($host);
+
+        $centralDomains = config('tenant.central_domains', []);
+        $isCentral = in_array($host, ['localhost', '127.0.0.1']) || in_array($host, $centralDomains);
+
+        if ($isCentral) {
+            return $next($request);
+        }
+
         $school = $request->attributes->get('currentSchool');
 
         if (! $school instanceof School && app()->bound('currentSchool')) {

@@ -19,7 +19,7 @@ class DiscussionController extends Controller
     {
         $discussions = Discussion::with(['class', 'subject'])
             ->where('teacher_id', Auth::id())
-            ->latest('is_pinned', 'desc')
+            ->orderBy('is_pinned', 'desc')
             ->latest()
             ->paginate(15);
 
@@ -201,9 +201,10 @@ class DiscussionController extends Controller
         return back()->with('success', $discussion->is_pinned ? 'Discussion pinned.' : 'Discussion unpinned.');
     }
 
-    public function toggleLock(Discussion $discussion)
-    {
-        $this->authorize('update', $discussion);
-        $discussion->update(['is_locked' => !$discussion->is_locked]);
-        return back()->with('success', $discussion->is_locked ? 'Discussion locked.' : 'Discussion unlocked.');
+        public function toggleLock(Discussion $discussion)
+        {
+            $this->authorize('update', $discussion);
+            $discussion->update(['is_locked' => !$discussion->is_locked]);
+            return back()->with('success', $discussion->is_locked ? 'Discussion locked.' : 'Discussion unlocked.');
+        }
     }

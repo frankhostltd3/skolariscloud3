@@ -3,24 +3,20 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
+use App\Models\School;
 use Illuminate\Contracts\View\View;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class BillingController extends Controller
 {
     public function __invoke(): View
     {
-        $tenants = Tenant::query()
-            ->select(['id', 'data', 'created_at'])
+        $tenants = School::query()
+            ->select(['id', 'name', 'meta', 'created_at'])
             ->get()
-            ->map(function (Tenant $tenant) {
-                $payload = $tenant->getAttribute('data');
+            ->map(function (School $school) {
+                $meta = $school->meta ?? [];
 
-                if (is_string($payload)) {
-                    $payload = json_decode($payload, true) ?: [];
-                }
-
-                $plan = $payload['plan'] ?? 'starter';
+                $plan = $meta['plan'] ?? 'starter';
                 $mrr = match ($plan) {
                     'enterprise', 'custom' => 249,
                     'premium' => 189,
@@ -29,12 +25,12 @@ class BillingController extends Controller
                 };
 
                 return [
-                    'id' => $tenant->id,
-                    'name' => $payload['name'] ?? $tenant->id,
+                    'id' => $school->id,
+                    'name' => $school->name,
                     'plan' => $plan,
                     'mrr' => $mrr,
-                    'country' => $payload['country'] ?? null,
-                    'created_at' => $tenant->created_at,
+                    'country' => $meta['country'] ?? null,
+                    'created_at' => $school->created_at,
                 ];
             });
 

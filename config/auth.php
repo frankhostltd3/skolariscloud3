@@ -42,7 +42,7 @@ return [
         ],
         'landlord' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'landlords', // Use the new 'landlords' provider
         ],
     ],
 
@@ -66,13 +66,12 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'landlords' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\LandlordUser::class,
+        ],
     ],
 
     /*

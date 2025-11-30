@@ -47,7 +47,8 @@
                                         <option value="">Choose a class...</option>
                                         @foreach ($classes as $class)
                                             <option value="{{ $class->id }}">{{ $class->name }}
-                                                ({{ $class->students->count() }} students)</option>
+                                                ({{ $class->students->count() }} students)
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -131,7 +132,8 @@
                                         <option value="">Choose a stream...</option>
                                         @foreach ($streams as $stream)
                                             <option value="{{ $stream->id }}">{{ $stream->full_name }}
-                                                ({{ $stream->students->count() }} students)</option>
+                                                ({{ $stream->students->count() }} students)
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>

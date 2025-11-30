@@ -46,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'approved' => \App\Http\Middleware\EnsureUserApproved::class,
+            'landlord.context' => \App\Http\Middleware\SetLandlordContext::class,
         ]);
 
     // Set high priority so these run early

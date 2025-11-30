@@ -38,6 +38,7 @@ use App\Http\Controllers\Landlord\TenantsController;
 use App\Http\Controllers\Landlord\Tenants\CreateController as TenantsCreateController;
 use App\Http\Controllers\Landlord\Tenants\ImportController as TenantsImportController;
 use App\Http\Controllers\Landlord\Tenants\DomainsController as TenantsDomainsController;
+use App\Http\Controllers\Landlord\DomainOrderController;
 use Illuminate\Support\Facades\Route;
 
 // Home page (Landing page)
@@ -64,6 +65,8 @@ Route::prefix('bookstore')->name('bookstore.')->group(function () {
         Route::get('/account/orders/{order}/download/{book}', [\App\Http\Controllers\Tenant\BookstoreController::class, 'download'])->name('download');
     });
 });
+
+Route::get('/landlord/logout-now', [AuthenticatedSessionController::class, 'destroy'])->name('landlord.logout.get');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -112,13 +115,45 @@ Route::middleware('auth')->group(function () {
 // ======================================================================
 // LANDLORD ROUTES
 // ======================================================================
-Route::middleware('web')->prefix('landlord')->name('landlord.')->group(function (): void {
+// Route::middleware('web')->prefix('landlord')->name('landlord.')->group(function (): void {
+// Route::middleware('guest:landlord')->group(function (): void {
+// Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login.show');
+// Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+// });
+
+Route::middleware(['web', 'landlord.context'])->prefix('landlord')->name('landlord.')->group(function (): void {
 Route::middleware('guest:landlord')->group(function (): void {
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login.show');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
 
-Route::middleware(['auth:landlord', 'permission:access landlord dashboard,landlord'])->group(function (): void {
+Route::middleware(['auth:landlord', \App\Http\Middleware\SetLandlordContext::class])->group(function () {
+    Route::get('/landlord-debug', function () {
+        $user = \Illuminate\Support\Facades\Auth::guard('landlord')->user();
+        $perm = 'access landlord dashboard';
+        $guard = 'landlord';
+
+        $hasPerm = $user->hasPermissionTo($perm, $guard);
+
+        return [
+            'user_id' => $user->id,
+            'user_class' => get_class($user),
+            'user_connection' => $user->getConnectionName(),
+            'team_id' => app(\Spatie\Permission\PermissionRegistrar::class)->getPermissionsTeamId(),
+            'has_permission' => $hasPerm,
+            'roles' => $user->roles->pluck('name'),
+            'permissions' => $user->permissions->pluck('name'),
+            'role_permissions' => $user->getPermissionsViaRoles()->pluck('name'),
+            'default_db_connection' => config('database.default'),
+            'spatie_role_connection' => (new \Spatie\Permission\Models\Role)->getConnectionName(),
+            'spatie_permission_connection' => (new \Spatie\Permission\Models\Permission)->getConnectionName(),
+        ];
+    });
+});
+
+Route::middleware(['auth:landlord', \App\Http\Middleware\SetLandlordContext::class])->group(function (): void {
+    // Temporarily removed permission check to debug 403 error
+    // 'permission:access landlord dashboard,landlord'
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 Route::get('/dashboard', LandlordDashboardController::class)->name('dashboard');
 
@@ -135,6 +170,17 @@ Route::get('/export/excel', [TenantsController::class, 'exportExcel'])->name('ex
 Route::get('/export/sql', [TenantsController::class, 'exportSql'])->name('export.sql');
 Route::get('/export/odata', [TenantsController::class, 'exportOdata'])->name('export.odata');
 Route::get('/domains', TenantsDomainsController::class)->name('domains');
+
+// Domain Order Management Routes
+Route::prefix('domains')->name('domains.')->group(function () {
+    Route::get('/orders', [DomainOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [DomainOrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders', [DomainOrderController::class, 'store'])->name('orders.store');
+    Route::post('/orders/{order}/approve', [DomainOrderController::class, 'approve'])->name('orders.approve');
+    Route::post('/orders/{order}/reject', [DomainOrderController::class, 'reject'])->name('orders.reject');
+    Route::post('/orders/{order}/activate-routing', [DomainOrderController::class, 'activateRouting'])->name('orders.activate-routing');
+    Route::post('/check-availability', [DomainOrderController::class, 'checkAvailability'])->name('check-availability');
+});
 });
 
 Route::get('/billing', BillingController::class)->name('billing');

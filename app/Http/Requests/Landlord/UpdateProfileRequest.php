@@ -24,6 +24,9 @@ class UpdateProfileRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'], // Max 2MB
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }

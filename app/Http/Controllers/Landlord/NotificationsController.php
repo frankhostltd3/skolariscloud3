@@ -94,12 +94,12 @@ class NotificationsController extends Controller
         $countries = (array) ($audience['countries'] ?? []);
         $landlordRoles = (array) ($audience['landlord_roles'] ?? []);
 
-        $tenantsQuery = \Stancl\Tenancy\Database\Models\Tenant::query();
+        $tenantsQuery = \App\Models\School::query();
         if (!empty($plans)) {
-            $tenantsQuery->whereRaw("JSON_EXTRACT(data, '$.plan') IN (" . implode(',', array_fill(0, count($plans), '?')) . ")", $plans);
+            $tenantsQuery->whereRaw("JSON_EXTRACT(meta, '$.plan') IN (" . implode(',', array_fill(0, count($plans), '?')) . ")", $plans);
         }
         if (!empty($countries)) {
-            $tenantsQuery->whereRaw("JSON_EXTRACT(data, '$.country') IN (" . implode(',', array_fill(0, count($countries), '?')) . ")", $countries);
+            $tenantsQuery->whereRaw("JSON_EXTRACT(meta, '$.country') IN (" . implode(',', array_fill(0, count($countries), '?')) . ")", $countries);
         }
         $tenants = $tenantsQuery->get();
 
@@ -145,6 +145,6 @@ class NotificationsController extends Controller
             'meta' => array_merge($notification->meta ?? [], ['sent_count' => $sentCount]),
         ])->save();
 
-        return redirect()->route('landlord.notifications.index')->with('success', __('Notification dispatched')); 
+        return redirect()->route('landlord.notifications.index')->with('success', __('Notification dispatched'));
     }
 }

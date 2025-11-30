@@ -62,4 +62,33 @@ return [
         ],
     ],
 
+
+        // FRANKHOST White Label Domain Registrar
+        'domain_registrar_1' => [
+            'api_key' => env('DOMAIN_REGISTRAR_1_API_KEY'),
+            'api_user' => env('DOMAIN_REGISTRAR_1_API_USER'),
+            'sandbox' => env('DOMAIN_REGISTRAR_1_SANDBOX', true),
+        ],
+        'domain_registrar_2' => [
+            'api_key' => env('DOMAIN_REGISTRAR_2_API_KEY'),
+            'api_user' => env('DOMAIN_REGISTRAR_2_API_USER'),
+            'sandbox' => env('DOMAIN_REGISTRAR_2_SANDBOX', true),
+        ],
+
+        // FRANKHOST White Label Hosting Providers
+        'hosting_provider_1' => [
+            'api_key' => env('HOSTING_PROVIDER_1_API_KEY'),
+            'api_user' => env('HOSTING_PROVIDER_1_API_USER'),
+        ],
+        'hosting_provider_2' => [
+            'api_key' => env('HOSTING_PROVIDER_2_API_KEY'),
+            'api_user' => env('HOSTING_PROVIDER_2_API_USER'),
+        ],
+
+        // Cloudflare DNS & SSL
+        'cloudflare' => [
+            'api_token' => env('CLOUDFLARE_API_TOKEN'),
+            'account_id' => env('CLOUDFLARE_ACCOUNT_ID'),
+        ],
+
 ];

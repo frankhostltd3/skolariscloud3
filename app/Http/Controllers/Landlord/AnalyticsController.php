@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Landlord;
 use App\Http\Controllers\Controller;
 use App\Models\LandlordInvoice;
 use App\Models\PaymentTransaction;
+use App\Models\School;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class AnalyticsController extends Controller
 {
     public function __invoke(): View
     {
-        $connection = Tenant::query()->getConnection();
+        $connection = School::query()->getConnection();
         $driver = $connection->getDriverName();
 
         $monthExpression = match ($driver) {
@@ -29,7 +29,7 @@ class AnalyticsController extends Controller
         $hasTransactions = Schema::hasTable((new PaymentTransaction())->getTable());
 
         // Tenants
-        $monthlySignups = Tenant::query()
+        $monthlySignups = School::query()
             ->selectRaw($monthExpression.' as month, COUNT(*) as total')
             ->groupBy('month')
             ->orderByDesc('month')
@@ -37,15 +37,12 @@ class AnalyticsController extends Controller
             ->pluck('total', 'month')
             ->reverse();
 
-        $planVelocity = Tenant::query()
-            ->select(['data'])
+        $planVelocity = School::query()
+            ->select(['meta'])
             ->get()
-            ->map(function (Tenant $tenant) {
-                $payload = $tenant->getAttribute('data');
-                if (is_string($payload)) {
-                    $payload = json_decode($payload, true) ?: [];
-                }
-                return $payload['plan'] ?? 'unassigned';
+            ->map(function (School $school) {
+                $meta = $school->meta ?? [];
+                return $meta['plan'] ?? 'unassigned';
             })
             ->countBy();
 
