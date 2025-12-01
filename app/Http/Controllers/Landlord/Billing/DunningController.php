@@ -14,19 +14,6 @@ class DunningController extends Controller
     {
         $policy = LandlordDunningPolicy::current();
 
-        // Normalize template placeholders back to {{ }} if user-submitted values contain HTML entities
-        $templates = $validated['templates'] ?? ($policy->templates ?? []);
-        if (is_array($templates)) {
-            $decode = static function (string $v): string {
-                return str_replace(['&#123;&#123;', '&#125;&#125;'], ['{{', '}}'], $v);
-            };
-            foreach ($templates as $k => $v) {
-                if (is_string($v)) {
-                    $templates[$k] = $decode($v);
-                }
-            }
-        }
-
         return view('landlord.billing.dunning', compact('policy'));
     }
 
@@ -70,7 +57,20 @@ class DunningController extends Controller
                 ->all();
         };
 
-    $policy = LandlordDunningPolicy::current();
+        // Normalize template placeholders back to {{ }} if user-submitted values contain HTML entities
+        $templates = $validated['templates'] ?? [];
+        if (is_array($templates)) {
+            $decode = static function (string $v): string {
+                return str_replace(['&#123;&#123;', '&#125;&#125;'], ['{{', '}}'], $v);
+            };
+            foreach ($templates as $k => $v) {
+                if (is_string($v)) {
+                    $templates[$k] = $decode($v);
+                }
+            }
+        }
+
+        $policy = LandlordDunningPolicy::current();
         $policy->fill([
             'name' => $validated['name'],
             'warning_threshold_days' => (int) $validated['warning_threshold_days'],

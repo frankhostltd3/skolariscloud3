@@ -14,12 +14,13 @@ class DomainRegistrarService
 
     public function __construct()
     {
-        $this->apiKey = config('services.namecheap.api_key');
-        $this->apiUser = config('services.namecheap.api_user');
-        $this->sandbox = config('services.namecheap.sandbox', true);
-        $this->apiUrl = $this->sandbox
-            ? 'https://api.sandbox.namecheap.com/xml.response'
-            : 'https://api.namecheap.com/xml.response';
+        // Namecheap integration temporarily disabled
+        // $this->apiKey = config('services.namecheap.api_key');
+        // $this->apiUser = config('services.namecheap.api_user');
+        // $this->sandbox = config('services.namecheap.sandbox', true);
+        // $this->apiUrl = $this->sandbox
+        //     ? 'https://api.sandbox.namecheap.com/xml.response'
+        //     : 'https://api.namecheap.com/xml.response';
     }
 
     /**
@@ -27,37 +28,11 @@ class DomainRegistrarService
      */
     public function checkAvailability(string $domain): array
     {
-        try {
-            $response = Http::get($this->apiUrl, [
-                'ApiUser' => $this->apiUser,
-                'ApiKey' => $this->apiKey,
-                'UserName' => $this->apiUser,
-                'Command' => 'namecheap.domains.check',
-                'ClientIp' => request()->ip(),
-                'DomainList' => $domain,
-            ]);
-
-            if ($response->successful()) {
-                $xml = simplexml_load_string($response->body());
-                $result = $xml->CommandResponse->DomainCheckResult;
-
-                return [
-                    'available' => (string) $result['Available'] === 'true',
-                    'domain' => (string) $result['Domain'],
-                    'premium' => isset($result['IsPremiumName']) && (string) $result['IsPremiumName'] === 'true',
-                    'price' => $this->getDomainPrice($domain),
-                ];
-            }
-
-            return ['available' => false, 'error' => 'API request failed'];
-        } catch (\Exception $e) {
-            Log::error('Domain availability check failed', [
-                'domain' => $domain,
-                'error' => $e->getMessage(),
-            ]);
-
-            return ['available' => false, 'error' => $e->getMessage()];
-        }
+        // Namecheap API temporarily disabled
+        return [
+            'available' => false,
+            'error' => 'Namecheap API integration is currently disabled.'
+        ];
     }
 
     /**

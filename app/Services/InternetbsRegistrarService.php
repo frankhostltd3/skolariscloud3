@@ -14,8 +14,8 @@ class InternetbsRegistrarService
 
     public function __construct()
     {
-        $this->apiKey = config('services.internetbs.api_key');
-        $this->apiUser = config('services.internetbs.api_user');
+        $this->apiKey = config('services.internetbs.api_key') ?? '';
+        $this->apiUser = config('services.internetbs.api_user') ?? '';
         $this->sandbox = config('services.internetbs.sandbox', true);
         $this->apiUrl = $this->sandbox
             ? 'https://testapi.internetbs.net'
@@ -84,7 +84,8 @@ class InternetbsRegistrarService
         } catch (\Exception $e) {
             Log::error('Internet.bs domain registration failed', [
                 'domain' => $data['domain'],
-                'error' => $e->getMessage()];
+                'error' => $e->getMessage()
+            ]);
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -114,7 +115,8 @@ class InternetbsRegistrarService
         } catch (\Exception $e) {
             Log::error('Internet.bs domain renewal failed', [
                 'domain' => $domain,
-                'error' => $e->getMessage()];
+                'error' => $e->getMessage()
+            ]);
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }

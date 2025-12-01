@@ -13,8 +13,8 @@ class SpaceshipHostingService
 
     public function __construct()
     {
-        $this->apiKey = config('services.spaceship_hosting.api_key');
-        $this->apiUser = config('services.spaceship_hosting.api_user');
+        $this->apiKey = config('services.spaceship_hosting.api_key') ?? '';
+        $this->apiUser = config('services.spaceship_hosting.api_user') ?? '';
     }
 
     /**

@@ -17,13 +17,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-{
-    protected SpaceshipRegistrarService $spaceshipRegistrar;
-    protected InternetbsRegistrarService $internetbsRegistrar;
-    protected DnsManagementService $dnsService;
-    protected SslCertificateService $sslService;
-    protected ContaboHostingService $contaboHosting;
-    protected SpaceshipHostingService $spaceshipHosting;
+class DomainOrderController extends Controller {
+    protected $spaceshipRegistrar;
+    protected $internetbsRegistrar;
+    protected $dnsService;
+    protected $sslService;
+    protected $contaboHosting;
+    protected $spaceshipHosting;
 
     public function __construct(
         SpaceshipRegistrarService $spaceshipRegistrar,
@@ -38,13 +38,13 @@ use Illuminate\Support\Str;
         $this->dnsService = $dnsService;
         $this->sslService = $sslService;
         $this->contaboHosting = $contaboHosting;
-        $this->spaceshipHosting = $spaceshipHosting;
-    }
+    $this->spaceshipHosting = $spaceshipHosting;
+}
 
-    /**
-     * Display all domain orders
-     */
-    public function index(Request $request)
+/**
+ * Display all domain orders
+ */
+public function index(Request $request)
     {
         $query = DomainOrder::with(['school', 'creator', 'approver']);
 

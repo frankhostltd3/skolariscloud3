@@ -31,7 +31,8 @@ use App\Http\Controllers\Landlord\UsersController as LandlordUsersController;
 use App\Http\Controllers\Landlord\AuditLogsController;
 use App\Http\Controllers\Landlord\NotificationsController as LandlordNotificationsController;
 use App\Http\Controllers\Landlord\IntegrationsController;
-use App\Http\Controllers\Landlord\SystemHealthController;
+use App\Http\Controllers\Landlord\HealthController as LandlordHealthController;
+use Spatie\Health\Http\Controllers\HealthCheckResultsController;
 use App\Http\Controllers\Landlord\SettingsController as LandlordSettingsController;
 use App\Http\Controllers\Landlord\RbacController;
 use App\Http\Controllers\Landlord\TenantsController;
@@ -43,6 +44,9 @@ use Illuminate\Support\Facades\Route;
 
 // Home page (Landing page)
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Dynamic Pages
+Route::get('/p/{slug}', [App\Http\Controllers\PageController::class, 'show'])->name('page.show');
 
 // Public Bookstore Routes
 Route::prefix('bookstore')->name('bookstore.')->group(function () {
@@ -169,21 +173,19 @@ Route::post('/import', [TenantsImportController::class, 'store'])->name('import.
 Route::get('/export/excel', [TenantsController::class, 'exportExcel'])->name('export.excel');
 Route::get('/export/sql', [TenantsController::class, 'exportSql'])->name('export.sql');
 Route::get('/export/odata', [TenantsController::class, 'exportOdata'])->name('export.odata');
-Route::get('/domains', TenantsDomainsController::class)->name('domains');
+    Route::get('/domains', TenantsDomainsController::class)->name('domains');
+});
 
 // Domain Order Management Routes
 Route::prefix('domains')->name('domains.')->group(function () {
-    Route::get('/orders', [DomainOrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [DomainOrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders', [DomainOrderController::class, 'store'])->name('orders.store');
-    Route::post('/orders/{order}/approve', [DomainOrderController::class, 'approve'])->name('orders.approve');
-    Route::post('/orders/{order}/reject', [DomainOrderController::class, 'reject'])->name('orders.reject');
-    Route::post('/orders/{order}/activate-routing', [DomainOrderController::class, 'activateRouting'])->name('orders.activate-routing');
-    Route::post('/check-availability', [DomainOrderController::class, 'checkAvailability'])->name('check-availability');
-});
-});
-
-Route::get('/billing', BillingController::class)->name('billing');
+    Route::get('/orders', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'store'])->name('orders.store');
+    Route::post('/orders/{order}/approve', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'approve'])->name('orders.approve');
+    Route::post('/orders/{order}/reject', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'reject'])->name('orders.reject');
+    Route::post('/orders/{order}/activate-routing', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'activateRouting'])->name('orders.activate-routing');
+    Route::post('/check-availability', [\App\Http\Controllers\Landlord\DomainOrderController::class, 'checkAvailability'])->name('check-availability');
+});Route::get('/billing', BillingController::class)->name('billing');
 Route::prefix('billing')->name('billing.')->group(function (): void {
 Route::get('/invoices', [LandlordInvoicesController::class, 'index'])->name('invoices');
 Route::get('/invoices/{invoice}', [LandlordInvoicesController::class, 'show'])->name('invoices.show');
@@ -207,12 +209,23 @@ Route::get('/api/payment/status/{transaction}', [LandlordInvoicePaymentControlle
 Route::get('/analytics', AnalyticsController::class)->name('analytics');
 Route::get('/analytics/data', [AnalyticsController::class, 'data'])->name('analytics.data');
 Route::get('/settings', LandlordSettingsController::class)->name('settings');
-Route::get('/rbac', RbacController::class)->name('rbac');
+Route::resource('rbac', RbacController::class)->names([
+    'index' => 'rbac.index',
+    'create' => 'rbac.create',
+    'store' => 'rbac.store',
+    'show' => 'rbac.show',
+    'edit' => 'rbac.edit',
+    'update' => 'rbac.update',
+    'destroy' => 'rbac.destroy',
+]);
 
 Route::get('/profile', [LandlordProfileController::class, 'edit'])->name('profile');
 Route::put('/profile', [LandlordProfileController::class, 'update'])->name('profile.update');
 
 Route::get('/users', LandlordUsersController::class)->name('users');
+Route::post('/users', [LandlordUsersController::class, 'store'])->name('users.store');
+Route::post('/users/{user}/roles', [LandlordUsersController::class, 'updateRoles'])->name('users.roles.update');
+Route::delete('/users/{user}', [LandlordUsersController::class, 'destroy'])->name('users.destroy');
 Route::get('/audit-logs', AuditLogsController::class)->name('audit');
 Route::get('/audit-logs/export', [AuditLogsController::class, 'export'])->name('audit.export');
 
@@ -226,8 +239,17 @@ Route::delete('/{notification}', [LandlordNotificationsController::class, 'destr
 Route::post('/{notification}/dispatch', [LandlordNotificationsController::class, 'dispatchNow'])->name('dispatch');
 });
 
-Route::get('/integrations', IntegrationsController::class)->name('integrations');
-Route::get('/system-health', SystemHealthController::class)->name('health');
+Route::get('/integrations', [IntegrationsController::class, 'index'])->name('integrations');
+    Route::get('health', HealthCheckResultsController::class)->name('health');
+    Route::post('health/refresh', [LandlordHealthController::class, 'refresh'])->name('health.refresh');
+
+    Route::resource('hero-slides', \App\Http\Controllers\Landlord\HeroSlideController::class);
+    Route::resource('landing-features', \App\Http\Controllers\Landlord\LandingFeatureController::class);
+    Route::resource('landing-stats', \App\Http\Controllers\Landlord\LandingStatController::class);
+    Route::resource('landing-testimonials', \App\Http\Controllers\Landlord\LandingTestimonialController::class);
+    Route::resource('landing-faqs', \App\Http\Controllers\Landlord\LandingFaqController::class);
+    Route::resource('landing-sections', \App\Http\Controllers\Landlord\LandingSectionController::class);
+    Route::resource('landing-pages', \App\Http\Controllers\Landlord\LandingPageController::class);
 });
 });
 

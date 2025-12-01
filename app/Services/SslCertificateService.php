@@ -13,7 +13,7 @@ class SslCertificateService
 
     public function __construct()
     {
-        $this->apiToken = config('services.cloudflare.api_token');
+        $this->apiToken = config('services.cloudflare.api_token') ?? '';
     }
 
     /**

@@ -13,8 +13,8 @@ class ContaboHostingService
 
     public function __construct()
     {
-        $this->apiKey = config('services.contabo.api_key');
-        $this->apiUser = config('services.contabo.api_user');
+        $this->apiKey = config('services.contabo.api_key') ?? '';
+        $this->apiUser = config('services.contabo.api_user') ?? '';
     }
 
     /**

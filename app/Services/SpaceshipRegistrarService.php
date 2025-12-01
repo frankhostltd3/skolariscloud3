@@ -14,8 +14,8 @@ class SpaceshipRegistrarService
 
     public function __construct()
     {
-        $this->apiKey = config('services.spaceship.api_key');
-        $this->apiUser = config('services.spaceship.api_user');
+        $this->apiKey = config('services.spaceship.api_key') ?? '';
+        $this->apiUser = config('services.spaceship.api_user') ?? '';
         $this->sandbox = config('services.spaceship.sandbox', true);
         $this->apiUrl = $this->sandbox
             ? 'https://api.sandbox.spaceship.com/v1'

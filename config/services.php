@@ -85,6 +85,18 @@ return [
             'api_user' => env('HOSTING_PROVIDER_2_API_USER'),
         ],
 
+        'spaceship' => [
+            'api_key' => env('SPACESHIP_API_KEY'),
+            'api_user' => env('SPACESHIP_API_USER'),
+            'sandbox' => env('SPACESHIP_SANDBOX', true),
+        ],
+
+        'internetbs' => [
+            'api_key' => env('INTERNETBS_API_KEY'),
+            'api_user' => env('INTERNETBS_API_USER'),
+            'sandbox' => env('INTERNETBS_SANDBOX', true),
+        ],
+
         // Cloudflare DNS & SSL
         'cloudflare' => [
             'api_token' => env('CLOUDFLARE_API_TOKEN'),

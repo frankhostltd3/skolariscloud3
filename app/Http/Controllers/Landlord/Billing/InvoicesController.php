@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Landlord\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\LandlordInvoice;
-use App\Models\Tenant;
+use App\Models\School;
 use App\Services\LandlordBilling\InvoiceBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -21,23 +21,23 @@ class InvoicesController extends Controller
 
     public function index(): View
     {
-        $tenantOptions = Tenant::query()
-            ->select(['id', 'data', 'created_at'])
+        $tenantOptions = School::query()
+            ->select(['id', 'name', 'subdomain', 'meta', 'created_at'])
             ->orderByDesc('created_at')
             ->limit(50)
             ->get()
-            ->map(static function (Tenant $tenant): array {
-                $payload = $tenant->getAttribute('data');
-                if (is_string($payload)) {
-                    $payload = json_decode($payload, true) ?: [];
+            ->map(static function (School $school): array {
+                $meta = $school->meta;
+                if (is_string($meta)) {
+                    $meta = json_decode($meta, true) ?: [];
                 }
 
-                $displayName = $payload['name'] ?? $payload['school_name'] ?? Str::headline((string) $tenant->id);
-                $plan = $payload['plan'] ?? 'starter';
-                $country = $payload['country'] ?? null;
+                $displayName = $school->name ?? $meta['school_name'] ?? Str::headline((string) $school->id);
+                $plan = $meta['plan'] ?? 'starter';
+                $country = $meta['country'] ?? null;
 
                 return [
-                    'id' => $tenant->id,
+                    'id' => $school->id,
                     'name' => $displayName,
                     'short' => Str::of($displayName)
                         ->explode(' ')
@@ -47,7 +47,7 @@ class InvoicesController extends Controller
                         ->implode(''),
                     'plan' => Str::title((string) $plan),
                     'country' => $country ? Str::upper($country) : null,
-                    'created_at' => $tenant->created_at,
+                    'created_at' => $school->created_at,
                 ];
             })
             ->all();
@@ -154,7 +154,7 @@ class InvoicesController extends Controller
     public function show(LandlordInvoice $invoice): View
     {
         $invoice->load(['items', 'tenant']);
-        
+
         // Get active payment gateways
         $activeGateways = \App\Models\PaymentGatewayConfig::where('context', 'landlord_billing')
             ->where('is_active', true)
@@ -168,13 +168,13 @@ class InvoicesController extends Controller
                     'requires_phone' => in_array($config->gateway, ['mpesa', 'mtn_momo', 'airtel_money']),
                 ];
             });
-        
+
         // Get payment transactions for this invoice
         $transactions = \App\Models\PaymentTransaction::where('transaction_type', 'invoice')
             ->where('related_id', $invoice->id)
             ->orderByDesc('created_at')
             ->get();
-        
+
         return view('landlord.billing.invoice-show', compact('invoice', 'activeGateways', 'transactions'));
     }
 }

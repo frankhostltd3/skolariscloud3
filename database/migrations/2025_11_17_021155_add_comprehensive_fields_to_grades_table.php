@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('grades')) {
+            return;
+        }
+
         Schema::table('grades', function (Blueprint $table) {
             // Add missing columns for comprehensive grading system
             if (!Schema::hasColumn('grades', 'class_id')) {
@@ -60,6 +64,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('grades')) {
+            return;
+        }
+
         Schema::table('grades', function (Blueprint $table) {
             // Drop added columns in reverse order
             if (Schema::hasColumn('grades', 'published_at')) {

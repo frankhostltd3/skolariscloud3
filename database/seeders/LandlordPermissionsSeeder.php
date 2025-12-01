@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use App\Models\User;
+use App\Models\LandlordUser;
 use Illuminate\Support\Facades\Hash;
 
 class LandlordPermissionsSeeder extends Seeder
@@ -20,6 +20,7 @@ class LandlordPermissionsSeeder extends Seeder
             'access landlord dashboard',
             'manage tenants',
             'view billing',
+            'manage landlord billing',
             'manage invoices',
             'manage payment methods',
             'view analytics',
@@ -37,11 +38,12 @@ class LandlordPermissionsSeeder extends Seeder
         ];
 
         $this->command->info('Creating landlord permissions...');
-        
+
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'landlord'
+                'guard_name' => 'landlord',
+                'tenant_id' => 'landlord',
             ]);
             $this->command->info("✓ Created permission: {$permission}");
         }
@@ -50,19 +52,20 @@ class LandlordPermissionsSeeder extends Seeder
         $this->command->info('Creating landlord-admin role...');
         $role = Role::firstOrCreate([
             'name' => 'landlord-admin',
-            'guard_name' => 'landlord'
+            'guard_name' => 'landlord',
+            'tenant_id' => 'landlord',
         ]);
-        
+
         $role->syncPermissions($permissions);
         $this->command->info("✓ Created landlord-admin role with all permissions");
 
         // Check if landlord user exists, if not create one
         $landlordEmail = 'admin@landlord.local';
-        $landlordUser = User::where('email', $landlordEmail)->first();
-        
+        $landlordUser = LandlordUser::where('email', $landlordEmail)->first();
+
         if (!$landlordUser) {
             $this->command->info('Creating landlord user...');
-            $landlordUser = User::create([
+            $landlordUser = LandlordUser::create([
                 'name' => 'Landlord Admin',
                 'email' => $landlordEmail,
                 'password' => Hash::make('password123'),
@@ -72,6 +75,9 @@ class LandlordPermissionsSeeder extends Seeder
         }
 
         // Assign role to user
+        // Set the team id to 'landlord' for this assignment
+        setPermissionsTeamId('landlord');
+
         if (!$landlordUser->hasRole('landlord-admin', 'landlord')) {
             $landlordUser->assignRole($role);
             $this->command->info("✓ Assigned landlord-admin role to user");

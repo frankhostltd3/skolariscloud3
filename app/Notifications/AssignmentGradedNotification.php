@@ -37,7 +37,7 @@ class AssignmentGradedNotification extends Notification implements ShouldQueue
     {
         $exercise = $this->submission->exercise;
         $percentage = round(($this->submission->score / $exercise->max_score) * 100, 1);
-        
+
         return (new MailMessage)
             ->subject('Assignment Graded: ' . $exercise->title)
             ->line('Your assignment has been graded.')

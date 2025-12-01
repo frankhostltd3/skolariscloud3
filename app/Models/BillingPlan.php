@@ -10,11 +10,19 @@ use Illuminate\Database\Eloquent\Model;
 class BillingPlan extends Model
 {
     /**
+     * The database connection name for the model.
+     * Always use the central database for landlord billing plans.
+     *
+     * @var string|null
+     */
+    protected $connection = 'mysql';
+
+    /**
      * Use the configured central database connection so plans are shared across tenants.
      */
     public function getConnectionName(): ?string
     {
-        return config('tenancy.database.central_connection', config('database.default'));
+        return 'mysql'; // Force central database
     }
 
     /** @var array<int, string> */
@@ -33,6 +41,8 @@ class BillingPlan extends Model
         'is_active',
         'position',
         'features',
+        'modules',
+        'limits',
     ];
 
     /** @var array<string, string> */
@@ -42,6 +52,8 @@ class BillingPlan extends Model
         'is_active' => 'boolean',
         'position' => 'integer',
         'features' => 'array',
+        'modules' => 'array',
+        'limits' => 'array',
     ];
 
     /**

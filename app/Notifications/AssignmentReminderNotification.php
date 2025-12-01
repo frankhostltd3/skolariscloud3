@@ -36,7 +36,7 @@ class AssignmentReminderNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $hoursRemaining = now()->diffInHours($this->exercise->due_date);
-        
+
         return (new MailMessage)
             ->subject('Reminder: Assignment Due Soon - ' . $this->exercise->title)
             ->line('This is a reminder that you have a pending assignment.')

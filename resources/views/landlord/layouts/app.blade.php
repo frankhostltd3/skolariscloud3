@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name') }} · {{ __('Landlord Console') }}</title>
 
@@ -11,9 +12,29 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Quicksand Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Custom Styles for Landlord Panel -->
     <style>
+        :root {
+            --landlord-font-family: 'Quicksand', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body,
+        .card,
+        .btn,
+        .nav-link,
+        .navbar-brand,
+        .form-control,
+        .dropdown-menu,
+        .table,
+        .badge {
+            font-family: var(--landlord-font-family) !important;
+        }
+
         .bg-body-tertiary {
             background-color: #f8f9fa !important;
         }
@@ -25,6 +46,10 @@
         .card {
             border: none;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .landlord-sidebar .nav-link {
+            border-radius: 0.5rem;
         }
     </style>
 </head>
@@ -100,17 +125,83 @@
                             'icon' => 'bi-bell',
                             'route' => 'landlord.notifications.index',
                         ],
-                        ['label' => __('Integrations'), 'icon' => 'bi-plug', 'route' => 'landlord.integrations'],
-                        ['label' => __('System health'), 'icon' => 'bi-activity', 'route' => 'landlord.health'],
-                        ['label' => __('Roles & permissions'), 'icon' => 'bi-shield-lock', 'route' => 'landlord.rbac'],
+                        [
+                            'label' => __('System Monitoring'),
+                            'icon' => 'bi-speedometer',
+                            'children' => [
+                                [
+                                    'label' => __('Health Checks'),
+                                    'icon' => 'bi-heart-pulse',
+                                    'route' => 'landlord.health',
+                                ],
+                                [
+                                    'label' => __('Integrations'),
+                                    'icon' => 'bi-plug',
+                                    'route' => 'landlord.integrations',
+                                ],
+                            ],
+                        ],
+                        [
+                            'label' => __('Roles & permissions'),
+                            'icon' => 'bi-shield-lock',
+                            'route' => 'landlord.rbac.index',
+                        ],
+                        [
+                            'label' => __('Landing Page'),
+                            'icon' => 'bi-layout-text-window-reverse',
+                            'children' => [
+                                [
+                                    'label' => __('Hero Slides'),
+                                    'icon' => 'bi-images',
+                                    'route' => 'landlord.hero-slides.index',
+                                    'pattern' => 'landlord.hero-slides.*',
+                                ],
+                                [
+                                    'label' => __('Features'),
+                                    'icon' => 'bi-grid-3x3-gap',
+                                    'route' => 'landlord.landing-features.index',
+                                    'pattern' => 'landlord.landing-features.*',
+                                ],
+                                [
+                                    'label' => __('Stats'),
+                                    'icon' => 'bi-bar-chart',
+                                    'route' => 'landlord.landing-stats.index',
+                                    'pattern' => 'landlord.landing-stats.*',
+                                ],
+                                [
+                                    'label' => __('Testimonials'),
+                                    'icon' => 'bi-chat-quote',
+                                    'route' => 'landlord.landing-testimonials.index',
+                                    'pattern' => 'landlord.landing-testimonials.*',
+                                ],
+                                [
+                                    'label' => __('FAQs'),
+                                    'icon' => 'bi-question-circle',
+                                    'route' => 'landlord.landing-faqs.index',
+                                    'pattern' => 'landlord.landing-faqs.*',
+                                ],
+                                [
+                                    'label' => __('Sections'),
+                                    'icon' => 'bi-layers',
+                                    'route' => 'landlord.landing-sections.index',
+                                    'pattern' => 'landlord.landing-sections.*',
+                                ],
+                                [
+                                    'label' => __('Pages'),
+                                    'icon' => 'bi-file-earmark-text',
+                                    'route' => 'landlord.landing-pages.index',
+                                    'pattern' => 'landlord.landing-pages.*',
+                                ],
+                            ],
+                        ],
                         ['label' => __('Settings'), 'icon' => 'bi-gear', 'route' => 'landlord.settings'],
                     ];
                 }
             @endphp
 
             <div class="row g-4">
-                <div class="col-12 col-lg-3 col-xl-2">
-                    <aside class="card border-0 shadow-sm h-100">
+                <div class="col-12 col-lg-4 col-xl-3">
+                    <aside class="card border-0 shadow-sm h-100 landlord-sidebar">
                         <div class="card-body p-0">
                             <nav class="nav flex-column">
                                 @foreach ($navigation as $item)
@@ -166,7 +257,7 @@
                     </aside>
                 </div>
 
-                <div class="col-12 col-lg-9 col-xl-10">
+                <div class="col-12 col-lg-8 col-xl-9">
                     @yield('content')
                 </div>
             </div>

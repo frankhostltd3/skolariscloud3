@@ -16,6 +16,12 @@ class PlansController extends Controller
 {
     public function __construct()
     {
+        $this->middleware(function ($request, $next) {
+            // Ensure landlord context is set for permissions
+            app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId('landlord');
+            return $next($request);
+        });
+
         $this->middleware('permission:manage landlord billing,landlord');
     }
 

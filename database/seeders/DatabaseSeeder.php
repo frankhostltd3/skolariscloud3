@@ -11,6 +11,7 @@ use App\Models\SchoolUserInvitation;
 use App\Models\User;
 use App\Services\TenantDatabaseManager;
 use App\Support\CentralDomain;
+use Database\Seeders\IntegrationHealthDemoSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -87,6 +88,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedPaymentGateways();
         $this->seedMessagingChannels();
+        $this->call(IntegrationHealthDemoSeeder::class);
     }
 
     private function bootstrapSchool(TenantDatabaseManager $manager, array $definition): void

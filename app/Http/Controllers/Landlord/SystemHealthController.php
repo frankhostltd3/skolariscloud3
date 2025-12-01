@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Contracts\View\View;
+use Spatie\Health\Http\Controllers\HealthCheckResultsController;
 
 class SystemHealthController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(HealthCheckResultsController $controller)
     {
-        return view('landlord.health.index');
+        return $controller();
     }
 }

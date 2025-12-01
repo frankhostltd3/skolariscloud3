@@ -1,0 +1,74 @@
+@extends('landlord.layouts.app')
+
+@section('content')
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Landing Stats</h1>
+        <a href="{{ route('landlord.landing-stats.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add New Stat
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Sort Order</th>
+                            <th>Value</th>
+                            <th>Label</th>
+                            <th>Icon</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($stats as $stat)
+                            <tr>
+                                <td>{{ $stat->sort_order }}</td>
+                                <td>{{ $stat->value }}</td>
+                                <td>{{ $stat->label }}</td>
+                                <td>
+                                    @if ($stat->icon)
+                                        <i class="bi {{ $stat->icon }}"></i>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($stat->is_active)
+                                        <span class="badge bg-success">Active</span>
+                                    @else
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <a href="{{ route('landlord.landing-stats.edit', $stat->id) }}"
+                                        class="btn btn-sm btn-info">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="{{ route('landlord.landing-stats.destroy', $stat->id) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Are you sure?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+@endsection

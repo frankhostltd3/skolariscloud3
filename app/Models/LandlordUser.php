@@ -20,11 +20,12 @@ class LandlordUser extends Authenticatable implements MustVerifyEmail
     protected $guard_name = 'landlord';
 
     /**
-     * The connection name for the model.
-     *
-     * @var string|null
+     * Resolve the connection for landlord users (always central DB).
      */
-    protected $connection = 'mysql'; // Explicitly use the central connection
+    public function getConnectionName()
+    {
+        return central_connection();
+    }
 
     /**
      * The attributes that are mass assignable.
