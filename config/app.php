@@ -19,6 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Central Domain
+    |--------------------------------------------------------------------------
+    |
+    | The primary central/landlord domain for this application.
+    | This is used to distinguish between central requests and tenant requests.
+    | Set via CENTRAL_DOMAIN in .env (e.g., smatcampus.com or localhost)
+    |
+    */
+
+    'central_domain' => env('CENTRAL_DOMAIN', 'localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
