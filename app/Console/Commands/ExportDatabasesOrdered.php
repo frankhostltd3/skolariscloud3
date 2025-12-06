@@ -11,7 +11,7 @@ class ExportDatabasesOrdered extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'system:export-databases-ordered 
+    protected $signature = 'system:export-databases-ordered
                             {--path= : Export directory path (default: storage/backups/export_TIMESTAMP)}
                             {--central-only : Export only the central database}
                             {--tenants-only : Export only tenant databases}';
@@ -55,7 +55,7 @@ class ExportDatabasesOrdered extends Command
         // Export tenant databases
         if (!$this->option('central-only')) {
             $schools = School::all();
-            
+
             if ($schools->isEmpty()) {
                 $this->warn('No tenant schools found in the database.');
             } else {
@@ -138,8 +138,8 @@ class ExportDatabasesOrdered extends Command
     {
         // Get all tables
         $tables = DB::select("
-            SELECT TABLE_NAME 
-            FROM INFORMATION_SCHEMA.TABLES 
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
             ORDER BY TABLE_NAME
         ", [$database]);
@@ -153,7 +153,7 @@ class ExportDatabasesOrdered extends Command
         }
 
         $fks = DB::select("
-            SELECT 
+            SELECT
                 TABLE_NAME as child_table,
                 REFERENCED_TABLE_NAME as parent_table
             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -252,7 +252,7 @@ class ExportDatabasesOrdered extends Command
 
         // Use mysqldump for each table in order and append to file
         $escapedPassword = escapeshellarg($password);
-        
+
         foreach ($orderedTables as $table) {
             $cmd = sprintf(
                 'mysqldump --host=%s --port=%s --user=%s --password=%s ' .

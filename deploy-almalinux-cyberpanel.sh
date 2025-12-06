@@ -164,7 +164,7 @@ echo "⚙️ Configuring environment..."
 
 if [ ! -f ".env" ]; then
     cp .env.example .env
-    
+
     # Update .env with provided values
     sed -i "s|APP_URL=.*|APP_URL=https://${DOMAIN}|" .env
     sed -i "s|DB_DATABASE=.*|DB_DATABASE=${DB_NAME}|" .env
@@ -172,7 +172,7 @@ if [ ! -f ".env" ]; then
     sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASS}|" .env
     sed -i "s|APP_ENV=.*|APP_ENV=production|" .env
     sed -i "s|APP_DEBUG=.*|APP_DEBUG=false|" .env
-    
+
     echo "✅ .env file created and configured"
 else
     echo "ℹ️ .env file already exists"
@@ -207,13 +207,13 @@ read -p "Run migrations now? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     php artisan migrate --force
-    
+
     # Run tenant migrations
     if php artisan list | grep -q "tenants:migrate"; then
         echo "🏢 Running tenant migrations..."
         php artisan tenants:migrate
     fi
-    
+
     # Seed database
     read -p "Seed database? (y/n) " -n 1 -r
     echo

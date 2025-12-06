@@ -15,7 +15,7 @@ class ExportDatabases extends Command
     {
         $timestamp = date('Y-m-d_H-i-s');
         $backupPath = storage_path("backups/export_{$timestamp}");
-        
+
         if (!file_exists($backupPath)) {
             mkdir($backupPath, 0755, true);
         }
@@ -47,12 +47,12 @@ class ExportDatabases extends Command
     private function exportDatabase($host, $port, $username, $password, $database, $outputPath)
     {
         $this->info("Exporting {$database}...");
-        
+
         $passwordArg = $password ? "--password=\"{$password}\"" : "";
-        
+
         // Try to find mysqldump
         $mysqldump = 'mysqldump'; // Default
-        
+
         // Check common WAMP paths if on Windows
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
              // Attempt to find in WAMP
@@ -76,19 +76,19 @@ class ExportDatabases extends Command
         // --hex-blob: dump binary strings in hex format
         // --no-tablespaces: avoid tablespace issues
         // --column-statistics=0: avoid issues with newer mysqldump on older servers
-        
+
         $command = "{$mysqldump} --user=\"{$username}\" {$passwordArg} --host=\"{$host}\" --port=\"{$port}\" --routines --triggers --single-transaction --quick --add-drop-table --disable-keys --hex-blob --no-tablespaces --column-statistics=0 \"{$database}\" > \"{$outputPath}\" 2>NUL";
-        
+
         // Execute
         system($command, $returnVar);
-        
+
         if ($returnVar === 0) {
             $this->info("✓ Exported {$database}");
         } else {
             // Try without column-statistics=0 if it failed (older mysqldump versions don't support it)
             $commandRetry = "{$mysqldump} --user=\"{$username}\" {$passwordArg} --host=\"{$host}\" --port=\"{$port}\" --routines --triggers --single-transaction --quick --add-drop-table --disable-keys --hex-blob --no-tablespaces \"{$database}\" > \"{$outputPath}\" 2>NUL";
             system($commandRetry, $returnVarRetry);
-            
+
             if ($returnVarRetry === 0) {
                 $this->info("✓ Exported {$database} (retry without column-statistics)");
             } else {

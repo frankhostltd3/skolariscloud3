@@ -107,13 +107,13 @@ read -p "Do you want to run migrations now? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     php artisan migrate --force
-    
+
     # Run tenant migrations if they exist
     if php artisan list | grep -q "tenants:migrate"; then
         echo "🏢 Running tenant migrations..."
         php artisan tenants:migrate
     fi
-    
+
     # Seed database
     read -p "Do you want to seed the database? (y/n) " -n 1 -r
     echo
